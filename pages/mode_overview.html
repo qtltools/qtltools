@@ -14,35 +14,38 @@
 <div class="content">
 
 	<div class="item"  id="item1">
-		<h1>Title1</h1>
+		<h1>How to run QTLtools</h1>
 		<p>
-		Text1.1
+		QTLtools contain the following multiple functionalities:
 		</p>
 		
-		<code>
-		Code1
-		</code>
-		
-		<p>
-		Text1.2
-		</p>
-				
-	</div>
+		<ul>
+			<li><a href="mode_bamstat.html" target='content'>[bamstat]</a> to control the quality (QC) of the raw sequence data</li>
+			<li><a href="mode_match.html" target='content'>[match]</a> to ensure that the sequence data match the genotype data</li>
+			<li><a href="mode_quant.html" target='content'>[quant]</a> to quantify exon and gene expression</li>
+			<li><a href="mode_pca.html" target='content'>[pca]</a> to perform PCA on the phenotype/genotype data</li>
+			<li><a href="mode_cis.html" target='content'>[cis]</a> to discover QTL in <i>cis</i> and eventually perform conditional analysis</li>
+			<li><a href="mode_trans.html" target='content'>[trans]</a> to discover QTL in <i>trans</i></li>
+			<li><a href="mode_fdensity.html" target='content'>[fdensity]</a> to measure the functional annotation density around QTLs</li>
+			<li><a href="mode_fenrich.html" target='content'>[fenrich]</a> to measure enrichment of QTLs within functional annotations</li>
+			<li><a href="mode_rtc.html" target='content'>[rtc]</a> to overlap QTLs with GWAS hits</li>
+		</ul>
 
-	<div class="item"  id="item2">
-		<h1>Title1</h1>
 		<p>
-		Text2.1
+		To run a particular functionality, you need to combine QTLtools with the appropriate mode. For instance, to run <i>bamstat</i>, use:
 		</p>
-		
+
 		<code>
-		Code2
+		QTLtools bamstat ...
 		</code>
-		
+
 		<p>
-		Text2.2
+		Where ... stands for all options unique to the mode used. To get a full list of available options with short description, run:
 		</p>
-				
+
+		<code>
+		QTLtools bamstat --help
+		</code>
 	</div>
 	
 	<div class="log">Monday 11th July 2016</div>
