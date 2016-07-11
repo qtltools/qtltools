@@ -25,18 +25,10 @@
 			</tr>
 			<tr>
 				<td>
-				<a href="https://github.com/qtltools/qtltools/archive/master.zip">Last development version (not recommended)</a>
-				</td>
-				<td>
-				This version is a tar ball of the last version of the code. We recommend instead to use the last release version below. Alternatively to this tar ball, you can also get the lastest version of the source code with by running <b> git clone https://github.com/qtltools/qtltools.git master </b>.
-				</td>
-			</tr>
-			<tr>
-				<td>
 				<a href="https://qtltools.github.io/qtltools/files/QTLtools.1.XXX.tgz">v1.XXX (Binary + source code)</a>
 				</td>
 				<td>
-				This is the last stable version of the code with a static linux binary that should run on most linux plateforms and a binary for MacOSX >= 10.6.
+				This is the last stable version of the code with a static linux binary that should run on most linux plateforms and a static binary for MacOSX >= 10.6.
 				</td>
 			</tr>
 		</table>
@@ -46,13 +38,13 @@
 	<div class="item"  id="item1">
 		<h1>Compiling <b>QTLtools</b></h1>
 		<p>
-		If the provided binaries does not directly work, QTLtools needs to be re-compiled on your plateform. For this, you may need to install few standard libraries required by QTLtools if you do not have them already installed.
+		If the provided binaries does not directly work, QTLtools needs to be re-compiled on your plateform. For this, you may need to install few standard libraries required by QTLtools if you do not have them already installed. To do so, you need to update the path of the required libraries in the <i>Makefile</i>. 
 		</p>
 
 		<br>
 		<h3>The GNU Scientific Library</h3>
 		<p>
-		This library is usually installed by default on most linux plateforms, otherwise instructions to install it can be found <a href="http://www.gnu.org/software/gsl/">here</a>.
+		This library is usually installed by default on most linux plateforms, otherwise instructions to install it can be found <a href="http://www.gnu.org/software/gsl/">here</a>. This librry does not need any modification of the <i>Makefile</i> since it is dynamically linked.
 		</p>
 
 		<br>
