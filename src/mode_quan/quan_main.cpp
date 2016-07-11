@@ -1,0 +1,166 @@
+/*Copyright (C) 2015 Olivier Delaneau, Halit Ongen, Emmanouil T. Dermitzakis
+ 
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
+
+#include "quan_data.h"
+
+void quan_main(vector < string > & argv) {
+    quan_data D;
+    //-------------------------
+    // 1. DECLARE ALL OPTIONS
+    //-------------------------
+    D.declareBasicOptions();
+    boost::program_options::options_description opt_files ("\x1B[32mI/O\33[0m");
+    opt_files.add_options()
+    	("gtf", boost::program_options::value< string >(), "Annotation in GTF format")
+		("bam", boost::program_options::value< vector < string > > ()->multitoken(), "Sequence data in BAM/SAM format.")
+		("samples",boost::program_options::value< vector < string > > ()->multitoken(), "Sample names or a file with sample names. [Optional]")
+		("out-prefix", boost::program_options::value< string >(), "Output file prefix.");
+    
+	boost::program_options::options_description opt_parameters ("\x1B[32mParameters\33[0m");
+	opt_parameters.add_options()
+		("rpkm", "Print RPKM values.")
+        ("debug", "Print debug info to stderr.")
+		("gene-types", boost::program_options::value< vector < string > > ()->multitoken(), "Gene types to quantify. (Requires gene_type attribute in GTF. It will also use transcript_type if present).")
+		("max-read-length", boost::program_options::value< unsigned int >()->default_value(1000), "Group genes separated by this much together. Set this larger than your read length");
+
+    boost::program_options::options_description opt_filters ("\x1B[32mFilters\33[0m");
+    opt_filters.add_options()
+    	("filter-mapping-quality", boost::program_options::value< unsigned int >()->default_value(10), "Minimal phred mapping quality for a read to be considered.")
+		("filter-mismatch", boost::program_options::value< double >()->default_value(-1.0,"OFF"), "Maximum mismatches allowed in a read. If between 0 and 1 taken as the fraction of read length. (Requires NM attribute)")
+		("filter-mismatch-total", boost::program_options::value< double >()->default_value(-1.0,"OFF"), "Maximum total mismatches allowed in paired reads. If between 0 and 1 taken as the fraction of combined read length. (Requires NM attribute)")
+		("check-proper-pairing", "If provided only properly paired reads according to the aligner that are in correct orientation will be considered. Otherwise all pairs in correct orientation will be considered.")
+        ("check-consistency", "If provided checks the consistency of split reads with annotation, rather than pure overlap of one of the blocks of the split read.")
+        ("no-merge", "If provided overlapping mate pairs will not be merged.")
+		("filter-remove-duplicates", "Remove duplicate sequencing reads in the process.");
+    
+    boost::program_options::options_description opt_parallel ("\x1B[32mParallelization\33[0m");
+    opt_parallel.add_options()
+    	("chunk", boost::program_options::value< vector < int > >()->multitoken(), "Specify which chunk needs to be processed")
+		("region", boost::program_options::value< string >(), "Region of interest.");
+    
+    D.option_descriptions.add(opt_files).add(opt_parameters).add(opt_filters).add(opt_parallel);
+    
+    //-------------------
+    // 2. PARSE OPTIONS
+    //-------------------
+    boost::program_options::variables_map options;
+    try {
+        boost::program_options::store(boost::program_options::command_line_parser(argv).options(D.option_descriptions).run(), D.options);
+        boost::program_options::notify(D.options);
+    } catch ( const boost::program_options::error& e ) {
+        cerr << "Error parsing [quan] command line :" << string(e.what()) << endl;
+        exit(0);
+    }
+    
+    //---------------------
+    // 3. PRINT HELP/HEADER
+    //---------------------
+    vrb.ctitle("QUANTIFY GENES AND EXONS FROM BAM FILES");
+    if (D.options.count("help")) {
+        cout << D.option_descriptions << endl;
+        exit(EXIT_SUCCESS);
+    }
+    
+    //-----------------
+    // 4. COMMON CHECKS
+    //-----------------
+    if (!D.options.count("gtf")) vrb.error("Genotype data needs to be specified with --gtf [file.gtf]");
+    if (!D.options.count("bam")) vrb.error("Sequence data needs to be specified with --bam [file.bam]");
+    if (!D.options.count("out-prefix")) vrb.error("Output needs to be specified with --out [file.out]");
+    
+
+    D.min_mapQ = D.options["filter-mapping-quality"].as < unsigned int > ();
+    vrb.bullet("Minimum mapping quality: " + stb.str(D.min_mapQ));
+    D.max_read_length = D.options["max-read-length"].as < unsigned int > ();
+    vrb.bullet("Maximum read length: " + stb.str(D.max_read_length));
+    double intpart;
+
+    D.max_mismatch_count_total = D.options["filter-mismatch-total"].as < double > ();
+    if(D.max_mismatch_count_total >= 0 && modf(D.max_mismatch_count_total, &intpart) != 0.0) {
+    	if(D.max_mismatch_count_total > 1) vrb.error("--filter-mismatch-total cannot be greater than 1 when not an integer");
+    	else D.fraction_mmt = true;
+    }
+    if ( D.max_mismatch_count_total >= 0) vrb.bullet("Maximum mismatch count per mate-pair: " + stb.str(D.max_mismatch_count_total));
+
+    D.max_mismatch_count = D.options["filter-mismatch"].as < double > ();
+    if(D.max_mismatch_count >= 0 && modf(D.max_mismatch_count, &intpart) != 0.0) {
+    	if(D.max_mismatch_count > 1) vrb.error("--filter-mismatch cannot be greater than 1 when not an integer");
+    	else D.fraction_mm = true;
+    }
+    if (D.max_mismatch_count < 0 && D.max_mismatch_count_total >= 0 && !D.fraction_mmt) D.max_mismatch_count = D.max_mismatch_count_total;
+    if ( D.max_mismatch_count >= 0) vrb.bullet("Maximum mismatch count per read: " + stb.str(D.max_mismatch_count));
+
+
+
+    if (D.options.count("check-proper-pairing")){
+        vrb.bullet("Checking properly paired flag");
+        D.proper_pair = true;
+    }
+    
+    if (D.options.count("check-consistency")){
+        vrb.bullet("Checking if all blocks of a split read are consistent with the annotation");
+        D.check_consistency = true;
+    }
+    
+    if (D.options.count("filter-remove-duplicates")){
+        vrb.bullet("Filtering reads flagged as duplicate");
+        D.dup_remove = true;
+    }
+    
+    if (D.options.count("no-merge")){
+        vrb.bullet("Not merging overlapping mate pairs");
+        D.merge = false;
+    }
+    
+    if (D.options.count("gene-types")){
+    	vector < string > t = D.options["gene-types"].as < vector < string > > ();
+    	D.gene_types = set < string > (t.begin(),t.end());
+        const char* const delim = " ";
+        ostringstream temp;
+        copy(D.gene_types.begin(), D.gene_types.end(), ostream_iterator<string>(temp, delim));
+        vrb.bullet("Genes included: " + temp.str());
+    }
+    
+    if (D.options.count("debug")) D.debug = true;
+
+    int k=1,K=1;
+    if (D.options.count("chunk")) {
+        vector < int > nChunk = D.options["chunk"].as < vector < int > > ();
+        if (nChunk.size() != 2 || nChunk[0] > nChunk[1]) vrb.error("Incorrect --chunk arguments!");
+        vrb.bullet("Chunk = [" + stb.str(nChunk[0]) + "/" + stb.str(nChunk[1]) + "]");
+        k=nChunk[0] , K = nChunk[1];
+    } else if(D.options.count("region")) vrb.bullet("Region = [" + D.options["region"].as < string > () +"]");
+    
+    //TO DO CHECK PARAMETER VALUES
+
+    
+    //------------------------------------------
+    // 5. READ FILES / INITIALIZE / RUN ANALYSIS
+    //------------------------------------------
+    
+    D.processBasicOptions();
+    D.bams = D.options["bam"].as < vector < string > > ();
+    if (D.options.count("samples")) {
+        vector < string > n = D.options["samples"].as <vector  < string > > ();
+        D.read_Sample_Names(n);
+    }else D.samples = D.bams;
+    D.readGTF(D.options["gtf"].as < string > (),D.bams.size());
+    if (D.options.count("region")) D.setRegion(D.options["region"].as < string >());
+    if (D.options.count("chunk")) D.setChunk(k, K);
+    D.readBams();
+    D.printBEDcount(D.options["out-prefix"].as < string > ());
+    if (D.options.count("rpkm")) D.printBEDrpkm(D.options["out-prefix"].as < string > ());
+    D.printStats(D.options["out-prefix"].as < string > ());
+}
