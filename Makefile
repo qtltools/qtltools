@@ -22,13 +22,26 @@ OFILE=$(shell for file in `find src -name *.cpp`; do echo obj/$$(basename $$file
 VPATH=$(shell for file in `find src -name *.cpp`; do echo $$(dirname $$file); done)
 
 #DEFAULT VERSION (I.E. UNIGE DESKTOP RELEASE VERSION)
-all: desktop
+all: default
+
+#FOR USER DEFINED COMPILATION [YOU NEED TO UPDATE THE SIX PATHS TO COMPILE QTLTOOLS]
+default: RMATH_INC=
+default: RMATH_LIB=
+default: HTSLD_INC=
+default: HTSLD_LIB=
+default: BOOST_INC=
+default: BOOST_LIB=
+default: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
+default: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
+default: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
+default: LDFLAG=$(LDFLAG_REL)
+default: $(BFILE)
 
 #UNIGE DESKTOP RELEASE VERSION
-desktop: RMATH_INC=/home/olivier/Tools/R-3.2.2/src/include
-desktop: RMATH_LIB=/home/olivier/Tools/R-3.2.2/src/nmath/standalone
-desktop: HTSLD_INC=/home/olivier/Tools/htslib-1.3
-desktop: HTSLD_LIB=/home/olivier/Tools/htslib-1.3
+desktop: RMATH_INC=$(HOME)/Tools/R-3.2.2/src/include
+desktop: RMATH_LIB=$(HOME)/Tools/R-3.2.2/src/nmath/standalone
+desktop: HTSLD_INC=$(HOME)/Tools/htslib-1.3
+desktop: HTSLD_LIB=$(HOME)/Tools/htslib-1.3
 desktop: BOOST_INC=/usr/include
 desktop: BOOST_LIB=/usr/lib/x86_64-linux-gnu
 desktop: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
@@ -38,10 +51,10 @@ desktop: LDFLAG=$(LDFLAG_REL)
 desktop: $(BFILE)
 
 #UNIGE DESKTOP DEBUG VERSION
-desktop-dbg: RMATH_INC=/home/olivier/Tools/R-3.2.2/src/include
-desktop-dbg: RMATH_LIB=/home/olivier/Tools/R-3.2.2/src/nmath/standalone
-desktop-dbg: HTSLD_INC=/home/olivier/Tools/htslib-1.3
-desktop-dbg: HTSLD_LIB=/home/olivier/Tools/htslib-1.3
+desktop-dbg: RMATH_INC=$(HOME)/Tools/R-3.2.2/src/include
+desktop-dbg: RMATH_LIB=$(HOME)/Tools/R-3.2.2/src/nmath/standalone
+desktop-dbg: HTSLD_INC=$(HOME)/Tools/htslib-1.3
+desktop-dbg: HTSLD_LIB=$(HOME)/Tools/htslib-1.3
 desktop-dbg: BOOST_INC=/usr/include
 desktop-dbg: BOOST_LIB=/usr/lib/x86_64-linux-gnu
 desktop-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
@@ -65,10 +78,10 @@ server: LDFLAG=$(LDFLAG_REL)
 server: $(BFILE)
 
 #DELL LAPTOP RELEASE VERSION
-laptop: RMATH_INC=/home/olivier/Libraries/R-3.2.2/src/include
-laptop: RMATH_LIB=/home/olivier/Libraries/R-3.2.2/src/nmath/standalone
-laptop: HTSLD_INC=/home/olivier/Libraries/htslib-1.2.1
-laptop: HTSLD_LIB=/home/olivier/Libraries/htslib-1.2.1
+laptop: RMATH_INC=$(HOME)/Libraries/R-3.2.2/src/include
+laptop: RMATH_LIB=$(HOME)/Libraries/R-3.2.2/src/nmath/standalone
+laptop: HTSLD_INC=$(HOME)/Libraries/htslib-1.2.1
+laptop: HTSLD_LIB=$(HOME)/Libraries/htslib-1.2.1
 laptop: BOOST_INC=/usr/include
 laptop: BOOST_LIB=/usr/lib/x86_64-linux-gnu
 laptop: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
@@ -78,10 +91,10 @@ laptop: LDFLAG=$(LDFLAG_REL)
 laptop: $(BFILE)
 
 #DELL LAPTOP DEBUG VERSION
-laptop-dbg: RMATH_INC=/home/olivier/Libraries/R-3.2.2/src/include
-laptop-dbg: RMATH_LIB=/home/olivier/Libraries/R-3.2.2/src/nmath/standalone
-laptop-dbg: HTSLD_INC=/home/olivier/Libraries/htslib-1.2.1
-laptop-dbg: HTSLD_LIB=/home/olivier/Libraries/htslib-1.2.1
+laptop-dbg: RMATH_INC=$(HOME)/Libraries/R-3.2.2/src/include
+laptop-dbg: RMATH_LIB=$(HOME)/Libraries/R-3.2.2/src/nmath/standalone
+laptop-dbg: HTSLD_INC=$(HOME)/Libraries/htslib-1.2.1
+laptop-dbg: HTSLD_LIB=$(HOME)/Libraries/htslib-1.2.1
 laptop-dbg: BOOST_INC=/usr/include
 laptop-dbg: BOOST_LIB=/usr/lib/x86_64-linux-gnu
 laptop-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
@@ -119,8 +132,6 @@ cluster-dbg: $(BFILE)
 #UBUNTU RELEASE VERSION
 ubuntu: RMATH_INC=$(HOME)/R-3.2.2/src/include
 ubuntu: RMATH_LIB=$(HOME)/R-3.2.2/src/nmath/standalone
-#ubuntu: RMATH_INC=/usr/include
-#ubuntu: RMATH_LIB=/usr/lib
 ubuntu: HTSLD_INC=/usr/local/include/
 ubuntu: HTSLD_LIB=/usr/local/lib
 ubuntu: BOOST_INC=/usr/include
@@ -134,8 +145,6 @@ ubuntu: $(BFILE)
 #UBUNTU DEBUG VERSION
 ubuntu-dbg: RMATH_INC=$(HOME)/R-3.2.2/src/include
 ubuntu-dbg: RMATH_LIB=$(HOME)/R-3.2.2/src/nmath/standalone
-#ubuntu-dbg: RMATH_INC=/usr/include
-#ubuntu-dbg: RMATH_LIB=/usr/lib
 ubuntu-dbg: HTSLD_INC=/usr/local/include/
 ubuntu-dbg: HTSLD_LIB=/usr/local/lib
 ubuntu-dbg: BOOST_INC=/usr/include
