@@ -14,7 +14,7 @@
 	<div class="item"  id="cis_map1">
 		<h1>How to run a nominal pass in cis?</h1>
 		<p>
-		To perform a simple nominal pass on the example data set, you need the following input files:
+		To perform a simple nominal pass on your data set in order to get nominal P-values between your phenotypes and genotypes, you need the following input files:
 		</p>
 
 		<ul>
@@ -38,7 +38,7 @@
 		</p>
 
 		<code>
-		QTLtools cis --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --cov genes.covariates.pc50.txt.gz --nominal 0.01 --region chr22:17000000-18000000 --out nominals.txt
+		QTLtools cis --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --cov genes.covariates.pc50.txt.gz <b>--nominal 0.01</b> --region chr22:17000000-18000000 --out nominals.txt
 		</code>
 
 		<p>
@@ -76,7 +76,7 @@
 			<li>4. The end position of the phenotype</li>
 			<li>5. The strand orientation of the phenotype</li>
 			<li>6. The total number of variants tested in <i>cis</i></li>
-			<li>7. The distance between the phenotype and the tested variant</li>
+			<li>7. The distance between the phenotype and the tested variant (accounting for strand orientation)</li>
 			<li>8. The ID of the tested variant</li>
 			<li>9. The chromosome ID of the variant</li>
 			<li>10. The start position of the variant</li>
