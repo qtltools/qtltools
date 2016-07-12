@@ -23,7 +23,6 @@
 		<ul>
 			<li> The phenotype data matrix for chr22 on 358 samples: <a href="http://jungle.unige.ch/QTLtools_examples/genes.50percent.chr22.bed.gz">BED</a> / <a href="http://jungle.unige.ch/QTLtools_examples/genes.50percent.chr22.bed.gz.tbi">index</a></li>
 			<li> The genotype data matrix for chr22 on 358 samples: <a href="http://jungle.unige.ch/QTLtools_examples/genotypes.chr22.vcf.gz">BED</a> / <a href="http://jungle.unige.ch/QTLtools_examples/genotypes.chr22.vcf.gz.csi">index</a></li>
-			<li> The covariate data matrix on 358 samples: <a href="http://jungle.unige.ch/QTLtools_examples/genes.covariates.pc50.txt.gz">TXT</a></li>
 		</ul>
 
 		<br>
@@ -33,25 +32,25 @@
 		</p>
 
 		<code>
-		QTLtools <b>trans</b> --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --threshold 1e-5 <b>--nominal</b> --out nominal.full
+		QTLtools <b>trans</b> --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --threshold 1e-5 <b>--nominal</b> --out trans.nominal
 		</code>
 
 		<p>
-		This produces 3 output files:
+		This computes all pairwise test between variants and phenotypes (excluding the cis-window) and reports the results in 3 output files:
 		</p>
 
 		<ul>
-			<li><i>nominal.full.best.txt.gz</i>; contains the top hit per phenotype</li>
-			<li><i>nominal.full.bins.txt.gz</i>; contains a binning of all hits with a P-value above the specified <i>--threshold</i> (=1e-5)</li>
-			<li><i>nominal.full.hits.txt.gz</i>; contains detailed information (not binned) for all hits with a P-value <b>below</b> the specified <i>--threshold</i> (=1e-5)</li>
+			<li><i>trans.nominal.best.txt.gz</i>; contains the top hit per phenotype</li>
+			<li><i>trans.nominal.bins.txt.gz</i>; contains a binning of all hits with a P-value above the specified <i>--threshold</i> (=1e-5)</li>
+			<li><i>trans.nominal.hits.txt.gz</i>; contains detailed information (not binned) for all hits with a P-value <b>below</b> the specified <i>--threshold</i> (=1e-5)</li>
 		</ul>
 
 		<p>
-		That are more detailed below:
+		These files are detailed below:
 		</p>
 
 		<code>
-		zcat nominal.full.best.txt.gz | head<br>
+		zcat trans.nominal.best.txt.gz | head<br>
 		ENSG00000215270.3 -1 1.12926e-05<br>
 		ENSG00000237438.2 -1 2.03908e-05<br>
 		ENSG00000273203.1 -1 0.000138072<br>
@@ -71,7 +70,7 @@
 		</ul>		
 
 		<code>
-		zcat nominal.full.bins.txt.gz | head<br>
+		zcat trans.nominal.bins.txt.gz | head<br>
 		0 0 0.000231095 1 0.996523 147445<br>
 		1 0.000231095 0.000462191 0.996523 0.993047 148408<br>
 		2 0.000462191 0.000693286 0.993047 0.989571 149815<br>
@@ -92,7 +91,7 @@
 		</ul>
 
 		<code>
-		zcat nominal.full.hits.txt.gz | sort -k7,7g | head<br>
+		zcat trans.nominal.hits.txt.gz | sort -k7,7g | head<br>
 		ENSG00000207833.1 chr22 23134977 rs147092127 chr22 39863524 9.48389e-13 -1 0.365398<br>
 		ENSG00000207833.1 chr22 23134977 rs76864396 chr22 39888462 1.19178e-12 -1 0.363899<br>
 		ENSG00000207833.1 chr22 23134977 rs12628516 chr22 39939913 2.00021e-12 -1 0.360471<br>
@@ -121,47 +120,67 @@
 		This trans nominal pass can be tuned using the following options:
 		</p>
 		<ul>
-			<li></li>
-			<li></li>
-			<li></li>
-			<li></li>
-			<li></li>
+			<li><i>--threshold [float]</i>: this defines the threshold to bin (in *.bins.txt.gz files) or report (in *.hits.txt.gz) nominal P-values. Default is 1e-5.</li>
+			<li><i>--normal</i>: this enforce the phenotypes to be normally distributed</li>
+			<li><i>--window</i>: this defines the <i>cis</i>-window of variants to be excluded from the analysis</li>
+			<li><i>--bins [int]</i>: this defines the number of bins to be used for binning P-values above --threshold (default is 1000)</li>
 		</ul>
 
 		<br>
 		<h3>Step2: Run the permutation passes</h3>
 
-
-
-
-
-
-
-
-
-
-
-
-				
-	</div>
-
-	<div class="item"  id="item2">
-		<h1>Title1</h1>
 		<p>
-		Text2.1
+		The permutation pass is relatively similar to the nominal one. For a single permutation, run:
 		</p>
 		
 		<code>
-		Code2
+		QTLtools <b>trans</b> --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --threshold 1e-5 <b>--permute</b> --out trans.perm123 --seed 123
 		</code>
-		
+
 		<p>
-		Text2.2
+		This command permutes all the phenotypes in a similar way so that correlation between phenotypes is unchanged.
+		All pairwise tests between variants and phenotypes are then computed (excluding the cis-window) and reported in 3 files as done by the nominal pass: <i>trans.perm123.best.txt.gz</i>, <i>trans.perm123.bins.txt.gz</i> and <i>trans.perm123.hits.txt.gz</i>.
 		</p>
-				
+
+		<note>
+		YOU NEED TO CHANGE THE SEED FOR EACH PERMUTATION! Please, change the value of <i>--seed</i> each time you run the command.
+		</note>
+
+		<p>
+		For instance, to run 20 permutations using 4 threads, you can proceed as follows:
+		</p>
+
+		<code>
+		for p in $(seq 1 20); do<br>
+		&nbsp;&nbsp;&nbsp;&nbsp;echo "trans --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --permute --out trans.perm$p --seed $p";<br>
+		done | xargs -P4 -n10 QTLtools
+		</code>
+
+		<br>
+		<h3>Produce a QQplot and estimating FDR</h3>
+
+		<p>
+		Once the nominal and permutation passes done, you can produce a QQplot by running:
+		</p>
+		
+		<code>
+		Rscript ~/script/plotTrans.R QQplot.pdf trans.nominal.hits.txt.gz trans.perm*.hits.txt.gz
+		</code>
+
+		<p>
+		For the example data, you should get something like this:
+		</p>
+
+		<img WIDTH=25% src="../img/fastqtl_qqplot.png"></img>
+
+		<p>
+		Now, to estimate FDR, you can go through all the best nominal hits and count how many hits in the permutation passes give a smaller P-values.
+		For instance, for the 100th smallest nominal P-values, if you get 10 smaller permutation P-values, you can assume a 10% FDR at that level.
+		We are currently working on a R script to do this automatically and will release it ASAP. 
+		</p>
 	</div>
 	
-	<div class="log">Monday 11th July 2016</div>
+	<div class="log">Tuesday 12th July 2016</div>
 </div>
 </body>
 </html>

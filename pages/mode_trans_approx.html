@@ -14,35 +14,85 @@
 <div class="content">
 
 	<div class="item"  id="item1">
-		<h1>Title1</h1>
 		<p>
-		Text1.1
+		To perform an approximate analysis in <i>trans</i>, you need to proceed in two steps: 1. build the null and 2. adjust the nominal pass.
+		To illustrate this, first download the example data below and then go through the two steps.
 		</p>
-		
-		<code>
-		Code1
-		</code>
-		
-		<p>
-		Text1.2
-		</p>
-				
-	</div>
 
-	<div class="item"  id="item2">
-		<h1>Title1</h1>
+		<ul>
+			<li> The phenotype data matrix for chr22 on 358 samples: <a href="http://jungle.unige.ch/QTLtools_examples/genes.50percent.chr22.bed.gz">BED</a> / <a href="http://jungle.unige.ch/QTLtools_examples/genes.50percent.chr22.bed.gz.tbi">index</a></li>
+			<li> The genotype data matrix for chr22 on 358 samples: <a href="http://jungle.unige.ch/QTLtools_examples/genotypes.chr22.vcf.gz">BED</a> / <a href="http://jungle.unige.ch/QTLtools_examples/genotypes.chr22.vcf.gz.csi">index</a></li>
+		</ul>
+
+		<br>
+		<h3>Step1: Build the null distribution</h3>
 		<p>
-		Text2.1
+		To do so, run:
 		</p>
-		
+
 		<code>
-		Code2
+		QTLtools <b>trans</b> --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --threshold 1e-5 <b>--sample 1000 --normal</b> --out trans.null
 		</code>
-		
+
+		<note>
+		DO NOT FORGET TO USE <i>--normal</i>. Here it is crucial that all phenotypes are noramally distributed.
+		</note>
+
 		<p>
-		Text2.2
+		This produces the same 3 output files than the full permutation pass. However, here, you just need the file <i>trans.null.best.txt.gz</i> that should look like this: 
 		</p>
-				
+
+		<code>
+		zcat trans.null.best.txt.gz | head
+		ENSG00000223704.1 -1 6.30456e-06<br>
+		ENSG00000025770.14 -1 4.5423e-06<br>
+		ENSG00000183569.13 -1 1.17821e-06<br>
+		...<br>
+		ENSG00000253794.1 -1 0.000108164<br>
+		ENSG00000184979.9 -1 4.89379e-05<br>
+		ENSG00000099910.12 -1 2.03245e-05<br>
+		</code>
+
+		<p>
+		The columns are:
+		</p>
+
+		<ul>
+			<li>1. The ID of the randomly chosen phenotype which quantifications have been permuted</li>
+			<li>2. Dummy</li>
+			<li>3. The best nominal P-value discovered for the shuffle phenotype</li>
+		</ul>
+
+		<p>
+		If you run <i>--sample 1000</i>, there are therefore 1000 lines in this file.
+		This forms a null distribution for a single phenotype that we are going to use to adjust any nominal P-value in the next stage.
+		</p>
+
+		<br>
+		<h3>Step2: Adjust the P-values in the nominal pass</h3>
+		<p>
+		To do so, run:
+		</p>
+
+		<code>
+		QTLtools <b>trans</b> --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz <b>--adjust trans.null.best.txt.gz --normal --threshold 0.1</b> --out trans.adjust
+		</code>
+
+		<ul>
+			<li><i>--adjust trans.null.best.txt.gz</i>: this allows building the null internally and to fit a beta distribution on it similarly to what is done in <i>cis</i></li>
+			<li><i>--normal</i>: do not forget to add this option in order to be consistent with the step1</li>
+			<li><i>--threshold 0.1</i>: this needs to be set relatively high to report hits since P-values are now adjusted for the number of variants being tested</li>
+		</ul>
+	
+		<br>
+		<h3>Get the significant hits</h3>
+		<p>
+		This section will be more detailed soon.
+		The idea here is to determine the adjusted P-value threshold of significance corresponding to a given FDR level.
+		For this, load in R the second column of file <i>trans.adjust.best.txt.gz</i>.
+		Then, you can proceed as in <i>cis</i>, you run R/qvalue to get the significant phenotypes at 5% FDR for example.
+		From this, you can determine the adjusted p-value threshold of significance and then extract from <i>trans.adjust.hits.txt.gz</i> (column8) all hits below this adjusted threshold. 
+		</p>
 	</div>
 	
 	<div class="log">Monday 11th July 2016</div>
