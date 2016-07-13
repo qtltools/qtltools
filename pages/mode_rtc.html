@@ -14,35 +14,150 @@
 <div class="content">
 
 	<div class="item"  id="item1">
-		<h1>Title1</h1>
+		<h1>How to run Regulatory Trait Cconcordance (RTC)?</h1>
 		<p>
-		Text1.1
+		RTC is XXX.
+		To illustrate this, first download the example data below and go through the two steps; 1. permutation pass and 2. run RTC.
 		</p>
-		
-		<code>
-		Code1
-		</code>
-		
-		<p>
-		Text1.2
-		</p>
-				
-	</div>
 
-	<div class="item"  id="item2">
-		<h1>Title1</h1>
+		<ul>
+			<li> The phenotype data matrix for chr22 on 358 samples: <a href="http://jungle.unige.ch/QTLtools_examples/genes.50percent.chr22.bed.gz">BED</a> / <a href="http://jungle.unige.ch/QTLtools_examples/genes.50percent.chr22.bed.gz.tbi">index</a></li>
+			<li> The genotype data matrix for chr22 on 358 samples: <a href="http://jungle.unige.ch/QTLtools_examples/genotypes.chr22.vcf.gz">BED</a> / <a href="http://jungle.unige.ch/QTLtools_examples/genotypes.chr22.vcf.gz.csi">index</a></li>
+			<li> The covariate data matrix on 358 samples: <a href="http://jungle.unige.ch/QTLtools_examples/genes.covariates.pc50.txt.gz">TXT</a></li>
+		</ul>
+
+		<br>
+		<h3>Step1: Run the permutation pass</h3>
+
 		<p>
-		Text2.1
+		This can be done quickly using 4 threads as follows:
+		</p>
+
+		<code>
+		for j in $(seq 1 16); do<br>
+		&nbsp;&nbsp;echo "cis --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --cov genes.covariates.pc50.txt.gz --permute 200 --chunk $j 16 --out permutations_$j\_16.txt";<br>
+		done | xargs -P4 -n14 QTLtools<br>
+		</code>
+
+		<p>
+		Then, cat all chunks together and run FDR correction:
+		</p>
+
+		<code>
+		cat permutations_*.txt | gzip -c > permutations_all.txt.gz<br>
+		Rscript ./script/runFDR.R permutations_all.txt.gz 0.05 permutations_all
+		</code>
+
+		<p>
+		From this, you get all your significant hits in <i>permutations_all.significant.txt</i> and you're ready to go to the next step.
+		</p>
+
+		<br>
+		<h3>Required files for RTC</h3>
+		<p>
+		For this step, you actually need two additionnal files:
+		</p>
+
+		<ul>
+			<li>Recombination hotspots that can can find here for b37: <a href="http://jungle.unige.ch/QTLtools_examples/hotspots_b37_hg19.bed">BED</a></li>
+			<li>The coordinates of the GWAS hits you want to overlap with QTLs. Example for chr22: <a href="http://jungle.unige.ch/QTLtools_examples/GWAS.b37.txt">TXT</a></li>
+		</ul>
+
+		<p>
+		The two files look like this:
+		</p>
+
+		<code>
+		head hotspots_b37_hg19.bed<br>
+		chr1	1020078	1031078	11000<br>
+		chr1	1872839	1881839	9000<br>
+		chr1	2031839	2035839	4000<br>
+		chr1	2141839	2147839	6000<br>
+		chr1	2214839	2221839	7000<br>
+		chr1	2299839	2303839	4000<br>
+		chr1	2322839	2326839	4000<br>
+		chr1	2338839	2357839	19000<br>
+		chr1	2362839	2369839	7000<br>
+		chr1	2403839	2408839	5000
+		</code>
+
+		<p>
+		Columns here correspond to:
 		</p>
 		
+		<ul>
+			<li>1. XXX </li>
+			<li>2. XXX </li>
+			<li>3. XXX </li>
+			<li>4. XXX </li>
+		</ul>
+
 		<code>
-		Code2
+		head GWAS.b37.txt<br>
+		1_1005806 Body<br>
+		1_1079198 Other<br>
+		1_1247494 Digestive<br>
+		1_1723031 Body<br>
+		1_2069172 Body<br>
+		1_2069681 Biological<br>
+		1_2205581 Other<br>
+		1_2387101 Neurological<br>
+		1_2392648 Other<br>
+		1_2452979 Other
 		</code>
 		
 		<p>
-		Text2.2
+		Columns here correspond to:
 		</p>
-				
+		
+		<ul>
+			<li>1. XXX [why is this important? How careful we need to be with this file?]</li>
+			<li>2. XXX </li>
+		</ul>
+
+		<br>
+		<h3>Step2: Run RTC</h3>
+		<p>
+		To run RTC on all the files presented so far, use:
+		</p>
+
+		<code>
+		QTLtools rtc --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --cov genes.covariates.pc50.txt.gz --hotspot hotspots_b37_hg19.bed --gwas-cis GWAS.b37.txt permutations_all.significant.txt --out rtc_results.txt
+		</code>
+
+		<p>
+		This step can be tuned using the following options:
+		</p>
+
+		<ul>
+			<li><i>--option1</i>: to do blabla</li>
+			<li><i>--option2 [int]</i>: to do blabla2</li>
+		</ul>
+
+		<p>
+		This command produces the output file <i>rtc_results.txt</i>:
+		</p>
+
+		<code>
+		head rtc_results.txt<br>
+		22_17597462 22_17620429 ENSG00000069998.8 ENSG00000069998.8 chr22 17597462 0 chr22 17620429 0 chr22 17646177 22967 48715 64959 64959 17583447 17666446 300 0.993333 NA 0.285641<br>
+		22_17597462 22_17587975 ENSG00000183307.3 ENSG00000183307.3 chr22 17597462 0 chr22 17587975 0 chr22 17602257 9487 4795 64959 64959 17583447 17666446 300 0.12 NA 0.0423723<br>
+		22_18283247 22_18261544 ENSG00000269220.1 ENSG00000269220.1 chr22 18283247 0 chr22 18261544 0 chr22 18260088 21703 23159 64978 64978 18251447 18283446 48 0.395833 NA 0.00236583<br>
+		22_18439958 22_18483388 ENSG00000093100.13 ENSG00000093100.13 chr22 18439958 0 chr22 18483388 0 chr22 18294263 43430 145695 64987 64987 18382447 18485446 325 0.483077 NA 0.236648<br>
+		22_18448113 22_18483388 ENSG00000093100.13 ENSG00000093100.13 chr22 18448113 0 chr22 18483388 0 chr22 18294263 35275 153850 64987 64987 18382447 18485446 325 0.483077 NA 0.236648<br>
+		22_18439958 22_18483388 ENSG00000243156.3 ENSG00000243156.3 chr22 18439958 0 chr22 18483388 0 chr22 18507325 43430 67367 64987 64987 18382447 18485446 325 0.483077 NA 0.236648<br>
+		22_18448113 22_18483388 ENSG00000243156.3 ENSG00000243156.3 chr22 18448113 0 chr22 18483388 0 chr22 18507325 35275 59212 64987 64987 18382447 18485446 325 0.483077 NA 0.236648<br>
+		22_19154522 22_19166680 ENSG00000100075.5 ENSG00000100075.5 chr22 19154522 0 chr22 19166680 0 chr22 19166343 12158 11821 65005 65005 19147447 19274446 277 0.920578 NA 0.887379<br>
+		22_19156117 22_19166680 ENSG00000100075.5 ENSG00000100075.5 chr22 19156117 0 chr22 19166680 0 chr22 19166343 10563 10226 65005 65005 19147447 19274446 277 0.906137 NA 0.745216
+		</code>
+
+		<p>
+		Description of the columns in the output file !
+		</p>
+
+		<p>
+		Described alternative ways of running RTC w/o conditional.
+		</p>
 	</div>
 	
 	<div class="log">Monday 11th July 2016</div>
