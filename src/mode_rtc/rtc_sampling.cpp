@@ -267,12 +267,13 @@ rtc_sample_results rtc_data::sampleRTC(vector <int> & genotype_idx, vector <floa
 	if(h0.size()){
 		copy(h0.begin(),h0.end(),ostream_iterator<float>(h0sss,sep));
 		result.h0 = h0sss.str();
-		result.h0.pop_back();
+		//result.h0.pop_back();
+		results.h0.resize (results.h0.size () - 1);
 	} else result.h0 = "NA";
 	if(h1.size()){
 		copy(h1.begin(),h1.end(),ostream_iterator<float>(h1sss,sep));
 		result.h1 = h1sss.str();
-		result.h1.pop_back();
+		results.h1.resize (results.h1.size () - 1);
 	} else result.h1 = "NA";
 	if (count && count2){
 		probability(h0,h1,RTC, result);

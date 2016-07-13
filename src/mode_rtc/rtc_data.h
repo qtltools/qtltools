@@ -112,8 +112,8 @@ public:
     unsigned long int sample_iterations,max_sample_iterations;
     set <string> unphased_regions,unfound_regions,no_variance_regions,unmatched_alleles,unfound_ids,unfound_phenotypes;
     unsigned int DprimeR2inMem;
-    const int DprimePrintFreq = 10;
-    const int normal_output_columns = 18;
+    static const int DprimePrintFreq = 10;
+    static const int normal_output_columns = 18;
     bool calculate_Dprime_R2;
 
     //ADDITIONAL VCF
