@@ -36,7 +36,8 @@ public:
 	}
 
 	template <class T>
-	basic_stats(vector < T > & X): basic_stats() {
+	basic_stats(vector < T > & X) {
+		basic_stats();
 		for (uint32_t e = 0 ; e < X.size() ; e ++) push(X[e]);
 	}
 
