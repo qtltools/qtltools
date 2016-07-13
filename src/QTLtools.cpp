@@ -63,8 +63,8 @@ int main(int argc, char ** argv) {
 	//3. Print header on screen
 	vrb.ctitle("QTLtools");
 	vrb.bullet("Authors : Olivier DELANEAU / Halit ONGEN / Emmanouil DERMITZAKIS");
-	vrb.bullet("Contact : olivier.delaneau@gmail.com");
-	vrb.bullet("Webpage : XXX");
+	vrb.bullet("Contact : olivier.delaneau@gmail.com / halit.ongen@unige.ch / Emmanouil.Dermitzakis@unige.ch");
+	vrb.bullet("Webpage : https://qtltools.github.io/qtltools/");
 	vrb.bullet("Version : " + string(QTLTOOLS_VERSION));
 	vrb.bullet("Date    : " + running_timer.date());
 
@@ -72,7 +72,7 @@ int main(int argc, char ** argv) {
 	vector < string > args;
     if (argc < 2){
         printModes();
-        vrb.error("Not enough options, check command line!");
+        exit(EXIT_SUCCESS);
     }
 	for (int a = 2 ; a < argc ; a ++) args.push_back(string(argv[a]));
 
@@ -119,7 +119,10 @@ int main(int argc, char ** argv) {
     else if (strcmp(argv[1], "fdensity") == 0) fdensity_main(args);
 
 	//5.15. UNRECOGNIZED mode
-    else{
+    else if (strcmp(argv[1], "--help") == 0) {
+        printModes();
+        exit(EXIT_SUCCESS);
+    } else {
         printModes();
         vrb.error("Unrecognized QTLtools mode!");
     }
