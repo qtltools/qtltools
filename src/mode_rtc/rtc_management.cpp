@@ -21,13 +21,13 @@ void rtc_data::imputeGenotypes() {
 		double mean = 0.0;
 		int c_mean = 0;
 		for (int s = 0; s < sample_count ; s ++) {
-			if (genotype_val[g][s] != bcf_float_missing) {
+			if (genotype_val[g][s] != bcf_float_missing && !std::isnan(genotype_val[g][s])) {
 				mean += genotype_val[g][s];
 				c_mean ++;
 			}
 		}
 		mean /= c_mean;
-		for (int s = 0; s < sample_count ; s ++) if (genotype_val[g][s] == bcf_float_missing) genotype_val[g][s] = mean;
+		for (int s = 0; s < sample_count ; s ++) if (genotype_val[g][s] == bcf_float_missing || std::isnan(genotype_val[g][s])) genotype_val[g][s] = mean;
 	}
 }
 
@@ -37,13 +37,13 @@ void rtc_data::imputePhenotypes() {
 		double mean = 0.0;
 		int c_mean= 0;
 		for (int s = 0; s < sample_count; s ++) {
-			if (phenotype_val[p][s] != bcf_float_missing) {
+			if (phenotype_val[p][s] != bcf_float_missing && !std::isnan(phenotype_val[p][s])) {
 				mean += phenotype_val [p][s];
 				c_mean ++;
 			}
 		}
 		mean /= c_mean;
-		for (int s = 0; s < sample_count ; s ++) if (phenotype_val[p][s] == bcf_float_missing) phenotype_val[p][s] = mean;
+		for (int s = 0; s < sample_count ; s ++) if (phenotype_val[p][s] == bcf_float_missing || std::isnan(phenotype_val[p][s])) phenotype_val[p][s] = mean;
 	}
 }
 
@@ -166,4 +166,31 @@ void rtc_data::copyIncludeExclude(){
 
 void rtc_data::setStatsVCF(string file){
     stats_vcf_file = file;
+}
+
+long long unsigned int rtc_data::getMemoryUsage(){
+	long long unsigned int mem = 0;
+	ifstream file("/proc/self/status");
+	if (file.is_open()){
+	    string buffer;
+	    vector < string > str;
+	    while(getline(file, buffer)) {
+	        stb.split(buffer, str);
+	        if (str[0] == "VmRSS:"){
+	        	mem += atoi(str[1].c_str()) * 1024;
+	        	break;
+	        }
+	    }
+	    file.close();
+	}else mem += (genotype_val.capacity() * genotype_val[0].capacity() + phenotype_val.capacity() * phenotype_val[0].capacity()) * sizeof(float);
+
+	long long unsigned int max_variants = 0;
+	for (int c = 0 ; c < all_coldspots.size(); c++){
+		if (all_coldspots[c].coldspot_variant_idx.size() > max_variants) max_variants = all_coldspots[c].coldspot_variant_idx.size();
+		mem += all_coldspots[c].getMemoryUsage();
+	}
+	cerr << max_variants << endl;
+	if(DprimeR2inMem) mem += ((sample_iterations * 2 * max_variants * phenotype_val[0].capacity() * sizeof(float))  + (max_variants * genotype_val[0].capacity() * sizeof(float)) );
+	mem += max_variants * (max_variants - 1) / 2 * sizeof(float);
+	return mem;
 }

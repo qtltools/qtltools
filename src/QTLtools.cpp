@@ -26,6 +26,7 @@
 #include "mode_quan/quan_data.h"
 #include "mode_union/union_data.h"
 #include "mode_bamstat/bamstat_data.h"
+#include "mode_fdensity/fdensity_data.h"
 
 void printModes(){
     vrb.ctitle("Usage:");
@@ -39,6 +40,7 @@ void printModes(){
     vrb.print("  cis       cis QTL analysis");
     vrb.print("  trans     trans QTL analysis");
     vrb.print("  fenrich   Functional enrichment for QTLs");
+    vrb.print("  fdensity  Functional density around QTLs");
     vrb.print("  genrich   GWAS enrichment for QTLs");
     vrb.print("  rtc       Regulatory Trait Concordance analysis");
     vrb.print("  rtc-union Find the union of QTLs");
@@ -113,7 +115,10 @@ int main(int argc, char ** argv) {
     //5.13. BAMSTAT mode
     else if (strcmp(argv[1], "bamstat") == 0) bamstat_main(args);
 
-	//5.14. UNRECOGNIZED mode
+    //5.14. FDENSITY mode
+    else if (strcmp(argv[1], "fdensity") == 0) fdensity_main(args);
+
+	//5.15. UNRECOGNIZED mode
     else{
         printModes();
         vrb.error("Unrecognized QTLtools mode!");

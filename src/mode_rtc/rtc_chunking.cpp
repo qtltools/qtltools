@@ -25,13 +25,13 @@ void rtc_data::deduceGenotypeRegion(int W) {
 	if (start < 0) regionGenotype.start = 0;
 	else{
         int start_coldspot = getColdspot(regionGenotype.chr,start);
-        if (start_coldspot > 0 ) regionGenotype.start = all_coldspots_p[start_coldspot]->start;
+        if (start_coldspot > 0 ) regionGenotype.start = all_coldspots[start_coldspot].start;
         else if (start_coldspot == -1) regionGenotype.start = (coldspot_bins_p[regionGenotype.chr].rbegin()->second).back()->end;
         else regionGenotype.start = start;
 	}
 	int end = regionPhenotype.end + W;
 	int end_coldspot = getColdspot(regionGenotype.chr,end);
-    if (end_coldspot > 0 ) regionGenotype.end = all_coldspots_p[end_coldspot]->end;
+    if (end_coldspot > 0 ) regionGenotype.end = all_coldspots[end_coldspot].end;
     else if (end_coldspot == -1) regionGenotype.end = end + 1000000000;
     else regionGenotype.end = end;
 }

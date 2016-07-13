@@ -25,8 +25,8 @@ void fenrich_data::readQTL(string fqtl) {
 	while (getline(fdq, buffer)) {
 		if (buffer[0] != '#') {
 			stb.split(buffer, str);
-			//if (str.size() != 5) vrb.error("Incorrect number of columns, observed = " + stb.str(str.size())  + " expected = 5");
-			int idx_tss = findTSS(str[0]);
+			if (str.size() < 6) vrb.error("Incorrect number of columns, observed = " + stb.str(str.size())  + " expected = 5");
+			int idx_tss = findTSS(str[4]);
 			if (idx_tss < 0) vrb.error("Unknown phenotype id!");
 			qtl_pos.push_back(atoi(str[1].c_str()) - tss_pos[idx_tss]);
 			qtl_order.push_back(idx_tss);

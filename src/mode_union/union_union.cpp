@@ -159,6 +159,8 @@ void union_data::find_unions(vector <string> &hitFiles , vector <string> &vcfFil
 	}
 	for (int i = 0 ; i < no_of_files; i++){
 		string name = hitFiles[i].substr(hitFiles[i].find_last_of("/") + 1);
+		//add prefix
+		if (options.count("out-suffix")) name += options["out-suffix"].as <string> ();
 		output_file fout(name + ".union");
 		if (fout.fail()) vrb.error("Cannot open [" + name + ".union]");
 		fout << results_vector[i];

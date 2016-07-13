@@ -22,38 +22,81 @@ void rtc_data::readHotspots(string fcov) {
     vrb.title("Reading hotspots in [" + fcov + "]");
     input_file fd (fcov);
     if(fd.fail()) vrb.error("Cannot open file");
+    map < string , map < int , vector < unsigned int > > > _bins;
+    map < string , map < int , vector < unsigned int > > >::iterator oit;
+    map < int , vector < unsigned int > >::iterator iit;
     coldspot prev;
     //Read hotspots
     while(getline(fd, buffer)) {
         stb.split(buffer, str);
         if (str.size() < 3) vrb.error("Wrong hotspot file format");
+        if (prev.chr != "" && prev.chr != str[0]){
+        	//coldspot *pCs = new coldspot(prev.chr,prev.end + 1,INT_MAX,idx,"CS");
+            //all_coldspots_p.push_back(pCs);
+        	all_coldspots.push_back(coldspot(prev.chr,prev.end + 1,INT_MAX,idx,"CS"));
+            int sb = (prev.end + 1) / bin_size;
+            int eb = INT_MAX / bin_size;
+            //for (int b = sb; b <= eb; b++) coldspot_bins_p[prev.chr][b].push_back(pCs);
+            for (int b = sb; b <= eb; b++) _bins[prev.chr][b].push_back(all_coldspots.size()-1);
+            idx++;
+            coldspot_count++;
+        }
         int s = prev.chr == str[0] ? prev.end + 1 : 0 ;
         int e = atoi(str[1].c_str());
         int sb = s / bin_size;
         int eb = e / bin_size;
-        coldspot *pCs = new coldspot(str[0],s,e,idx,"CS");
-        for (int b = sb; b <= eb; b++) coldspot_bins_p[str[0]][b].push_back(pCs);
-        all_coldspots_p.push_back(pCs);
-        prev = coldspot(str[0],atoi(str[1].c_str())+1,atoi(str[2].c_str()),-1,"NA");
+        //coldspot *pCs = new coldspot(str[0],s,e,idx,"CS");
+        //for (int b = sb; b <= eb; b++) coldspot_bins_p[str[0]][b].push_back(pCs);
+        //all_coldspots_p.push_back(pCs);
+        all_coldspots.push_back(coldspot(str[0],s,e,idx,"CS"));
+        for (int b = sb; b <= eb; b++) _bins[str[0]][b].push_back(all_coldspots.size()-1);
         idx++;
         coldspot_count++;
+        prev = coldspot(str[0],atoi(str[1].c_str())+1,atoi(str[2].c_str()),-1,"NA");
         s = atoi(str[1].c_str())+1;
         e = atoi(str[2].c_str());
-        if (e < s) vrb.error("Hotspot end cannot be smaller than start " + buffer);
+        if (e < s) vrb.error("Hotspot end cannot be less than start " + buffer);
         if (prev.chr == str[0] && prev.start > s) vrb.error("Hotspots are not sorted at " + buffer);
         sb = s / bin_size;
         eb = e / bin_size;
-        pCs = new coldspot(str[0],s,e,idx,"HS");
-        for (int b = sb; b <= eb; b++) coldspot_bins_p[str[0]][b].push_back(pCs);
-        all_coldspots_p.push_back(pCs);
+        //pCs = new coldspot(str[0],s,e,idx,"HS");
+        //for (int b = sb; b <= eb; b++) coldspot_bins_p[str[0]][b].push_back(pCs);
+        //all_coldspots_p.push_back(pCs);
+        all_coldspots.push_back(coldspot(str[0],s,e,idx,"HS"));
+        for (int b = sb; b <= eb; b++) _bins[str[0]][b].push_back(all_coldspots.size()-1);
         idx++;
         coldspot_count++;
     }
+	//coldspot *pCs = new coldspot(prev.chr,prev.end + 1,INT_MAX,idx,"CS");
+    //all_coldspots_p.push_back(pCs);
+    all_coldspots.push_back(coldspot(prev.chr,prev.end + 1,INT_MAX,idx,"CS"));
+    int sb = (prev.end + 1) / bin_size;
+    int eb = INT_MAX / bin_size;
+    //for (int b = sb; b <= eb; b++) coldspot_bins_p[prev.chr][b].push_back(pCs);
+    for (int b = sb; b <= eb; b++) _bins[prev.chr][b].push_back(all_coldspots.size()-1);
+    idx++;
+    coldspot_count++;
 
     //Finalise
     if (!coldspot_count) vrb.error("No coldspots found");
+    for (oit = _bins.begin(); oit != _bins.end(); oit++){
+    	for (iit = oit->second.begin() ; iit != oit->second.end(); iit++){
+    		for (int i = 0 ; i < (iit->second).size(); i++) coldspot_bins_p[oit->first][iit->first].push_back( & all_coldspots[iit->second[i]]);
+    	}
+    }
     vrb.bullet(stb.str(coldspot_count) + " coldspots included");
     fd.close();
+
+    //for (int i = 0 ; i < coldspot_count; i++ ) cerr << (*all_coldspots_p[i]);
+    /*map < string, map < int,  vector <coldspot *> > >::iterator it1;
+    map < int,  vector <coldspot *> >::iterator it2;
+    for (it1 = coldspot_bins_p.begin(); it1 != coldspot_bins_p.end(); it1++){
+    	for (it2 = it1->second.begin() ; it2 != it1->second.end(); it2++){
+    		cerr << it1->first << " " << it2->first << endl;
+    		for (int i = 0 ; i < (it2->second).size(); i++) cerr << *(it2->second[i]);
+    	}
+    }
+    exit(0);*/
 }
 
 

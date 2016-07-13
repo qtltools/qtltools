@@ -1,3 +1,13 @@
+##########################################
+# SET CORRECTLY THESE 6 PATHS TO COMPILE #
+##########################################
+BOOST_INC=
+BOOST_LIB=
+RMATH_INC=
+RMATH_LIB=
+HTSLD_INC=
+HTSLD_LIB=
+
 #COMPILER MODE C++11
 CXX=g++ -std=c++11
 
@@ -11,7 +21,7 @@ LDFLAG_REL=-O2
 LDFLAG_DBG=-g
 
 #BASE LIBRARIES
-LIB_FLAGS=-lm -lz -lgsl -lblas -lbz2 -lpthread
+LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lblas -lbz2 -Wl,-Bdynamic -lm -lpthread 
 
 #FILE LISTS
 BFILE=bin/QTLtools
@@ -24,13 +34,7 @@ VPATH=$(shell for file in `find src -name *.cpp`; do echo $$(dirname $$file); do
 #DEFAULT VERSION (I.E. UNIGE DESKTOP RELEASE VERSION)
 all: default
 
-#FOR USER DEFINED COMPILATION [YOU NEED TO UPDATE THE SIX PATHS TO COMPILE QTLTOOLS]
-default: RMATH_INC=
-default: RMATH_LIB=
-default: HTSLD_INC=
-default: HTSLD_LIB=
-default: BOOST_INC=
-default: BOOST_LIB=
+#DEFAULT RELEASE VERSION
 default: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
 default: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
 default: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
@@ -62,20 +66,6 @@ desktop-dbg: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_IN
 desktop-dbg: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
 desktop-dbg: LDFLAG=$(LDFLAG_DBG)
 desktop-dbg: $(BFILE)
-
-#UNIGE SERVER RELEASE VERSION (=BINARY RELEASED TO PUBLIC)
-server: RMATH_INC=/home/popgen/delaneau/SOFT/R-3.2.1/src/include
-server: RMATH_LIB=/home/popgen/delaneau/SOFT/R-3.2.1/src/nmath/standalone
-server: HTSLD_INC=/home/popgen/delaneau/SOFT/htslib-1.2.1
-server: HTSLD_LIB=/home/popgen/delaneau/SOFT/htslib-1.2.1
-server: BOOST_INC=/home/popgen/delaneau/SOFT/boost/boost_1_59_0/build/include
-server: BOOST_LIB=/home/popgen/delaneau/SOFT/boost/boost_1_59_0/build/lib
-server: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
-server: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
-server: LIB_FLAGS=$(LIB_FLAGS) -lgslcblas
-server: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
-server: LDFLAG=$(LDFLAG_REL)
-server: $(BFILE)
 
 #DELL LAPTOP RELEASE VERSION
 laptop: RMATH_INC=$(HOME)/Libraries/R-3.2.2/src/include
@@ -128,32 +118,6 @@ cluster-dbg: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_IN
 cluster-dbg: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
 cluster-dbg: LDFLAG=$(LDFLAG_DBG)
 cluster-dbg: $(BFILE)
-
-#UBUNTU RELEASE VERSION
-ubuntu: RMATH_INC=$(HOME)/R-3.2.2/src/include
-ubuntu: RMATH_LIB=$(HOME)/R-3.2.2/src/nmath/standalone
-ubuntu: HTSLD_INC=/usr/local/include/
-ubuntu: HTSLD_LIB=/usr/local/lib
-ubuntu: BOOST_INC=/usr/include
-ubuntu: BOOST_LIB=/usr/lib/x86_64-linux-gnu
-ubuntu: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
-ubuntu: IFLAG=-Ilib/OTools -Ilib/ -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
-ubuntu: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
-ubuntu: LDFLAG=$(LDFLAG_REL)
-ubuntu: $(BFILE)
-
-#UBUNTU DEBUG VERSION
-ubuntu-dbg: RMATH_INC=$(HOME)/R-3.2.2/src/include
-ubuntu-dbg: RMATH_LIB=$(HOME)/R-3.2.2/src/nmath/standalone
-ubuntu-dbg: HTSLD_INC=/usr/local/include/
-ubuntu-dbg: HTSLD_LIB=/usr/local/lib
-ubuntu-dbg: BOOST_INC=/usr/include
-ubuntu-dbg: BOOST_LIB=/usr/lib/x86_64-linux-gnu
-ubuntu-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
-ubuntu-dbg: IFLAG=-Ilib/OTools -Ilib/ -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
-ubuntu-dbg: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
-ubuntu-dbg: LDFLAG=$(LDFLAG_DBG)
-ubuntu-dbg: $(BFILE)
 
 #MAC RELEASE VERSION
 mac: RMATH_INC=$(HOME)/Libraries/R-3.2.2/src/include
@@ -230,6 +194,9 @@ obj/ase_%.o: ase_%.cpp ase_data.h src/common/data.h src/common/filter.h $(TFILE)
 obj/bamstat_%.o: bamstat_%.cpp bamstat_data.h src/common/data.h src/common/filter.h $(TFILE)
 	$(CXX) -o $@ -c $< $(CXXFLAG) $(IFLAG)
 	
+obj/fdensity_%.o: fdensity_%.cpp fdensity_data.h src/common/data.h src/common/filter.h $(TFILE)
+	$(CXX) -o $@ -c $< $(CXXFLAG) $(IFLAG)
+	
 clean: 
 	rm -f obj/*.o $(BFILE)
 
@@ -271,4 +238,8 @@ clean-quan:
 
 clean-bamstat:
 	rm -f obj/bamstat_*.o $(BFILE)
+		
+clean-fdensity:
+	rm -f obj/fdensity_*.o $(BFILE)
+		
 		

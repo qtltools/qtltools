@@ -29,7 +29,8 @@ void union_main(vector < string > & argv) {
 		("bed", boost::program_options::value< vector < string > >()->multitoken(), "Phenotypes in BED format.")
 		("cov", boost::program_options::value< vector < string > >()->multitoken(), "Covariates in TXT format.")
 		("hotspots", boost::program_options::value< string >(), "Hotspots in BED format.")
-        ("results", boost::program_options::value< vector < string > >()->multitoken(), "QTLtools results file in TXT format.");
+        ("results", boost::program_options::value< vector < string > >()->multitoken(), "QTLtools results file in TXT format.")
+		("out-suffix", boost::program_options::value< string >(), "If provided output files will be suffixed with this.");
 
 	boost::program_options::options_description opt_parameters ("\x1B[32mParameters\33[0m");
 	opt_parameters.add_options()
@@ -59,7 +60,7 @@ void union_main(vector < string > & argv) {
 		boost::program_options::store(boost::program_options::command_line_parser(argv).options(D.option_descriptions).run(), D.options);
 		boost::program_options::notify(D.options);
 	} catch ( const boost::program_options::error& e ) {
-		cerr << "Error parsing [rtc] command line :" << string(e.what()) << endl;
+		cerr << "Error parsing [rtc-union] command line :" << string(e.what()) << endl;
 		exit(0);
 	}
 
@@ -96,6 +97,7 @@ void union_main(vector < string > & argv) {
     if(!D.options.count("force")){
     	for (int i = 0 ; i < D.no_of_files; i++){
     		string name = hitFiles[i].substr(hitFiles[i].find_last_of("/") + 1) + ".union";
+    		if (D.options.count("out-suffix")) name += D.options["out-suffix"].as <string> ();
     		ifstream file(name.c_str());
     		if (file.is_open()){
     			file.close();
@@ -126,6 +128,7 @@ void union_main(vector < string > & argv) {
     }
 
     if (D.options.count("chunk") || D.options.count("region")) vrb.warning("--chunk or --region will not work for trans results");
+    if (D.options.count("chunk") && !D.options.count("out-suffix")) vrb.error("--out-suffix is required when --chunk. Otherwise output files will be overwritten.");
     D.readHotspots(D.options["hotspots"].as < string > ());
     //--------------
     // 6SET REGION

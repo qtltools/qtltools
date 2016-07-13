@@ -23,6 +23,7 @@ rtc_data::rtc_data() {
     pvalue_column = 17;
     variant_column = 6;
     phenotype_column = 0;
+    group_column=0;
     rank_column = 10;
     best_column = 17;
     coldspot_count = 0;
@@ -30,7 +31,7 @@ rtc_data::rtc_data() {
     R2_cutoff = 0.5;
     stats_n_includedS = 0;
     sample_iterations = 0;
-    DprimeR2inMem = true;
+    DprimeR2inMem = 0;
     calculate_Dprime_R2 = true;
 }
 
@@ -49,14 +50,15 @@ void rtc_data::clear() {
 	phenotype_chr.clear();
 	phenotype_start.clear();
 	phenotype_end.clear();
+	phenotype_grp.clear();
 	covariate_count = 0;
 	covariate_val.clear();
 	covariate_id.clear();
-    coldspot_bins_p.clear();
-    coldspot_end_idx.clear();
+    //coldspot_end_idx.clear();
     pheno_eqtls.clear();
-    for (int i = 0 ; i < all_coldspots_p.size(); i++) delete all_coldspots_p[i];
-    all_coldspots_p.clear();
+    //for (int i = 0 ; i < all_coldspots_p.size(); i++) delete all_coldspots_p[i];
+    all_coldspots.clear();
+    coldspot_bins_p.clear();
     genotype_id_to_idx.clear();
     phenotype_id_to_idx.clear();
     coldspot_count = 0;

@@ -25,7 +25,7 @@ void fenrich_main(vector < string > & argv) {
 	boost::program_options::options_description opt_files ("\x1B[32mI/O\33[0m");
 	opt_files.add_options()
 		("qtl", boost::program_options::value< string >(), "QTL list in TXT format.")
-		("ann", boost::program_options::value< string >(), "Functional annotations in BED format.")
+		("bed", boost::program_options::value< string >(), "Functional annotations in BED format.")
 		("tss", boost::program_options::value< string >(), "TSS positions.")
 		("out", boost::program_options::value< string >(), "Output file.");
 
@@ -60,7 +60,7 @@ void fenrich_main(vector < string > & argv) {
 	//-----------------
 	if (!D.options.count("qtl")) vrb.error("QTL data needs to be specified with --qtl [file.txt]");
 	if (!D.options.count("tss")) vrb.error("TSS data needs to be specified with --tss [file.bed]");
-	if (!D.options.count("ann")) vrb.error("Annotation data needs to be specified with --ann [file.bed]");
+	if (!D.options.count("bed")) vrb.error("Annotation data needs to be specified with --bed [file.bed]");
 	if (!D.options.count("out")) vrb.error("Output needs to be specified with --out [file.out]");
 
 	//--------------
@@ -73,7 +73,7 @@ void fenrich_main(vector < string > & argv) {
 	// 7. READ FILES & INITIALIZE
 	//---------------------------
 	D.processBasicOptions();
-	D.readAnnotation(D.options["ann"].as < string > ());
+	D.readAnnotation(D.options["bed"].as < string > ());
 	D.readTSS(D.options["tss"].as < string > ());
 	D.readQTL(D.options["qtl"].as < string > ());
 

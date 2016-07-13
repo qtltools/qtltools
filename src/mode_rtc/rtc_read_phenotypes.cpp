@@ -57,6 +57,7 @@ void rtc_data::readPhenotypes(string fbed) {
                 phenotype_start.push_back(atoi(tokens[1].c_str()) + 1);
                 phenotype_end.push_back(atoi(tokens[2].c_str()));
                 phenotype_val.push_back(vector < float > (sample_count, 0.0));
+                if (grp_mode > 0) phenotype_grp.push_back(tokens[4]);
                 for (int t = 6 ; t < tokens.size() ; t ++) {
                     if (mappingS[t-6] >= 0) {
                         if (tokens[t] == "NA") phenotype_val.back()[mappingS[t-6]] = bcf_float_missing;
@@ -82,6 +83,7 @@ void rtc_data::readPhenotypes(string fbed) {
                     phenotype_start.push_back(atoi(tokens[1].c_str()) + 1);
                     phenotype_end.push_back(atoi(tokens[2].c_str()));
                     phenotype_val.push_back(vector < float > (sample_count, 0.0));
+                    if (grp_mode > 0) phenotype_grp.push_back(tokens[4]);
                     for (int t = 6 ; t < tokens.size() ; t ++) {
                         if (mappingS[t-6] >= 0) {
                             if (tokens[t] == "NA") phenotype_val.back()[mappingS[t-6]] = bcf_float_missing;
@@ -125,10 +127,14 @@ void rtc_data::scanPhenotypes(string fbed) {
 	//Scan file
 	vector < string > tokens;
     unsigned int linecount =0;
-	while (hts_getline(fp, KS_SEP_LINE, &str) >= 0) {
-        linecount ++;
-        if (linecount % 100000 == 0) vrb.bullet("Read " + stb.str(linecount) + " lines");
-		if (str.l && str.s[0] != tbx->conf.meta_char) {
+	//Read data
+    if (regionPhenotype.chr != "NA"){
+		hts_itr_t *itr = tbx_itr_querys(tbx, regionPhenotype.get().c_str());
+		vrb.bullet("target region [" + regionPhenotype.get() + "]");
+		if (!itr) vrb.error("Cannot jump to region!");
+		while (tbx_itr_next(fp, tbx, itr, &str) >= 0) {
+			linecount ++;
+			if (linecount % 100000 == 0) vrb.bullet("Read " + stb.str(linecount) + " lines");
 			stb.split(string(str.s), tokens);
 			if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
 			if (filter_phenotype.check(tokens[3])) {
@@ -136,12 +142,34 @@ void rtc_data::scanPhenotypes(string fbed) {
 				phenotype_chr.push_back(tokens[0]);
 				phenotype_start.push_back(atoi(tokens[1].c_str()) + 1);
 				phenotype_end.push_back(atoi(tokens[2].c_str()));
-                pair < string, int > temp (tokens[3],n_includedP);
-                phenotype_id_to_idx.insert(temp);
+				phenotype_val.push_back(vector < float > (sample_count, 0.0));
+				if (grp_mode > 0) phenotype_grp.push_back(tokens[4]);
+				pair < string, int > temp (tokens[3],n_includedP);
+				phenotype_id_to_idx.insert(temp);
 				n_includedP++;
 			} else n_excludedP ++;
 		}
-	}
+		tbx_itr_destroy(itr);
+    }else{
+		while (hts_getline(fp, KS_SEP_LINE, &str) >= 0) {
+			linecount ++;
+			if (linecount % 100000 == 0) vrb.bullet("Read " + stb.str(linecount) + " lines");
+			if (str.l && str.s[0] != tbx->conf.meta_char) {
+				stb.split(string(str.s), tokens);
+				if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
+				if (filter_phenotype.check(tokens[3])) {
+					phenotype_id.push_back(tokens[3]);
+					phenotype_chr.push_back(tokens[0]);
+					phenotype_start.push_back(atoi(tokens[1].c_str()) + 1);
+					phenotype_end.push_back(atoi(tokens[2].c_str()));
+					if (grp_mode > 0) phenotype_grp.push_back(tokens[4]);
+					pair < string, int > temp (tokens[3],n_includedP);
+					phenotype_id_to_idx.insert(temp);
+					n_includedP++;
+				} else n_excludedP ++;
+			}
+		}
+    }
 
 	//Finalize & verbose
 	tbx_destroy(tbx);

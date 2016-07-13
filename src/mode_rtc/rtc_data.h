@@ -16,11 +16,19 @@
 #ifndef _RTC_DATA_H
 #define _RTC_DATA_H
 
+#define __INTERVAL_CENTRIC_RTC //do interval centric analysis
+
 //ANALYSIS MODES
 #define RTC_MODE1	1
 #define RTC_MODE2	2
 #define RTC_MODE3	3
 #define RTC_MODE4	4
+
+//AGGREGATION MODES
+#define GRP_NONE	0
+#define GRP_BEST	1
+#define GRP_PCA1	2
+#define GRP_MEAN	3
 
 #define __RTC_NA__ (0.0/0.0)
 
@@ -38,11 +46,15 @@ public:
     vector <int> coldspot_variant_idx;
     coldspot(){chr="";start=-1;end=-1;idx=-1;type="NA";}
     coldspot(string c, int s, int e, int i,string t){chr=c;start=s;end=e;idx=i; type = t ;}
+    //~coldspot(){coldspot_variant_idx.clear();}
     friend ostream& operator<<(ostream& out, const coldspot& p){
         out << "ID: " << p.idx << " CHR: " << p.chr << " START: " << p.start << " END: " << p.end << " TYPE: " << p.type << " VARIANTS:";
         for (int i =0 ; i < p.coldspot_variant_idx.size(); i++) out << " " << p.coldspot_variant_idx[i];
         out << endl;
         return out;
+    }
+    long long unsigned int getMemoryUsage(){
+    	return 3*sizeof(int) + type.capacity()*sizeof(char) + chr.capacity()*sizeof(char) + coldspot_variant_idx.capacity()*sizeof(int);
     }
 };
 
@@ -59,13 +71,31 @@ public:
     int eqtl_snp_coldspot_idx;
     double Dprime;
     double R2;
-    pairsToTestForRTC(){test_snp_idx=-1;eqtl_snp_idx=-1;test_snp_coldspot_idx=-1;eqtl_snp_coldspot_idx=-1;Dprime=-1.0;R2=0.0;test_snp_rank=0;eqtl_snp_rank=0;}
-    pairsToTestForRTC(int tsi , int esi , vector <int> & ocsi, int tsci, int esci,double dp, double r2,int tr, int er){eqtl_snp_rank=er;test_snp_rank=tr;test_snp_idx=tsi;eqtl_snp_idx=esi;test_snp_coldspot_idx=tsci;eqtl_snp_coldspot_idx=esci;other_conditional_signal_idx = ocsi;Dprime=dp;R2=r2;}
+    int pheno_idx;
+    pairsToTestForRTC(){test_snp_idx=-1;eqtl_snp_idx=-1;test_snp_coldspot_idx=-1;eqtl_snp_coldspot_idx=-1;Dprime=-1.0;R2=0.0;test_snp_rank=0;eqtl_snp_rank=0;pheno_idx=-1;}
+    pairsToTestForRTC(int tsi , int esi , vector <int> & ocsi, int tsci, int esci,double dp, double r2,int tr, int er , int pidx){eqtl_snp_rank=er;test_snp_rank=tr;test_snp_idx=tsi;eqtl_snp_idx=esi;test_snp_coldspot_idx=tsci;eqtl_snp_coldspot_idx=esci;other_conditional_signal_idx = ocsi;Dprime=dp;R2=r2;pheno_idx=pidx;}
+    //~pairsToTestForRTC(){other_conditional_signal_idx.clear();}
     friend ostream& operator<<(ostream& out, const pairsToTestForRTC& p){
         out << "TSI: " << p.test_snp_idx << " ESI: " << p.eqtl_snp_idx << " TSCI: " << p.test_snp_coldspot_idx << " ESCI: " << p.eqtl_snp_coldspot_idx << " D: " << p.Dprime << " R: " <<p.R2 << " O:";
         for (int i =0 ; i < p.other_conditional_signal_idx.size(); i++) out << " " << p.other_conditional_signal_idx[i];
         out << endl;
         return out;
+    }
+    long long unsigned int getMemoryUsage(){
+    	return 7*sizeof(int) + 2*sizeof(double) + other_conditional_signal_idx.capacity()*sizeof(int);
+    }
+};
+
+class rtc_sample_results{
+public:
+	double gtoe_h0,gt_h0,gtoe_h1,gt_h1,count_h0,count_h1,pval;
+	unsigned long int unique_h0,unique_h1,variants;
+	float medianR2, median_h0, median_h1;
+	double rtc_bin_start,rtc_bin_end,rtc_bin_h0_proportion, rtc_bin_h1_proportion;
+	string h0,h1;
+	rtc_sample_results(){pval=gtoe_h0=__RTC_NA__;gt_h0=__RTC_NA__;gtoe_h1=__RTC_NA__;gt_h1=__RTC_NA__;count_h0=0.0;count_h1=0.0;unique_h0=0,unique_h1=0; median_h0 = median_h1 = medianR2=__RTC_NA__; rtc_bin_start = 0.0,rtc_bin_end=1.0,rtc_bin_h0_proportion=1.0, rtc_bin_h1_proportion=1.0 ;h1=h0="";variants=0;}
+    long long unsigned int getMemoryUsage(){
+    	return sizeof(long int) + 11*sizeof(double) + 3*sizeof(float) + h0.capacity()*sizeof(char) + h1.capacity()*sizeof(char);
     }
 };
 
@@ -73,14 +103,15 @@ class rtc_data : public data {
 public:
 	//PARAMETERS
 	unsigned int mode;
+	unsigned int grp_mode;
 	unsigned int cis_window;
-	int pvalue_column,variant_column,phenotype_column,rank_column,best_column,coldspot_count;
+	int pvalue_column,variant_column,phenotype_column,rank_column,best_column,coldspot_count,group_column;
 	static const int bin_size = 1000000;
     double Dprime_cutoff;
     double R2_cutoff;
-    unsigned long int sample_iterations;
+    unsigned long int sample_iterations,max_sample_iterations;
     set <string> unphased_regions,unfound_regions,no_variance_regions,unmatched_alleles,unfound_ids,unfound_phenotypes;
-    bool DprimeR2inMem;
+    unsigned int DprimeR2inMem;
     const int DprimePrintFreq = 10;
     const int normal_output_columns = 18;
     bool calculate_Dprime_R2;
@@ -115,6 +146,12 @@ public:
 	vector < int > phenotype_end;						//phenotype end positions
     unordered_map < string, int > phenotype_id_to_idx;
 
+	//PHENOTYPE GROUPS
+	vector < vector < unsigned int > > group_idx;		//group index to phenotype indexes
+	vector < double > group_var;						//group variance explained by PC1
+	vector < int > group_size;							//number of phenotypes in group
+	map < string, unsigned int > group_id;
+
 	//COVARIATES & INTERACTION
 	int covariate_count;								//covariate number
 	vector < vector < string > > covariate_val;			//covariate values
@@ -122,14 +159,16 @@ public:
 
 	//RTC
     map < string, map < int,  vector <coldspot *> > >  coldspot_bins_p;
-    vector < coldspot *> all_coldspots_p;
-    map < string, vector < int > > coldspot_end_idx;
-    map < int ,vector < pairsToTestForRTC > > pheno_eqtls;
+    vector < coldspot > all_coldspots;
+    //map < string, vector < int > > coldspot_end_idx;
+    map < string ,vector < pairsToTestForRTC > > pheno_eqtls;
     unordered_map < string , unordered_map< string, vector <double> > > DprimeRsquareSink;
     //unordered_map < string , vector < float > > phenotypeSink; //UNUSED
     //unordered_map < string , vector < float > > phenotypeSinkRaw; //UNUSED
     unordered_map < int , vector < float > > genotypeSink;
-    unordered_map < int , unordered_map < int , double > > RsquareSink;
+    //unordered_map < int , unordered_map < int, float > > RsquareSink;
+    vector < float> RsquareSink;
+
 
 	//CONSTRUCTOR / DESTRUCTOR
 	rtc_data();
@@ -158,6 +197,10 @@ public:
     void setStatsVCF(string);
     void checkStatsVCF();
     void createTransLists();
+    void collapsePhenotypes();
+    bool readRTCline(const string &buufer, set < int > &their);
+    bool readRTCline(const string &buffer, string &pheno, string &snp, string &best, string &group, int &rank);
+    bool readRTCline(const string &buffer, string &pheno, string &snp, string &group,unsigned int &line_count);
 
 	//GENOTYPE & PHENOTYPE MANAGEMENT
 	void clusterizePhenotypes(int);
@@ -168,6 +211,7 @@ public:
     void normalTransform(vector < float > &);
 	void normalize(vector < float > &);
 	void normalize(vector < vector < float > > &);
+	long long unsigned int getMemoryUsage();
 
 	//COMPUTATION METHODS [ALL INLINES FOR SPEED]
 	double getCorrelation(vector < float > &, vector < float > &);
@@ -183,7 +227,7 @@ public:
     int getColdspot(string, int);
     void mapVariantsToColdspots();
     void calculateRTC(string);
-    vector <double> sampleRTC(vector <int> &, vector <float> &, int, double,int pI = -1);
+    rtc_sample_results sampleRTC(vector <int> &, vector <float> &, int, double,int pI = -1);
     void generatePhenotype (double,int, vector <float> &);
     void generatePhenotype(vector<float> &, linReg &, vector <float>&);
     void mergeqtl_cis_conditional(string, string);
@@ -195,11 +239,13 @@ public:
     void gwas_trans_conditional(string, string);
     void gwas_trans(string, string);
     vector <double> getDprimeRsquare(string,int,string,int, string al1 = "" , string al2 = "", int idx1 = -1 , int idx2 = -1);
+    double getRsquare(int,int,int,int);
     double getRsquare(int,int);
     void printPTTFR();
     vector < float > correct( vector < float> , vector <float> );
     int getBestVariant(vector <int> &, int, double &);
     int bcf_all_phased(const bcf_hdr_t *, bcf1_t *);
+    void probability(vector < float > &, vector < float > & , double , rtc_sample_results &);
 
 };
 
@@ -288,15 +334,13 @@ inline void rtc_data::regression(vector < float > & X, vector < float > & Y, dou
 }
 
 inline double rtc_data::getRsquare(int i, int j){
-    if (RsquareSink.count(i) && RsquareSink[i].count(j)) return RsquareSink[i][j];
-    if (RsquareSink.count(j) && RsquareSink[j].count(i)) return RsquareSink[j][i];
 	vector < float > v1;
     if (genotypeSink.count(i)){
     	v1 = genotypeSink[i];
     }else{
 		v1 = genotype_val[i];
 		normalize(v1);
-		if (DprimeR2inMem) genotypeSink[i] = v1;
+		if (DprimeR2inMem >=2) genotypeSink[i] = v1;
     }
     vector < float > v2;
     if (genotypeSink.count(j)){
@@ -304,10 +348,45 @@ inline double rtc_data::getRsquare(int i, int j){
     }else{
 		v2 = genotype_val[j];
 		normalize(v2);
-		if (DprimeR2inMem) genotypeSink[j] = v2;
+		if (DprimeR2inMem >=2) genotypeSink[j] = v2;
     }
     double r = getCorrelation(v1 , v2 ,v1.size());
-    if (DprimeR2inMem) RsquareSink[i][j] = r * r;
+    return r * r;
+}
+
+inline double rtc_data::getRsquare(int i, int j,int start, int size){
+	if (i==j) return 1.0;
+	int first = -1 , second = -1;
+	if (i > j){
+		first = j - start + 1;
+		second = i - start + 1;
+	}else{
+		first = i - start + 1;
+		second = j - start + 1;
+	}
+	int total = size * (size - 1) / 2;
+	if (!RsquareSink.size() && DprimeR2inMem >=2) RsquareSink = vector <float> (total, __RTC_NA__ );
+	int diff = (size - first) * (size - first + 1) / 2;
+	int index = total - diff + second - first - 1;
+	if (index < RsquareSink.size() && !isnan(RsquareSink[index])) return RsquareSink[index];
+	vector < float > v1;
+    if (genotypeSink.count(i)){
+    	v1 = genotypeSink[i];
+    }else{
+		v1 = genotype_val[i];
+		normalize(v1);
+		if (DprimeR2inMem >=2) genotypeSink[i] = v1;
+    }
+    vector < float > v2;
+    if (genotypeSink.count(j)){
+    	v2 = genotypeSink[j];
+    }else{
+		v2 = genotype_val[j];
+		normalize(v2);
+		if (DprimeR2inMem >=2) genotypeSink[j] = v2;
+    }
+    double r = getCorrelation(v1 , v2 ,v1.size());
+    if (DprimeR2inMem >=2) RsquareSink[index] = r * r;
     return r * r;
 }
 
@@ -333,6 +412,7 @@ inline int rtc_data::getBestVariant(vector <int> &genotype_idx, int phenotype_id
 inline float rtc_data::median(vector <float> &scores){
   float median;
   size_t size = scores.size();
+  if (!size) return __RTC_NA__;
   sort(scores.begin(), scores.end());
   if (size  % 2 == 0){
       median = (scores[size / 2 - 1] + scores[size / 2]) / 2;
@@ -340,6 +420,87 @@ inline float rtc_data::median(vector <float> &scores){
       median = scores[size / 2];
   }
   return median;
+}
+
+inline bool rtc_data::readRTCline(const string &buffer, set < int > &their){
+	vector < string > str;
+    stb.split(buffer, str);
+    string snp = str[0];
+    if (!genotype_id_to_idx.count(snp) ) {
+    	unfound_ids.insert(snp);
+    	return false;
+    }
+    their.insert(genotype_id_to_idx[snp]);
+	return true;
+}
+
+inline bool rtc_data::readRTCline(const string &buffer, string &pheno, string &snp, string &best, string &group, int &rank){
+	vector < string > str;
+    stb.split(buffer, str);
+    if (str.size() < 4) vrb.error("Wrong QTLtools output file format");
+	if (str.size() < 4) vrb.error("Wrong QTLtools output file format");
+	if (str[0] == "__UNION__"){
+		if (str[2].substr(0,15) == "__UNION_FILLER_") return false;
+		pheno = str[1];
+		snp = str[2];
+		best = "1";
+		rank = atoi(str[3].c_str());
+		group = pheno;
+	}else{
+		if (rank_column >= str.size()) vrb.error("rank column = " + stb.str(pvalue_column+1) + " but found " + stb.str(str.size()) + " columns in the following line:\n" + buffer);
+		if (variant_column >= str.size()) vrb.error("variant column = " + stb.str(variant_column+1) + " but found " + stb.str(str.size()) + " columns in the following line:\n" + buffer);
+		if (phenotype_column >= str.size()) vrb.error("phenotype column = " + stb.str(phenotype_column+1) + " but found " + stb.str(str.size()) + " columns in the following line:\n" + buffer);
+		if (best_column >= str.size()) vrb.error("best column = " + stb.str(best_column+1) + " but found " + stb.str(str.size()) + " columns in the following line:\n" + buffer);
+		if (group_column >= str.size()) vrb.error("group column = " + stb.str(group_column+1) + " but found " + stb.str(str.size()) + " columns in the following line:\n" + buffer);
+		pheno = str[phenotype_column];
+		group = str[group_column];
+		snp = str[variant_column];
+		best = str[best_column];
+		rank = atoi(str[rank_column].c_str());
+	}
+	string test = grp_mode > 0 ? group : pheno;
+	//cerr << pheno << " " << snp << " " << group << " " << test << " " << group_id.count(test) << endl;
+	if(best != "1"){
+		return false;
+	}else if (!genotype_id_to_idx.count(snp)){
+		unfound_ids.insert(snp);
+		if (!phenotype_id_to_idx.count(test) && !group_id.count(test)) unfound_phenotypes.insert(test);
+		return false;
+	}else if (!phenotype_id_to_idx.count(test) && !group_id.count(test)){
+		unfound_phenotypes.insert(test);
+		return false;
+	}
+	return true;
+}
+
+inline bool rtc_data::readRTCline(const string &buffer, string &pheno, string &snp, string &group,unsigned int &line_count){
+	vector < string > str;
+    stb.split(buffer, str);
+    if (str[0] == "__UNION__"){
+    	if (str[2].substr(0,15) == "__UNION_FILLER_") return false;
+    	pheno = str[1];
+        snp = str[2];
+        group = pheno;
+    }else{
+        if (!line_count && str.size() > normal_output_columns && !options.count("conditional")) vrb.warning("Looks like a conditional QTLtools output yet no --conditional provided, is this desired?");
+		if (variant_column >= str.size()) vrb.error("variant column = " + stb.str(variant_column+1) + " but found " + stb.str(str.size()) + " columns in the following line:\n" + buffer);
+		if (phenotype_column >= str.size()) vrb.error("phenotype column = " + stb.str(phenotype_column+1) + " but found " + stb.str(str.size()) + " columns in the following line:\n" + buffer);
+		if (group_column >= str.size()) vrb.error("group column = " + stb.str(group_column+1) + " but found " + stb.str(str.size()) + " columns in the following line:\n" + buffer);
+		pheno = str[phenotype_column];
+		snp = str[variant_column];
+		group = str[group_column];
+    }
+    line_count++;
+    string test = grp_mode > 0 ? group : pheno;
+    if (!genotype_id_to_idx.count(snp)){
+    	unfound_ids.insert(snp);
+    	if (!phenotype_id_to_idx.count(test) && !group_id.count(test)) unfound_phenotypes.insert(test);
+    	return false;
+    }else if (!phenotype_id_to_idx.count(test) && !group_id.count(test)){
+    	unfound_phenotypes.insert(test);
+    	return false;
+    }
+	return true;
 }
 
 #endif
