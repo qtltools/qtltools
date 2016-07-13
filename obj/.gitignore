@@ -1,5 +1,4 @@
-*.o
-.project
-.cproject
-.settings
-
+# Ignore everything in this directory
+*
+# Except this file
+!.gitignore
