@@ -1,0 +1,139 @@
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"/>
+<meta http-equiv="Cache-Control" content="max-age=3600"/>
+<meta name="description" content="description"/>
+<meta name="keywords" content="keywords"/> 
+<meta name="author" content="author"/> 
+<link rel="stylesheet" type="text/css" href="../style/default.css" media="screen"/>
+<title>QTLtools</title>
+<script language="Javascript" src="../script/print_last_modif_date.js" ></script>
+</head>
+
+<body>
+<div class="content">
+
+	<div class="item"  id="item1">
+		<h1>How to run fdensity?</h1>
+		<p>
+		This mode allows measuring the density of functional annotations around the positions of a collection of QTLs.
+		To illustrate how it works, first download the required example data:
+		</p>
+
+		<ul>
+			<li> The results from a full cis-analysis: <a href="http://jungle.unige.ch/QTLtools_examples/results.genes.full.txt.gz" download>TXT</a></li>
+			<li> The functional annotation for few Transcription Factor Binding sites: <a href="http://jungle.unige.ch/QTLtools_examples/TFs.encode.bed.gz" download>BED</a></li>
+		</ul>
+
+		<br>
+		<h3>Step1: Prepare the QTL data</h3>
+		<p>
+		First, you need to prepare a BED file containing the positions of the QTLs of interest. To do so, extract all significant hits at a given FDR threshold (e.g. 5%):		
+		</p>
+
+		<code>
+		Rscript ./script/runFDR.R results.genes.full.txt.gz 0.05 results.genes
+		</code>
+
+		<p>
+		Then, transform the significant QTL list into a BED file using the following command:
+		</p>
+
+		<code>
+		cat results.genes.significant.txt | awk '{ print $9, $10-1, $11, $8, $1, $5 }'  | tr " " "\t" | sort -k1,1 -k2,2n > results.genes.significant.bed
+		</code>
+
+		<p>
+		The resulting BED file looks like this:
+		</p>
+		
+		<code>
+		head results.genes.significant.bed<br>
+		1	15210	15211	1_15211	ENSG00000227232.4	-<br>
+		1	735984	735985	1_735985	ENSG00000177757.1	+<br>
+		1	735984	735985	1_735985	ENSG00000240453.1	-<br>
+		1	739527	739528	1_739528	ENSG00000237491.4	+<br>
+		1	754963	754964	1_754964	ENSG00000225880.4	-<br>
+		1	769222	769223	1_769223	ENSG00000228794.4	+<br>
+		1	832397	832398	1_832398	ENSG00000230699.2	+<br>
+		1	844342	844343	1_844343	ENSG00000223764.2	-<br>
+		1	879675	879676	1_879676	ENSG00000187634.6	+<br>
+		1	895705	895706	1_895706	ENSG00000187961.9	+<br>
+		</code>
+
+		<p>
+		Note here that this file contains the follwing columns:
+		</p>
+
+		<ul>
+			</li>1. Chromosome ID</li>
+			</li>2. Start position of the QTL</li>
+			</li>3. End position of the QTL</li>
+			</li>4. QTL ID</li>
+			</li>5. Targeted phenotype ID (not used, can be whatever you want)</li>
+			</li>6. Strand orientation; this is important, you need to specify here on which strand the QTL has been mapped to</li>	
+		</ul>
+
+		<br>
+		<h3>Step2: Run the density measurements</h3>
+		<p>
+		Now that you've got your QTLs ready to go, you can then measure the density using the following command:
+		</p>
+
+		<code>
+		QTLtools fdensity --qtl results.genes.significant.bed --bed TFs.encode.bed.gz --out density.TF.around.QTL.txt
+		</code>
+
+		<p>
+		This generates a file <i>density.TF.around.QTL.txt</i> that contains the number of functional annotations per 1kb bins around QTLs.
+		</p>
+		
+		<code>
+		head density.TF.around.QTL.txt<br>
+		-1000000 -999001 1314<br>
+		-999000 -998001 1253<br>
+		-998000 -997001 1263<br>
+		-997000 -996001 1315<br>
+		-996000 -995001 1339<br>
+		-995000 -994001 1293<br>
+		-994000 -993001 1277<br>
+		-993000 -992001 1299<br>
+		-992000 -991001 1309<br>
+		-991000 -990001 1282
+		</code>
+
+		<ul>
+			<li>1. start position of the bin</li>
+			<li>2. end position of the bin</li>
+			<li>3. number of annotations in this bin</li>
+		</ul>
+
+		<p>
+		You can use the two following options to tune the calculations:
+		</p>
+
+		<ul>
+			<li><i>--bin [int]</i>: size of the bin in bp (default is 1000bp)</li>
+			<li><i>--window [int]</i>: size of the window around QTLs to be examined in bp (default is 1000000bp)</li>
+		</ul>
+
+		<p>
+		Once you've got your density measurements, you can plot them in R using:
+		</p>
+
+		<code>
+		R> D=read.table("density.TF.around.QTL.txt", head=FALSE, stringsAsFactors=FALSE)<br>
+		R> plot((D$V1+D$V2)/2, D$V3, type="l", xlab="Distance to QTLs", ylab="#annotations/kb")
+		</code>
+
+		<p>
+		This is going to give you something like this:
+		</p>
+
+		<img WIDTH=20% src="../img/fdensity.png"></img>
+	</div>
+	
+	<div class="log">Monday 11th July 2016</div>
+</div>
+</body>
+</html>

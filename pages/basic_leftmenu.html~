@@ -1,0 +1,56 @@
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"/>
+<meta http-equiv="Cache-Control" content="max-age=3600"/>
+<link rel="stylesheet" type="text/css" href="../style/default.css" media="screen"/>
+<title>FastQTL</title>
+</head>
+
+<div class="sidenav">
+	<div class="item">
+		<h1>Basic information</h1>
+		<ul>
+			<li><a href="basic_homepage.html" target='content'>Homepage</a></li>
+			<li><a href="basic_install.html" target='content'>Download & Installation</a></li>
+		</ul>
+	</div>
+	
+	<div class="item">
+		<h1>Analyses</h1>
+		<ul>
+			<li><a href="input_files.html" target='content'>Preparing input files</a></li>
+			<li><a href="mode_overview.html" target='content'>Overview of QTLtools</a></li>
+			<li><a href="mode_bamstat.html" target='content'><b>[bamstat]</b> QC the sequence data</a></li>
+			<li><a href="mode_match.html" target='content'><b>[match]</b> Sequence to genotype matching</a></li>
+			<li><a href="mode_quant.html" target='content'><b>[quan]</b> Quantify gene expression</a></li>
+			<li><a href="mode_pca.html" target='content'><b>[pca]</b> Perform PCA on data</a></li>
+			<li><a href="mode_cis_nominal.html" target='content'><b>[cis]</b> Discover QTL in <i>cis</i> [nominal pass]</a></li>
+			<li><a href="mode_cis_permutation.html" target='content'><b>[cis]</b> Discover QTL in <i>cis</i> [permutation pass]</a></li>
+			<li><a href="mode_cis_conditional.html" target='content'><b>[cis]</b> Discover QTL in <i>cis</i> [conditional pass]</a></li>
+			<li><a href="mode_trans_full.html" target='content'><b>[trans]</b> Discover QTL in <i>trans</i> [full pass]</a></li>
+			<li><a href="mode_trans_approx.html" target='content'><b>[trans]</b> Discover QTL in <i>trans</i> [approx. pass]</a></li>
+			<li><a href="mode_fdensity.html" target='content'><b>[fdensity]</b> Annotation density at QTLs</a></li>
+			<li><a href="mode_fenrich.html" target='content'><b>[fenrich]</b> Enrichment of QTLs in annotations</a></li>
+			<li><a href="mode_rtc.html" target='content'><b>[rtc]</b> Overlap QTLs with GWAS hits</a></li>
+		</ul>
+	</div>
+
+	<div class="item">
+		<h1>Credits</h1>
+		<ul>
+			<li><a href="http://funpopgen.unige.ch/members/olivier-delaneau">Dr Olivier DELANEAU, UNIGE</a></li>
+			<li><a href="http://funpopgen.unige.ch/members/halit-ongen">Dr Halit ONGEN, UNIGE</a></li>
+			<li><a href="http://funpopgen.unige.ch/members/professor-emmanouil-manolis-dermitzakis">Prof. Manolis DERMITZAKIS, UNIGE</a></li>
+		</ul>
+		<a href="http://funpopgen.unige.ch" target='_top'><img WIDTH=45% src="../img/funpopgen.png"></img></a>
+		<a href="http://www.snf.ch/en/Pages/default.aspx" target='_top'><img WIDTH=45% src="../img/snf.jpg"></img></a>
+		<a href="http://www.systemsx.ch" target='_top'><img WIDTH=50% src="../img/systemsx.png"></img></a>
+		<a href="https://www.nih.gov" target='_top'><img WIDTH=25% src="../img/nih.png"></img></a>
+	</div>
+	<div class="item">
+		<h1>Reference</h1>
+		<ul>
+			<li><a href="http://bioinformatics.oxfordjournals.org/content/32/10/1479.long" target='_top'>QTLtools: a complete tool set for molecular QTL discovery and analysis [bioRxiv]</a></li>
+		</ul>
+
+</html>

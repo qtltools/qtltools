@@ -1,0 +1,102 @@
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"/>
+<meta http-equiv="Cache-Control" content="max-age=3600"/>
+<meta name="description" content="description"/>
+<meta name="keywords" content="keywords"/> 
+<meta name="author" content="author"/> 
+<link rel="stylesheet" type="text/css" href="../style/default.css" media="screen"/>
+<title>QTLtools</title>
+<script language="Javascript" src="../script/print_last_modif_date.js" ></script>
+</head>
+
+<body>
+<div class="content">
+	<div class="item"  id="item1">
+		<h1>How to run match?</h1>
+		<p>
+		The <b>match</b> mode of QTLtools requires two files as input:
+		</p>
+
+		<ul>
+			<li>A <i>BAM</i> file containing the sequence data for a particular molecular assay.</li>
+			<li>A <i>VCF/BCF</i> file containing the genotype data of many samples, including the one for which you have sequence data</li>
+		</ul>
+
+		<p>
+		To illustrate how it works, we provide the 2 following example files:
+		</p>
+
+		<ul>
+			<li>A RNA-seq <i>BAM</i> file on chr22 for sample HG00381: <a href="http://jungle.unige.ch/QTLtools_examples/HG00381.chr22.bam" download>BAM</a> / <a href="http://jungle.unige.ch/QTLtools_examples/HG00381.chr22.bam.bai" download>index</a></li>
+			<li>A <i>VCF</i> file containing genotypes for 358 samples: <a href="http://jungle.unige.ch/QTLtools_examples/genotypes.chr22.vcf.gz" download>VCF</a> / <a href="http://jungle.unige.ch/QTLtools_examples/genotypes.chr22.vcf.gz.csi">index</a></li>
+		</ul>
+
+		<p>
+		Then, you can run <b>match</b> on these two files running the command:
+		</p>
+
+		<code>
+		QTLtools <b>match</b> --bam HG00381.chr22.bam --vcf genotypes.chr22.vcf.gz --filter-mapping-quality 150 --out HG00381.chr22.bamstat.txt
+		</code>
+		
+		<p>
+		Note that we use the option <i>--filter-mapping-quality 150</i> since it is the recommended value to remove bad quality reads in a BAM generated with the <a href="http://algorithms.cnag.cat/wiki/The_GEM_library" target='_top'>GEM mapper</a>.
+		</p>
+
+		<p>
+		This command produces an output file <i>HG00381.chr22.match.txt</i> as follows:
+		</p>
+		
+		<code>
+		HG00096 0 23764 61721 175 499 91 333 29<br>
+		HG00097 0 26639 58846 193 481 93 317 23<br>
+		HG00099 0 27672 57813 216 458 93 294 26<br>
+		HG00100 0 28267 57218 243 431 107 281 24<br>
+		...<br>
+		<b>HG00381 0 27339 58146 213 461 204 408 28</b><br>
+		...<br>
+		HG00106 0 26046 59439 190 484 90 317 30<br>
+		HG00108 0 25408 60077 205 469 85 297 31<br>
+		</code>
+		
+		<p>
+		The 9 columns give:
+		</p>
+
+		<ul>
+			<li>A. The sample ID in the VCF against which the sequence data has been matched</li>
+			<li>B. The number of missing genotypes for this sample</li>
+			<li>C. The total number of heterozygous genotypes examined</li>
+			<li>D. The total number of homozygous genotypes examined</li>
+			<li>E. The number of heterozygous genotypes considered for the matching, i.e. those that are covered by more than <i>--filter-minimal-coverage 10</i> reads</li>
+			<li>F. The number of homozygous genotypes considered for the matching, i.e. those that are covered by more than <i>--filter-minimal-coverage 10</i> reads</li>
+			<li>G. The number of heterozygous genotypes considered for the matching with fully matching sequence data</li>
+			<li>H. The number of homozygous genotypes considered for the matching with fully matching sequence data</li>
+			<li>I. Dummy field</li>
+		</ul>
+
+		<p>
+		Then, you can compute the ratios G/E and H/F to get the concordances at heterozygous and homozygous genotypes. This helps to identify the genotyped sample in the VCF that matches best your sequence data. It is shown in bold above in the output file and has the same sample ID than the sequence sample, meaning that there is no sample swap here. Alternatively, you can also inspect the output by plotting the output using R as follows:
+		</p>
+
+		<img WIDTH=20% src="../img/plot_match.png"></img>
+
+		<p>
+		On this plot, we can clearly identify the set of genotyped samples that do not match the sequence data (in red) with the best match as a clear outlier (in green).
+		</p> 
+
+		<p>Hereafter the list of options that the <b>match</b> can use to tune the analysis:</p>
+
+		<ul>
+			<li><i>--filter-mapping-quality [10]</i>: Minimal phred mapping quality for a read to be considered in the matching</li>
+			<li><i>--filter-base-quality [5]</i>: Minimal phred quality for a base to be considered in the matching</li>
+			<li><i>--filter-minimal-coverage [10]</i>: Minimal coverage for a genotype to be considered in the analysis</li>
+			<li><i>--filter-keep-duplicates</i>: Keep duplicate sequencing reads in the analysis (default is no)</li>
+		</ul>
+	</div>
+	
+	<div class="log">Monday 11th July 2016</div>
+</div>
+</body>
+</html>
