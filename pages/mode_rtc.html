@@ -69,27 +69,27 @@
 
 		<code>
 		head hotspots_b37_hg19.bed<br>
-		chr1	1020078	1031078	11000<br>
-		chr1	1872839	1881839	9000<br>
-		chr1	2031839	2035839	4000<br>
-		chr1	2141839	2147839	6000<br>
-		chr1	2214839	2221839	7000<br>
-		chr1	2299839	2303839	4000<br>
-		chr1	2322839	2326839	4000<br>
-		chr1	2338839	2357839	19000<br>
-		chr1	2362839	2369839	7000<br>
-		chr1	2403839	2408839	5000
+		1	1020078	1031078	11000<br>
+		1	1872839	1881839	9000<br>
+		1	2031839	2035839	4000<br>
+		1	2141839	2147839	6000<br>
+		1	2214839	2221839	7000<br>
+		1	2299839	2303839	4000<br>
+		1	2322839	2326839	4000<br>
+		1	2338839	2357839	19000<br>
+		1	2362839	2369839	7000<br>
+		1	2403839	2408839	5000
 		</code>
 
 		<p>
-		Columns here correspond to:
+		Columns here correspond to (only the first three columns are used):
 		</p>
 		
 		<ul>
-			<li>1. XXX </li>
-			<li>2. XXX </li>
-			<li>3. XXX </li>
-			<li>4. XXX </li>
+			<li>1. Chromosome </li>
+			<li>2. Start (0-based) </li>
+			<li>3. End (1-based) </li>
+			<li>4. Length </li>
 		</ul>
 
 		<code>
@@ -107,12 +107,12 @@
 		</code>
 		
 		<p>
-		Columns here correspond to:
+		Columns here correspond to (only the first column is used):
 		</p>
 		
 		<ul>
-			<li>1. XXX [why is this important? How careful we need to be with this file?]</li>
-			<li>2. XXX </li>
+			<li>1. GWAS variants to test. These MUST correspond to the variants in your VCF file </li>
+			<li>2. Other information </li>
 		</ul>
 
 		<br>
@@ -122,7 +122,7 @@
 		</p>
 
 		<code>
-		QTLtools rtc --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --cov genes.covariates.pc50.txt.gz --hotspot hotspots_b37_hg19.bed --gwas-cis GWAS.b37.txt permutations_all.significant.txt --out rtc_results.txt
+		QTLtools rtc --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --cov genes.covariates.pc50.txt.gz --hotspot hotspots_b37_hg19.bed --gwas-cis GWAS.b37.txt permutations_all.significant.txt --normal --out rtc_results.txt
 		</code>
 
 		<p>
@@ -130,8 +130,8 @@
 		</p>
 
 		<ul>
-			<li><i>--option1</i>: to do blabla</li>
-			<li><i>--option2 [int]</i>: to do blabla2</li>
+			<li><i>--conditional</i>: to run RTC with independent conditional eQTLs</li>
+
 		</ul>
 
 		<p>
@@ -152,12 +152,34 @@
 		</code>
 
 		<p>
-		Description of the columns in the output file !
+		Description of the columns in the output file:
 		</p>
+		
+		<ul>
+			<li>1. GWAS variant </li>
+			<li>2. eQTL variant </li>
+			<li>3. Gene </li>
+			<li>4. Gene Group </li>
+			<li>5. GWAS variant chromosome </li>
+			<li>6. GWAS variant position </li>
+			<li>7. GWAS variant rank </li>
+			<li>8. eQTL variant chromosome </li>
+			<li>9. eQTL variant position </li>
+			<li>10. eQTL variant rank </li>
+			<li>11. Gene chromosome </li>
+			<li>12. Gene position</li>
+			<li>13. Distance between variants </li>
+			<li>14. Distance between GWAS and phenotype </li>
+			<li>15. GWAS variant's region index </li>
+			<li>16. eQTL variant's region index </li>
+			<li>17. Region start </li>
+			<li>18. Region end </li>
+			<li>19. Number of variants in the region </li>
+			<li>20. RTC </li>
+			<li>21. D prime </li>
+			<li>22. R squared </li>
+		</ul>
 
-		<p>
-		Described alternative ways of running RTC w/o conditional.
-		</p>
 	</div>
 	
 	<div class="log">Monday 11th July 2016</div>
