@@ -1,0 +1,8 @@
+QTLtools: a tool set for molecular QTL discovery and analysis
+
+ver: 1.0
+git: https://github.com/qtltools/qtltools
+web:https://qtltools.github.io/qtltools/
+
+developers:	Olivier Delaneau (olivier.delaneau@gmail.com)
+		Halit Ongen (halit.ongen@unige.ch)
