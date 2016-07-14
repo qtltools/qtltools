@@ -181,13 +181,13 @@
 		</p>
 
 		<code>
-		Rscript ~/script/runFdrTrans.R trans.nominal.hits.fdr.txt trans.nominal.hits.txt.gz trans.perm123.hits.txt.gz
+		Rscript ~/script/runFDR_ftrans.R trans.nominal.hits.txt.gz trans.perm123.hits.txt.gz output.txt
 		</code>
 
 		<p>
-		As an output, you get a file <i>trans.nominal.hits.fdr.txt</i> which contains the data in <i>trans.nominal.hits.txt.gz</i> with an additional column that gives the FDR estimate for each hit.
-		This value is obtained for each nominal hit by counting the number of permutation hits with a smaller P-values divided by the rank of the nominal hit.
-		In other words, the permutation outcome is used to estimate how many smaller P-values you can obtained when drawing from the null.
+		As an output, you get a file <i>output.txt</i> which contains the data in <i>trans.nominal.hits.txt.gz</i> with an additional column that gives the FDR estimate for each hit.
+		This value is obtained for each hit by counting the number of permutation hits with a smaller P-values; number divided by its rank.
+		In other words, the permutation outcome is used to estimate how many smaller P-values are obtained when drawing from the null.
 		</p>
 
 		<note>
