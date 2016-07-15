@@ -76,6 +76,49 @@
 	</div>
 
 	<div class="item"  id="item1">
+		<h1>Testing if <b>QTLtools</b> runs on your machine</h1>
+		<p>
+		To test if QTLtools can run on your plateform, run:
+		</p>
+
+		<code>
+		QTLtools --help
+		</code>
+
+		<p>
+		If it does not complain for missing libraries, you're good to go. Otherwise, first check your <i>glibc</i> version by running:
+		<p>
+
+		<code>
+		locate libc.so.6
+		</code>
+
+		<p>
+		This is going to tell you where is the library. Assuming it is in <i>/lib/x86_64-linux-gnu/</i>, then check <i>glibc</i> version by running:
+		</p>
+
+		<code>
+		/lib/x86_64-linux-gnu/libc.so.6
+		</code>
+		
+		<p>
+		...which gives:
+		</p>
+
+		<code>
+		GNU C Library (Ubuntu EGLIBC 2.19-0ubuntu6.9) stable release version <b>2.19</b>, by Roland McGrath et al.<br>
+		Copyright (C) 2014 Free Software Foundation, Inc.<br>
+		This is free software; see the source for copying conditions.<br>
+		...
+		</code>
+
+		<p>
+		Given this, I can then choose the binary accordingly by picking up the one based on an older or equal <i>glibc</i> version.
+		If your version of <i>glibc</i> is older than <i>2.12</i>, it is very likely that you need to recompile QTLtools following the instructions below:
+		</p>
+	</div>
+
+	<div class="item"  id="item1">
 		<h1>Compiling <b>QTLtools</b></h1>
 		<p>
 		If the provided binaries does not directly work, QTLtools needs to be re-compiled on your plateform. For this, you may need to install few standard libraries required by QTLtools if you do not have them already installed. To do so, you need to update the path of the required libraries in the <i>Makefile</i>. 
