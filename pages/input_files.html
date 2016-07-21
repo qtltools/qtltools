@@ -105,8 +105,17 @@
 		This file should have P lines and N+6 columns where P and N are the numbers of phenotypes and samples, respectively.
 		</p>
 
+		<note>
+		THIS FILE FORMAT EXTENDS THE FASTQTL FILE FORMAT BY ADDING 2 COLUMNS! THIS MEANS THAT QTLTOOLS CANNOT WORK WITH FASTQTL BED FILES!
+		To make a quick and dirty conversion, you can use this command:
+		</note>
+
+		<code>
+		zcat myFastQTLphenotypes.bed.gz | awk '{ $4=$4" . +"; print $0 }' | tr " " "\t" | bgzip -c > myQTLtoolsPhenotypes.bed.gz
+		</code>
+
 		<p>
-		This small example gives 3 different ways of encoding phenotype data:
+		The small example above gives 3 different ways of encoding phenotype data:
 		</p>
 
 		<ol>
