@@ -13,6 +13,7 @@
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
+
 #include "fdensity_data.h"
 
 void fdensity_data::buildIntervalTrees() {
@@ -28,6 +29,9 @@ void fdensity_data::buildIntervalTrees() {
 	}
 	unsigned int n_chr = chr2idx.size();
 	vrb.bullet("#detected chromosomes in QTL data = " + stb.str(n_chr));
+
+	for (map < string, int > :: iterator it = chr2idx.begin() ; it != chr2idx.end(); ++it)
+		cout << it->first << " " << it->second << endl;
 
 	//2. Build chromosomal interval trees
 	unsigned int chr_unfound = 0;
@@ -45,6 +49,10 @@ void fdensity_data::buildIntervalTrees() {
 	for (int c = 0 ; c < n_chr ; c ++) Ctree[c] = IntervalTree < bool > (Ivec[c]);
 
 	//4. Build functional neighborhoods
+
+	int n_neg = 0, n_pos = 0, n_mid = 0;
+	int s_neg = 0, s_pos = 0, s_mid = 0;
+
 	basic_stats Rstat;
 	Itree = vector <  IntervalTree < bool > > (tss_count);
 	for (int t = 0 ; t < tss_count ; t ++) {
@@ -52,16 +60,37 @@ void fdensity_data::buildIntervalTrees() {
 		assert(itC != chr2idx.end());
 		vector < Interval < bool > > ann_in_cis;
 		Ctree[itC->second].findOverlapping(tss_pos[t] - window, tss_pos[t] + window, ann_in_cis);
-		Rstat.push(ann_in_cis.size() * 1.0);
+
+		IntervalStartSorter < bool > intervalStartSorter;
+		sort(ann_in_cis.begin(), ann_in_cis.end(), intervalStartSorter);
+
+        Rstat.push(ann_in_cis.size() * 1.0);
 		vector < Interval < bool > > Rvec;
-		if (!tss_neg[t]) for (int a = 0 ; a < ann_in_cis.size() ; a ++) Rvec.push_back(Interval < bool > (ann_in_cis[a].start - tss_pos[t], ann_in_cis[a].stop - tss_pos[t], true));
-		else for (int a = 0 ; a < ann_in_cis.size() ; a ++) Rvec.push_back(Interval < bool > (-1 * (ann_in_cis[a].stop - tss_pos[t]), -1 * (ann_in_cis[a].start - tss_pos[t]), true));
+
+		for (int a = 0 ; a < ann_in_cis.size() ; a ++) {
+
+			if (!tss_neg[t]) Rvec.push_back(Interval < bool > (ann_in_cis[a].start - tss_pos[t], ann_in_cis[a].stop - tss_pos[t], true));
+			else Rvec.push_back(Interval < bool > (-1 * (ann_in_cis[a].stop - tss_pos[t]), -1 * (ann_in_cis[a].start - tss_pos[t]), true));
+			assert(Rvec.back().start <= Rvec.back().stop);
+
+			if (Rvec.back().start < 0 && Rvec.back().stop < 0) {
+				s_neg += Rvec.back().stop - Rvec.back().start;
+				n_neg ++;
+			} else if (Rvec.back().start > 0 && Rvec.back().stop > 0) {
+				s_pos += Rvec.back().stop - Rvec.back().start;
+				n_pos ++;
+			} else {
+				s_mid += Rvec.back().stop - Rvec.back().start;
+				n_mid ++;
+			}
+		}
+		sort(Rvec.begin(), Rvec.end(), intervalStartSorter);
 		Itree[t] = IntervalTree < bool > (Rvec);
 	}
+
 	vrb.bullet("#annotated cis-windows = " + stb.str(Rstat.size()));
 	vrb.bullet("#annotations per cis-window = " + stb.str(Rstat.mean(), 2) + " +/- " + stb.str(Rstat.sd(), 2));
 }
-
 
 void fdensity_data::runDensityCalculation(string fout) {
 
@@ -72,6 +101,7 @@ void fdensity_data::runDensityCalculation(string fout) {
 		int wto = w + bin - 1;
 		int n_annotation = 0;
 
+
 		for (int t = 0 ; t < tss_count ; t ++) {
 			vector < Interval < bool > > ann_in_bin;
 			Itree[t].findOverlapping(wfrom, wto, ann_in_bin);
@@ -80,5 +110,6 @@ void fdensity_data::runDensityCalculation(string fout) {
 
 		fdo << wfrom << " " << wto << " " << n_annotation << endl;
 	}
+
 	fdo.close();
 }

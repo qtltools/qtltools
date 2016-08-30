@@ -61,10 +61,17 @@ void fenrich_data::mapAnnotation2QTL() {
 		assert(itC != chr2idx.end());
 		vector < Interval < bool > > ann_in_cis;
 		Ttree[itC->second].findOverlapping(tss_pos[t] - max_distance - 10000, tss_pos[t] + max_distance + 10000, ann_in_cis);
+		IntervalStartSorter < bool > intervalStartSorter;
+		sort(ann_in_cis.begin(), ann_in_cis.end(), intervalStartSorter);
 		Rstat.push(ann_in_cis.size() * 1.0);
 		vector < Interval < bool > > Rvec;
-		if (!tss_neg[t]) for (int a = 0 ; a < ann_in_cis.size() ; a ++) Rvec.push_back(Interval < bool > (ann_in_cis[a].start - tss_pos[t], ann_in_cis[a].stop - tss_pos[t], true));
-		else for (int a = 0 ; a < ann_in_cis.size() ; a ++) Rvec.push_back(Interval < bool > (-1 * (ann_in_cis[a].start - tss_pos[t]), -1 * (ann_in_cis[a].stop - tss_pos[t]), true));
+
+		for (int a = 0 ; a < ann_in_cis.size() ; a ++) {
+			if (!tss_neg[t]) Rvec.push_back(Interval < bool > (ann_in_cis[a].start - tss_pos[t], ann_in_cis[a].stop - tss_pos[t], true));
+			else Rvec.push_back(Interval < bool > (-1 * (ann_in_cis[a].stop - tss_pos[t]), -1 * (ann_in_cis[a].start - tss_pos[t]), true));
+			assert(Rvec.back().start <= Rvec.back().stop);
+		}
+		sort(Rvec.begin(), Rvec.end(), intervalStartSorter);
 		R[t] = IntervalTree < bool > (Rvec);
 	}
 	vrb.bullet("#annotated cis-windows = " + stb.str(Rstat.size()));
