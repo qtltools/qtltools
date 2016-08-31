@@ -30,9 +30,6 @@ void fdensity_data::buildIntervalTrees() {
 	unsigned int n_chr = chr2idx.size();
 	vrb.bullet("#detected chromosomes in QTL data = " + stb.str(n_chr));
 
-	for (map < string, int > :: iterator it = chr2idx.begin() ; it != chr2idx.end(); ++it)
-		cout << it->first << " " << it->second << endl;
-
 	//2. Build chromosomal interval trees
 	unsigned int chr_unfound = 0;
 	vector < vector < Interval < bool > > > Ivec = vector < vector < Interval < bool > > > (n_chr, vector < Interval < bool > > ());

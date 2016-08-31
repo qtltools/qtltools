@@ -94,6 +94,7 @@ laptop-dbg: LDFLAG=$(LDFLAG_DBG)
 laptop-dbg: $(BFILE)
 
 #VITAL-IT RELEASE VERSION
+cluster: LIB_FLAGS=-Wl,-Bstatic -lz -Wl,-Bdynamic -lm -lpthread -lgsl -lblas -lbz2
 cluster: RMATH_INC=/software/R/3.1.1/include
 cluster: RMATH_LIB=/software/R/3.1.1/lib64
 cluster: HTSLD_INC=/software/UHTS/Analysis/samtools/1.2/include
