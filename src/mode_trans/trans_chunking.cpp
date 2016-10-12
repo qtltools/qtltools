@@ -25,7 +25,19 @@ void trans_data::setPhenotypeLines(int k, int K) {
     unsigned long int max_length =0 ;
     if (phenotype_count % K == 0) max_length = phenotype_count / K;
     else for ( unsigned long int l = 1 ; l * (K-1) < phenotype_count; l++ ) max_length = l;
-    start_line = (k-1) * max_length + 1;
-    end_line = k * max_length;
+    if (K * max_length < phenotype_count){
+    	int diff = phenotype_count - (K * max_length);
+    	if (k <= diff){
+        	start_line = (k-1) * (max_length + 1) + 1;
+        	end_line = k * (max_length + 1);
+    	}else{
+    		int prev = diff * (max_length + 1);
+        	start_line = (k-diff-1) * max_length + 1 + prev;
+        	end_line = (k-diff) * max_length + prev;
+    	}
+    }else{
+    	start_line = (k-1) * max_length + 1;
+    	end_line = k * max_length;
+    }
     if (end_line > phenotype_count) end_line = phenotype_count;
 }

@@ -34,8 +34,21 @@ void quan_data::setChunk(int k, int K){
     unsigned long int max_length =0 ;
     if (gene_grps.size() % K == 0) max_length = gene_grps.size() / K;
     else for ( unsigned long int l = 1 ; l * (K-1) < gene_grps.size(); l++ ) max_length = l;
-    unsigned long int start_idx = (k-1) * max_length;
-    unsigned long int end_idx = k * max_length;
+    unsigned long int start_idx, end_idx;
+    if (K * max_length < gene_grps.size()){
+		int diff = gene_grps.size() - (K * max_length);
+		if (k <= diff){
+			start_idx = (k-1) * (max_length + 1) + 1;
+			end_idx = k * (max_length + 1);
+		}else{
+			int prev = diff * (max_length + 1);
+			start_idx = (k-diff-1) * max_length + 1 + prev;
+			end_idx = (k-diff) * max_length + prev;
+		}
+	}else{
+		start_idx = (k-1) * max_length + 1;
+		end_idx = k * max_length;
+	}
     if (end_idx > gene_grps.size()) end_idx = gene_grps.size();
     gene_grps = vector < quan_gene_grp > (gene_grps.begin()+start_idx, gene_grps.begin()+end_idx);
     vrb.bullet("Number of gene groups in chunk [" + stb.str(k) + " / " + stb.str(K) +"] = " + stb.str(gene_grps.size()));

@@ -214,7 +214,7 @@ void rtc_data::calculateRTC(string fout){
     if (fdo.fail()) vrb.error("Cannot open file [" + fout + "]");
     if (options.count("header") || (!options.count("chunk") && !options.count("region"))){
         fdo <<"other_variant our_variant phenotype phenotype_group other_variant_chr other_variant_start other_variant_rank our_variant_chr our_variant_start our_variant_rank phenotype_chr phenotype_start distance_between_variants distance_between_other_variant_and_pheno other_variant_region_index our_variant_region_index region_start region_end variant_count_in_region RTC D' r^2";
-        if (options.count("sample")) fdo << " p_value unique_picks_H0 unique_picks_H1 rtc_bin_start rtc_bin_end rtc_bin_H0_proportion rtc_bin_H1_proportion median_r^2 median_H0 median_H1 H0 H1";
+        if (options["sample"].as <unsigned int> ()) fdo << " p_value unique_picks_H0 unique_picks_H1 rtc_bin_start rtc_bin_end rtc_bin_H0_proportion rtc_bin_H1_proportion median_r^2 median_H0 median_H1 H0 H1";
         fdo << endl;
     }
     map < string ,vector < pairsToTestForRTC > >::iterator it;
