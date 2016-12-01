@@ -43,6 +43,7 @@ void quan_main(vector < string > & argv) {
 		("check-proper-pairing", "If provided only properly paired reads according to the aligner that are in correct orientation will be considered. Otherwise all pairs in correct orientation will be considered.")
         ("check-consistency", "If provided checks the consistency of split reads with annotation, rather than pure overlap of one of the blocks of the split read.")
         ("no-merge", "If provided overlapping mate pairs will not be merged.")
+		("filter-failed-qc", "Remove fastq reads that fail sequencing QC (as indicated by the sequencer)")
 		("filter-remove-duplicates", "Remove duplicate sequencing reads in the process.");
     
     boost::program_options::options_description opt_parallel ("\x1B[32mParallelization\33[0m");
@@ -119,6 +120,11 @@ void quan_main(vector < string > & argv) {
         D.dup_remove = true;
     }
     
+    if (D.options.count("filter-failed-qc")){
+        vrb.bullet("Filtering reads flagged as failing QC");
+        D.fail_qc = true;
+    }
+
     if (D.options.count("no-merge")){
         vrb.bullet("Not merging overlapping mate pairs");
         D.merge = false;

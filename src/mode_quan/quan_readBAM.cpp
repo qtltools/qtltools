@@ -36,7 +36,14 @@ int quan_data::read_bam(void *data, bam1_t *b, quan_stats &f, unsigned int &mmc)
 			continue;
 		}
         
-		if (b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL)) {
+		if (b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY)) {
+			f.failed[name] = 'u';
+            if (debug) cerr << f.failed[name] << "\t" << name << endl;
+			f.unmapped++;
+			continue;
+		}
+
+		if(aux->fail_qc && b->core.flag & BAM_FQCFAIL){
 			f.failed[name] = 'u';
             if (debug) cerr << f.failed[name] << "\t" << name << endl;
 			f.unmapped++;
@@ -172,6 +179,7 @@ void quan_data::readBams(){
         data->max_mismatch_count = max_mismatch_count;
         data->max_mismatch_count_total = max_mismatch_count_total;
         data->max_intron_length = max_intron_length;
+        data->fail_qc = fail_qc;
         data->fp = sam_open(fbam.c_str(), "r");
         if (data->fp == 0) vrb.error("Cannot open file! [" + fbam + "]");
         data->hdr = sam_hdr_read(data->fp);

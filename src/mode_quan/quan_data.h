@@ -197,7 +197,7 @@ typedef struct {     			// auxiliary data structure
     hts_itr_t * iter;			// NULL if a region not specified
     hts_idx_t * idx;
     int min_mapQ;				// mapQ filter
-    bool dup_remove;			// remove duplicates
+    bool dup_remove,fail_qc;	// remove duplicates, failed QC reads
     int max_intron_length;
     double max_mismatch_count;
     double max_mismatch_count_total;
@@ -254,8 +254,8 @@ public:
     int max_intron_length;
     double max_mismatch_count,max_mismatch_count_total;
     unsigned int min_mapQ,max_read_length;
-    bool dup_remove,proper_pair,check_consistency,debug,merge,fraction_mm,fraction_mmt;
-    quan_data(){max_intron_length=0;max_mismatch_count=0.0;max_mismatch_count_total=0.0;min_mapQ=0;max_read_length=0;dup_remove=false;proper_pair=false;check_consistency=false;debug=false;merge=true;fraction_mm=false;fraction_mmt=false;}
+    bool dup_remove,proper_pair,check_consistency,debug,merge,fraction_mm,fraction_mmt,fail_qc;
+    quan_data(){max_intron_length=0;max_mismatch_count=0.0;max_mismatch_count_total=0.0;min_mapQ=0;max_read_length=0;dup_remove=false;proper_pair=false;check_consistency=false;debug=false;merge=true;fraction_mm=false;fraction_mmt=false;fail_qc=false;}
     
     void setChunk(int,int);
     void setRegion(string);
