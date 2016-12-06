@@ -34,18 +34,20 @@ public:
 	int covariate_count;								//covariate number
 	vector < vector < string > > covariate_val;			//covariate values
 	vector < string > covariate_id;						//covariate ids
+	vector < string > covariate_target;
 	residualizer * covariate_engine;					//covariate engine machinery
+
+	//QTL COVARIATES
+
 
 	//CONSTRUCTOR / DESTRUCTOR
 	correct_data();
 	~correct_data();
 	void clear();
 
-	//INITIALIZE
-	void initializeResidualizer();
-
 	//READ DATA
 	void readCovariates(string);
+	void readQTLCovariates(string, string);
 
 	//GENOTYPE & PHENOTYPE MANAGEMENT
 	void imputeMissing(vector < float > &);

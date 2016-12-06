@@ -67,9 +67,9 @@ extern "C" {
 
 //MAKE SOME TOOL FULLY ACCESSIBLE THROUGHOUT THE SOFTWARE
 #ifdef _DECLARE_TOOLBOX_HERE
-	random_number_generator rng;
-	string_utils stb;
-	verbose vrb;
+	random_number_generator rng;	//Random number generator
+	string_utils stb;				//Utils for string manipulation
+	verbose vrb;					//Verbose
 #else
 	extern random_number_generator rng;
 	extern string_utils stb;

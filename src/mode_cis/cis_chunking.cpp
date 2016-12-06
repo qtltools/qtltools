@@ -59,6 +59,10 @@ bool cis_data::setPhenotypeRegion(string reg) {
 	return regionPhenotype.parse(reg);
 }
 
+bool cis_data::setGenotypeRegion(string reg) {
+	return regionGenotype.parse(reg);
+}
+
 class pgroup {
 public:
 	int start, end;
