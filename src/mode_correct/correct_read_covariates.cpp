@@ -50,3 +50,84 @@ void correct_data::readCovariates(string fcov) {
 	if (n_excludedC > 0) vrb.bullet(stb.str(n_excludedC) + " covariate(s) excluded by user");
 	fd.close();
 }
+
+
+void correct_data::readQTLCovariates(string fqtl, string fvcf) {
+	string buffer; vector < string > tokens;
+
+	//File qtl
+	map < string, string > map_qtl;
+	vrb.title("Reading QTLs in [" + fqtl + "]");
+	input_file fd (fqtl);
+	if (fd.fail()) vrb.error("Cannot open file!");
+	while (getline(fd, buffer)) {
+		stb.split(buffer, tokens);
+		if (tokens.size() != 2) vrb.error("Wrong Incorrect number of columns, expected 2!");
+		map_qtl.insert(pair < string, string > (tokens[1], tokens[0]));
+	}
+	vrb.bullet(stb.str(map_qtl.size()) + " QTL(s) read");
+	fd.close();
+
+	//
+	for (int c = 0 ; c < covariate_count ; c ++) covariate_target.push_back("ALL");
+
+	//File VCF
+	vector < int > mappingS;
+	int n_includedG = 0, n_excludedG = 0, n_includedS = 0;
+	bcf_srs_t * sr =  bcf_sr_init();
+	if(!(bcf_sr_add_reader (sr, fvcf.c_str()))) {
+		switch (sr->errnum) {
+		case not_bgzf: vrb.error("File not compressed with bgzip!"); break;
+		case idx_load_failed: vrb.error("Impossible to load index file!"); break;
+		case file_type_error: vrb.error("File format not detected by htslib!"); break;
+		default : vrb.error("Unknown error!");
+		}
+	}
+	int n_samples = bcf_hdr_nsamples(sr->readers[0].header);
+	for (int i0 = 0 ; i0 < n_samples ; i0 ++) {
+		mappingS.push_back(findSample(string(sr->readers[0].header->samples[i0])));
+		if (mappingS.back() >= 0) n_includedS++;
+	}
+    unsigned int linecount=0;
+	int ngt, ngt_arr = 0, nds, nds_arr = 0, * gt_arr = NULL, nsl, nsl_arr = 0, * sl_arr = NULL;
+	float * ds_arr = NULL;
+	bcf1_t * line;
+	while(bcf_sr_next_line (sr)) {
+        linecount ++;
+        if (linecount % 100000 == 0) vrb.bullet("Read " + stb.str(linecount) + " lines");
+		line =  bcf_sr_get_line(sr, 0);
+		if (line->n_allele == 2) {
+			ngt = bcf_get_genotypes(sr->readers[0].header, line, &gt_arr, &ngt_arr);
+			nds = bcf_get_format_float(sr->readers[0].header, line,"DS", &ds_arr, &nds_arr);
+			if (nds == n_samples || ngt == 2*n_samples) {
+				bcf_unpack(line, BCF_UN_STR);
+				string sid = string(line->d.id);
+
+				map < string, string > :: iterator itM = map_qtl.find(sid);
+
+				if (itM != map_qtl.end() && filter_covariate.check(sid)) {
+					covariate_val.push_back(vector < string > (sample_count, "0"));
+					for(int i = 0 ; i < n_samples ; i ++) {
+						if (mappingS[i] >= 0) {
+							if (nds > 0) covariate_val.back()[mappingS[i]] = stb.str(ds_arr[i]);
+							else {
+								if (gt_arr[2*i+0] == bcf_gt_missing || gt_arr[2*i+1] == bcf_gt_missing) covariate_val.back()[mappingS[i]] ="NA";
+								else covariate_val.back()[mappingS[i]] = stb.str(bcf_gt_allele(gt_arr[2*i+0]) + bcf_gt_allele(gt_arr[2*i+1]));
+							}
+						}
+					}
+					covariate_target.push_back(itM->second);
+					covariate_count++;
+					n_includedG++;
+				} else n_excludedG ++;
+			}
+		}
+	}
+
+	//Finalize
+	free(gt_arr);
+	free(ds_arr);
+	bcf_sr_destroy(sr);
+	vrb.bullet(stb.str(n_includedG) + " variants included");
+	if (n_excludedG > 0) vrb.bullet(stb.str(n_excludedG) + " variants excluded");
+}

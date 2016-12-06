@@ -18,6 +18,14 @@
 void correct_data::processBED(string fin, string fout) {
 	int n_includedP = 0, n_excludedP_user = 0;
 
+	vrb.title("Initialize residualizer");
+	if (covariate_target.size() == 0) {
+		covariate_engine = new residualizer (sample_count);
+		for (int c = 0 ; c < covariate_count ; c ++) covariate_engine->push(covariate_val[c]);
+		covariate_engine->build();
+		vrb.bullet("#covariates = " + stb.str(covariate_count));
+	}
+
 	//Open BED file
 	vrb.title("Reading phenotype data in [" + fin + "] and writing [" + fout + "]");
 	output_file fdo (fout.c_str());
@@ -27,7 +35,7 @@ void correct_data::processBED(string fin, string fout) {
 	if (!fp) vrb.error("Cannot open file for reading!");
 	kstring_t str = {0,0,0};
 	if (hts_getline(fp, KS_SEP_LINE, &str) <= 0 || !str.l || str.s[0] != '#' ) vrb.error("Cannot read header!");
-	fdo << "#chr\tstart\tend\tid";
+	fdo << "#chr\tstart\tend\tid\tgid\tstrd";
 
 	//Read and map sample names
 	vector < int > mappingS;
@@ -48,7 +56,21 @@ void correct_data::processBED(string fin, string fout) {
 			fdo << tokens[0] << "\t" << tokens[1] << "\t" << tokens[2] << "\t" << tokens[3] << "\t" << tokens[4] << "\t" << tokens[5];
 			for (int t = 6 ; t < tokens.size() ; t ++) if (mappingS[t-6] >= 0) values[mappingS[t-6]] = ((tokens[t] != "NA")?stof(tokens[t]):bcf_float_missing);
 			imputeMissing(values);
-			if (residualize) covariate_engine->residualize(values);
+			if (residualize) {
+				if (covariate_target.size() > 0) {
+					covariate_engine = new residualizer (sample_count);
+					for (int c = 0 ; c < covariate_count ; c ++) {
+						if (covariate_target[c] == "ALL") covariate_engine->push(covariate_val[c]);
+						if (covariate_target[c] == tokens[4]) covariate_engine->push(covariate_val[c]);
+					}
+					covariate_engine->build();
+				}
+				covariate_engine->residualize(values);
+				if (covariate_target.size() > 0) {
+					delete covariate_engine;
+					covariate_engine = NULL;
+				}
+			}
 			if (normalize) normalTransform(values);
 			for (int s = 0 ; s < sample_count ; s++) fdo << "\t" << values[s];
 			n_includedP ++ ;
@@ -66,8 +88,14 @@ void correct_data::processBED(string fin, string fout) {
 void correct_data::processVCF(string fin, string fout) {
 	int n_includedG = 0, n_excludedG_user = 0, n_excludedG_miss = 0, n_excludedG_mult = 0;
 
-	vrb.title("Reading genotype data in [" + fin + "] and writing [" + fout + "]");
+	if (covariate_target.size() == 0) {
+		covariate_engine = new residualizer (sample_count);
+		for (int c = 0 ; c < covariate_count ; c ++) covariate_engine->push(covariate_val[c]);
+		covariate_engine->build();
+		vrb.bullet("#covariates = " + stb.str(covariate_count));
+	}
 
+	vrb.title("Reading genotype data in [" + fin + "] and writing [" + fout + "]");
 	bcf_sweep_t * sw = bcf_sweep_init(fin.c_str());
 	if (!sw) vrb.error("Cannot open file for reading [" + fin + "]");
 	bcf_hdr_t * hdr_old  = bcf_sweep_hdr(sw);

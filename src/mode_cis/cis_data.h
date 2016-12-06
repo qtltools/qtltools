@@ -42,6 +42,7 @@ public:
 	//REGIONS
 	genomic_region regionPhenotype;
 	genomic_region regionGenotype;
+	bool full_test;
 
 	//GENOTYPES
 	int genotype_count;									//variant site number
@@ -79,6 +80,7 @@ public:
 
 	//DATA REGION
 	bool setPhenotypeRegion(string);
+	bool setGenotypeRegion(string);
 	void setPhenotypeRegion(int, int);
 
 	//READ DATA

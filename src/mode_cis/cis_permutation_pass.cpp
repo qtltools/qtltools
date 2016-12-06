@@ -50,11 +50,11 @@ void cis_data::runPermutationPass(string fout) {
 		vector < unsigned int > variant_indexes;
 		vector < int > variant_distances;
 		for (unsigned int v = 0 ; v < genotype_count ; v ++) {
-			if (phenotype_chr[group_idx[i_group][0]] != genotype_chr[v]) continue;
+			if (!full_test && phenotype_chr[group_idx[i_group][0]] != genotype_chr[v]) continue;
 			int ps = (phenotype_start[group_idx[i_group][0]]>cis_window)?(phenotype_start[group_idx[i_group][0]]-cis_window):0;
 			int pe = phenotype_end[group_idx[i_group][0]] + cis_window;
 
-			if (genotype_start[v] <= pe && ps <= genotype_end[v]) {
+			if (full_test || (genotype_start[v] <= pe && ps <= genotype_end[v])) {
 				int cisdistance = 0;
 				if (genotype_start[v] <= phenotype_end[group_idx[i_group][0]] && phenotype_start[group_idx[i_group][0]] <= genotype_end[v]) cisdistance = 0;
 				else if (genotype_end[v] < phenotype_start[group_idx[i_group][0]]) cisdistance = genotype_end[v] - phenotype_start[group_idx[i_group][0]];

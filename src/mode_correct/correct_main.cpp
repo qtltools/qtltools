@@ -28,6 +28,7 @@ void correct_main(vector < string > & argv) {
 		("vcf", boost::program_options::value< string >(), "Genotypes in VCF/BCF/BED format.")
 		("bed", boost::program_options::value< string >(), "Phenotypes in BED format.")
 		("cov", boost::program_options::value< string >(), "Covariates in TXT format.")
+		("qtl", boost::program_options::value< vector < string > >()->multitoken(), "QTL covariates.")
 		("out", boost::program_options::value< string >(), "Output file.");
 
 	boost::program_options::options_description opt_param ("\x1B[32mParameters\33[0m");
@@ -87,9 +88,11 @@ void correct_main(vector < string > & argv) {
 	if (D.options.count("vcf")) D.readSampleFromVCF(D.options["vcf"].as < string > ());
 	if (D.options.count("cov")) D.readSampleFromCOV(D.options["cov"].as < string > ());
 	D.mergeSampleLists();
-	if (D.options.count("cov")) {
-		D.readCovariates(D.options["cov"].as < string > ());
-		D.initializeResidualizer();
+	if (D.options.count("cov")) D.readCovariates(D.options["cov"].as < string > ());
+	if (D.options.count("qtl")) {
+		vector < string > files = D.options["qtl"].as < vector < string > > ();
+		assert(files .size() == 2);
+		D.readQTLCovariates(files[0], files[1]);
 	}
 
 	//----------------

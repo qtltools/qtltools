@@ -59,7 +59,8 @@ void cis_data::readPhenotypes(string fbed) {
                 phenotype_chr.push_back(tokens[0]);
                 phenotype_start.push_back(atoi(tokens[1].c_str()) + 1);
                 phenotype_end.push_back(atoi(tokens[2].c_str()));
-                if (grp_mode > 0) phenotype_grp.push_back(tokens[4]);
+				if (grp_mode > 0 && full_test) phenotype_grp.push_back("ALL_GENES");
+				if (grp_mode > 0 && !full_test) phenotype_grp.push_back(tokens[4]);
                 phenotype_neg.push_back(tokens[5] == "-");
                 if (phenotype_neg.back()) n_negativeStrd ++;
                 phenotype_val.push_back(vector < float > (sample_count, 0.0));
@@ -85,7 +86,8 @@ void cis_data::readPhenotypes(string fbed) {
                     phenotype_chr.push_back(tokens[0]);
                     phenotype_start.push_back(atoi(tokens[1].c_str()) + 1);
                     phenotype_end.push_back(atoi(tokens[2].c_str()));
-                    if (grp_mode > 0) phenotype_grp.push_back(tokens[4]);
+    				if (grp_mode > 0 && full_test) phenotype_grp.push_back("ALL_GENES");
+    				if (grp_mode > 0 && !full_test) phenotype_grp.push_back(tokens[4]);
                     phenotype_neg.push_back(tokens[5] == "-");
                     if (phenotype_neg.back()) n_negativeStrd ++;
                     phenotype_val.push_back(vector < float > (sample_count, 0.0));
@@ -138,7 +140,8 @@ void cis_data::scanPhenotypes(string fbed) {
 				phenotype_chr.push_back(tokens[0]);
 				phenotype_start.push_back(atoi(tokens[1].c_str()) + 1);
 				phenotype_end.push_back(atoi(tokens[2].c_str()));
-				if (grp_mode > 0) phenotype_grp.push_back(tokens[4]);
+				if (grp_mode > 0 && full_test) phenotype_grp.push_back("ALL_GENES");
+				if (grp_mode > 0 && !full_test) phenotype_grp.push_back(tokens[4]);
                 phenotype_neg.push_back(tokens[5] == "-");
                 if (phenotype_neg.back()) n_negativeStrd ++;
 				n_includedP++;

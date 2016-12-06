@@ -81,11 +81,3 @@ void correct_data::normalTransform(float * V) {
 		V[s] = qnorm(R[s], 0.0, 1.0, 1, 0);
 	}
 }
-
-void correct_data::initializeResidualizer() {
-	vrb.title("Initialize residualizer");
-	covariate_engine = new residualizer (sample_count);
-	for (int c = 0 ; c < covariate_count ; c ++) covariate_engine->push(covariate_val[c]);
-	covariate_engine->build();
-	vrb.bullet("#covariates = " + stb.str(covariate_count));
-}

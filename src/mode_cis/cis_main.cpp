@@ -51,7 +51,8 @@ void cis_main(vector < string > & argv) {
 	boost::program_options::options_description opt_parallel ("\x1B[32mParallelization\33[0m");
 	opt_parallel.add_options()
 		("chunk", boost::program_options::value< vector < int > >()->multitoken(), "Specify which chunk needs to be processed")
-		("region", boost::program_options::value< string >(), "Region of interest.");
+		("region", boost::program_options::value< string >(), "Region of interest.")
+		("region-pair", boost::program_options::value< vector < string > >()->multitoken(), "Pairs of interest.");
 
 	D.option_descriptions.add(opt_files).add(opt_parameters).add(opt_modes).add(opt_aggr).add(opt_parallel);
 
@@ -81,8 +82,8 @@ void cis_main(vector < string > & argv) {
 	if (!D.options.count("vcf")) vrb.error("Genotype data needs to be specified with --vcf [file.vcf]");
 	if (!D.options.count("bed")) vrb.error("Phenotype data needs to be specified with --bed [file.bed]");
 	if (!D.options.count("out")) vrb.error("Output needs to be specified with --out [file.out]");
-	int nParallel = D.options.count("chunk") + D.options.count("region");
-	if (nParallel > 1) vrb.error("Please, specify one of these options [--region, --chunk]");
+	int nParallel = D.options.count("chunk") + D.options.count("region") + D.options.count("region-pair");
+	if (nParallel > 1) vrb.error("Please, specify one of these options [--region, --chunk, --region-pair]");
 	int nMode = D.options.count("permute") + D.options.count("mapping") + D.options.count("nominal");
 	if (nMode != 1) vrb.error("Please, specify only one of these options [--permute, --nominal, --mapping]");
 	string outFile = D.options["out"].as < string > ();
@@ -124,6 +125,12 @@ void cis_main(vector < string > & argv) {
 		if (nChunk.size() != 2 || nChunk[0] > nChunk[1] || nChunk[0] < 0) vrb.error("Incorrect --chunk arguments!");
 		vrb.bullet("Chunk = [" + stb.str(nChunk[0]) + "/" + stb.str(nChunk[1]) + "]");
 	} else if(D.options.count("region")) vrb.bullet("Region = [" + D.options["region"].as < string > () +"]");
+	else if(D.options.count("region-pair")) {
+		vector < string > regions = D.options["region-pair"].as < vector < string > > ();
+		vrb.bullet("Region for genotypes = [" + regions[0] +"]");
+		vrb.bullet("Region for phenotypes = [" + regions[1] +"]");
+		D.full_test = true;
+	}
 
 	//---------------------------
 	// 7. SET AGGREGATION METHODS
@@ -160,6 +167,14 @@ void cis_main(vector < string > & argv) {
     } else if (D.options.count("region")){
         if (!D.setPhenotypeRegion(D.options["region"].as < string > ())) vrb.error("Impossible to interpret region [" + D.options["region"].as < string > () + "]");
         D.regionGenotype = genomic_region(D.regionPhenotype, D.options["window"].as < unsigned int > ());
+    } else if (D.options.count("region-pair")) {
+    	vector < string > regions = D.options["region-pair"].as < vector < string > > ();
+    	if (!D.setPhenotypeRegion(regions[0])) vrb.error("Impossible to interpret region [" + regions[0] + "]");
+    	if (!D.setGenotypeRegion(regions[1])) vrb.error("Impossible to interpret region [" + regions[1] + "]");
+    	D.regionGenotype = genomic_region(D.regionGenotype, D.options["window"].as < unsigned int > ());
+    	D.regionPhenotype = genomic_region(D.regionPhenotype, D.options["window"].as < unsigned int > ());
+    	D.full_test = true;
+    	D.grp_mode = GRP_BEST;
     }
 	
 
