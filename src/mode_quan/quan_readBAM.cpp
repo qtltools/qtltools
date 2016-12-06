@@ -270,26 +270,8 @@ void quan_data::readBams(){
                                     }
                                     if (idx == -1) all_found1 = false;
                                 }
-                                if (!all_found1 && check_consistency){
-                                    if (debug){
-                                        cerr << "NCONS\t" << name<<endl;
-                                        cerr << gene_grps[gr].genes[g];
-                                        cerr << A;
-                                        cerr << "NCONS\t" << name<<endl;
-                                    }
-                                    continue;
-                                }
-                                if (!any_found1){
-                                    if (debug){
-                                        cerr << "NCONS\t" << name<<endl;
-                                        cerr << gene_grps[gr].genes[g];
-                                        cerr << A;
-                                        cerr << "NCONS\t" << name<<endl;
-                                    }
-                                    continue;
-                                }
-                                
-                                
+
+
                                 for (int i = 0 ; i < B.starts.size(); i++){
                                     int idx = -1;
                                     if (gene_grps[gr].genes[g].overlap(B.starts[i],B.ends[i])){
@@ -306,20 +288,40 @@ void quan_data::readBams(){
                                     }
                                     if (idx == -1) all_found2 = false;
                                 }
+
+                                if (!all_found1 && check_consistency){
+                                    if (debug){
+                                        cerr << "NCONSALL1\t" << name<<endl;
+                                        cerr << gene_grps[gr].genes[g];
+                                        cerr << A;
+                                        cerr << B;
+                                    }
+                                    continue;
+                                }
+                                if (!any_found1){
+                                    if (debug){
+                                        cerr << "NCONSANY1\t" << name<<endl;
+                                        cerr << gene_grps[gr].genes[g];
+                                        cerr << A;
+                                        cerr << B;
+                                    }
+                                    continue;
+                                }
+                                
                                 if (!all_found2 && check_consistency){
                                     if (debug){
-                                        cerr << "NCONS\t" << name<<endl;
-                                        cerr << "NCONS\t" << name<<endl;
+                                        cerr << "NCONSALL2\t" << name<<endl;
                                         cerr << gene_grps[gr].genes[g];
+                                        cerr << A;
                                         cerr << B;
                                     }
                                     continue;
                                 }
                                 if (!any_found2){
                                     if(debug){
-                                        cerr << "NCONS\t" << name<<endl;
-                                        cerr << "NCONS\t" << name<<endl;
+                                        cerr << "NCONSANY2\t" << name<<endl;
                                         cerr << gene_grps[gr].genes[g];
+                                        cerr << A;
                                         cerr << B;
                                     }
                                     continue;
