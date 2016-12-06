@@ -262,7 +262,8 @@ void quan_data::readBams(){
                                                 idx = e;
                                                 any_found1 = true;
                                                 exon_overlap1.push_back(idx);
-                                                exon_overlap1_length.push_back(min(gene_grps[gr].genes[g].exons[idx].end, A.ends[i]) - max(gene_grps[gr].genes[g].exons[idx].start, A.starts[i]) + 1);
+                                                if ( old_wrong_split) exon_overlap1_length.push_back(gene_grps[gr].genes[g].exons[idx].end - A.starts[i] < A.ends[i] - A.starts[i] ? gene_grps[gr].genes[g].exons[idx].end - A.starts[i] + 1 : A.lengths[i]);
+                                                else exon_overlap1_length.push_back(min(gene_grps[gr].genes[g].exons[idx].end, A.ends[i]) - max(gene_grps[gr].genes[g].exons[idx].start, A.starts[i]) + 1);
                                                 exon_overlap1_length_total += exon_overlap1_length.back();
                                                 exon_map1.push_back(i);
                                             }
@@ -280,7 +281,8 @@ void quan_data::readBams(){
                                                 idx = e;
                                                 any_found2 = true;
                                                 exon_overlap2.push_back(idx);
-                                                exon_overlap2_length.push_back(min(gene_grps[gr].genes[g].exons[idx].end, B.ends[i]) - max(gene_grps[gr].genes[g].exons[idx].start, B.starts[i]) + 1);
+                                                if ( old_wrong_split) exon_overlap2_length.push_back(gene_grps[gr].genes[g].exons[idx].end - B.starts[i] < B.ends[i] - B.starts[i] ? gene_grps[gr].genes[g].exons[idx].end - B.starts[i] + 1 : B.lengths[i]);
+                                                else exon_overlap2_length.push_back(min(gene_grps[gr].genes[g].exons[idx].end, B.ends[i]) - max(gene_grps[gr].genes[g].exons[idx].start, B.starts[i]) + 1);
                                                 exon_overlap2_length_total += exon_overlap2_length.back();
                                                 exon_map2.push_back(i);
                                             }

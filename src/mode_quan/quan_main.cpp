@@ -37,12 +37,13 @@ void quan_main(vector < string > & argv) {
 
     boost::program_options::options_description opt_filters ("\x1B[32mFilters\33[0m");
     opt_filters.add_options()
-    	("filter-mapping-quality", boost::program_options::value< unsigned int >()->default_value(10), "Minimal phred mapping quality for a read to be considered.")
+    	("filter-mapping-quality", boost::program_options::value< unsigned int >()->default_value(10), "Minimal mapping quality for a read to be considered.")
 		("filter-mismatch", boost::program_options::value< double >()->default_value(-1.0,"OFF"), "Maximum mismatches allowed in a read. If between 0 and 1 taken as the fraction of read length. (Requires NM attribute)")
 		("filter-mismatch-total", boost::program_options::value< double >()->default_value(-1.0,"OFF"), "Maximum total mismatches allowed in paired reads. If between 0 and 1 taken as the fraction of combined read length. (Requires NM attribute)")
 		("check-proper-pairing", "If provided only properly paired reads according to the aligner that are in correct orientation will be considered. Otherwise all pairs in correct orientation will be considered.")
         ("check-consistency", "If provided checks the consistency of split reads with annotation, rather than pure overlap of one of the blocks of the split read.")
         ("no-merge", "If provided overlapping mate pairs will not be merged.")
+		("legacy-split-reads", "Exactly replicate the bug in Dermitzakis lab original quantification script. (DO NOT USE UNLESS YOU HAVE A GOOD REASON)")
 		("filter-failed-qc", "Remove fastq reads that fail sequencing QC (as indicated by the sequencer)")
 		("filter-remove-duplicates", "Remove duplicate sequencing reads in the process.");
     
@@ -130,6 +131,11 @@ void quan_main(vector < string > & argv) {
         D.merge = false;
     }
     
+    if (D.options.count("legacy-split-reads")){
+        vrb.warning("You are using --legacy-split-reads, do you know what you are doing?");
+        D.old_wrong_split = true;
+    }
+
     if (D.options.count("gene-types")){
     	vector < string > t = D.options["gene-types"].as < vector < string > > ();
     	D.gene_types = set < string > (t.begin(),t.end());
