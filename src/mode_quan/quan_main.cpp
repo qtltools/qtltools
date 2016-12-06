@@ -43,7 +43,7 @@ void quan_main(vector < string > & argv) {
 		("check-proper-pairing", "If provided only properly paired reads according to the aligner that are in correct orientation will be considered. Otherwise all pairs in correct orientation will be considered.")
         ("check-consistency", "If provided checks the consistency of split reads with annotation, rather than pure overlap of one of the blocks of the split read.")
         ("no-merge", "If provided overlapping mate pairs will not be merged.")
-		("legacy-split-reads", "Exactly replicate the bug in Dermitzakis lab original quantification script. (DO NOT USE UNLESS YOU HAVE A GOOD REASON)")
+		("legacy-options", "Exactly replicate Dermitzakis lab original quantification script. (DO NOT USE UNLESS YOU HAVE A GOOD REASON). Sets --no-merge as well.")
 		("filter-failed-qc", "Remove fastq reads that fail sequencing QC (as indicated by the sequencer)")
 		("filter-remove-duplicates", "Remove duplicate sequencing reads in the process.");
     
@@ -131,9 +131,11 @@ void quan_main(vector < string > & argv) {
         D.merge = false;
     }
     
-    if (D.options.count("legacy-split-reads")){
-        vrb.warning("You are using --legacy-split-reads, do you know what you are doing?");
+    if (D.options.count("legacy-options")){
+    	if (!D.options.count("no-merge")) vrb.bullet("Not merging overlapping mate pairs");
+        vrb.warning("You are using --legacy-options, do you know what you are doing?");
         D.old_wrong_split = true;
+        D.merge = false;
     }
 
     if (D.options.count("gene-types")){

@@ -241,12 +241,13 @@ void quan_data::readBams(){
                             	stat.mismatch+=2;
                             	continue;
                             }
-                            if(A.core.mtid != B.core.tid || (A.core.flag & BAM_FREVERSE) || !(B.core.flag & BAM_FREVERSE) || (B.core.pos < A.core.mpos) ){
+                            if(A.core.mtid != B.core.tid || (A.core.flag & BAM_FREVERSE) || !(B.core.flag & BAM_FREVERSE) || ( old_wrong_split && B.core.pos <= A.core.pos) || ( !old_wrong_split && B.core.pos < A.core.pos)){
                                 stat.failed[name] = 'p';
                                 if (debug) cerr << stat.failed[name] << "\t" << name << endl;
                                 stat.unpaired++;
                                 continue;
                             }
+
                             if (merge) A.merge(B);
                             stat.good +=2;
                             bool both_found = false;
