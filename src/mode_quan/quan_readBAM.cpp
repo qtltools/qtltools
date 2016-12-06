@@ -298,6 +298,7 @@ void quan_data::readBams(){
                                     }
                                     continue;
                                 }
+                                //for debugging
                                 if (!any_found1){
                                     if (debug){
                                         cerr << "NCONSANY1\t" << name<<endl;
