@@ -263,8 +263,10 @@ void quan_data::readBams(){
                                                 idx = e;
                                                 any_found1 = true;
                                                 exon_overlap1.push_back(idx);
-                                                if ( old_wrong_split) exon_overlap1_length.push_back(gene_grps[gr].genes[g].exons[idx].end - A.starts[i] < A.ends[i] - A.starts[i] ? gene_grps[gr].genes[g].exons[idx].end - A.starts[i] + 1 : A.lengths[i]);
-                                                else exon_overlap1_length.push_back(min(gene_grps[gr].genes[g].exons[idx].end, A.ends[i]) - max(gene_grps[gr].genes[g].exons[idx].start, A.starts[i]) + 1);
+                                                if ( old_wrong_split){
+                                                	int mul = ( (int) A.starts[i] / 100000 != (int) A.ends[i] / 100000 && (int) gene_grps[gr].genes[g].exons[idx].start / 100000  != (int) gene_grps[gr].genes[g].exons[idx].end / 100000 ) ?  2 : 1;
+                                                	exon_overlap1_length.push_back(gene_grps[gr].genes[g].exons[idx].end - A.starts[i] < A.ends[i] - A.starts[i] ? (gene_grps[gr].genes[g].exons[idx].end - A.starts[i] + 1) * mul : A.lengths[i] * mul);
+                                                }else exon_overlap1_length.push_back(min(gene_grps[gr].genes[g].exons[idx].end, A.ends[i]) - max(gene_grps[gr].genes[g].exons[idx].start, A.starts[i]) + 1);
                                                 exon_overlap1_length_total += exon_overlap1_length.back();
                                                 exon_map1.push_back(i);
                                             }
@@ -282,8 +284,10 @@ void quan_data::readBams(){
                                                 idx = e;
                                                 any_found2 = true;
                                                 exon_overlap2.push_back(idx);
-                                                if ( old_wrong_split) exon_overlap2_length.push_back(gene_grps[gr].genes[g].exons[idx].end - B.starts[i] < B.ends[i] - B.starts[i] ? gene_grps[gr].genes[g].exons[idx].end - B.starts[i] + 1 : B.lengths[i]);
-                                                else exon_overlap2_length.push_back(min(gene_grps[gr].genes[g].exons[idx].end, B.ends[i]) - max(gene_grps[gr].genes[g].exons[idx].start, B.starts[i]) + 1);
+                                                if ( old_wrong_split) {
+                                                	int mul = ( (int) B.starts[i] / 100000 != (int) B.ends[i] / 100000 && (int) gene_grps[gr].genes[g].exons[idx].start / 100000  != (int) gene_grps[gr].genes[g].exons[idx].end / 100000 ) ?  2 : 1;
+                                                	exon_overlap2_length.push_back(gene_grps[gr].genes[g].exons[idx].end - B.starts[i] < B.ends[i] - B.starts[i] ? (gene_grps[gr].genes[g].exons[idx].end - B.starts[i] + 1) * mul: B.lengths[i] * mul);
+                                                }else exon_overlap2_length.push_back(min(gene_grps[gr].genes[g].exons[idx].end, B.ends[i]) - max(gene_grps[gr].genes[g].exons[idx].start, B.starts[i]) + 1);
                                                 exon_overlap2_length_total += exon_overlap2_length.back();
                                                 exon_map2.push_back(i);
                                             }
