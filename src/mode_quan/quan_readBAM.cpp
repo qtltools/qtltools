@@ -213,7 +213,7 @@ void quan_data::readBams(){
                         int l = bam_cigar_oplen(cigar[i]);
                         char c = bam_cigar_opchr(cigar[i]);
                         if(c=='S' || c =='H' || c =='I' || c=='P') continue;
-                        else if (c=='N' && l){
+                        else if ( (c=='N' || c == 'D' ) && l){
                             B.starts.push_back(bS);
                             B.ends.push_back(bS+bL-1);
                             B.lengths.push_back(bL);
