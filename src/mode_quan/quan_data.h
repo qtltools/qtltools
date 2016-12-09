@@ -253,7 +253,7 @@ public:
     //FILTERS
     int max_intron_length;
     double max_mismatch_count,max_mismatch_count_total;
-    unsigned int min_mapQ,max_read_length;
+    unsigned int min_mapQ,max_read_length,min_exon;
     bool dup_remove,proper_pair,check_consistency,debug,merge,fraction_mm,fraction_mmt,fail_qc,old_wrong_split;
     quan_data(){max_intron_length=0;max_mismatch_count=0.0;max_mismatch_count_total=0.0;min_mapQ=0;max_read_length=0;dup_remove=false;proper_pair=false;check_consistency=false;debug=false;merge=true;fraction_mm=false;fraction_mmt=false;fail_qc=false;old_wrong_split=false;}
     

@@ -45,6 +45,7 @@ void quan_main(vector < string > & argv) {
         ("no-merge", "If provided overlapping mate pairs will not be merged.")
 		("legacy-options", "Exactly replicate Dermitzakis lab original quantification script. (DO NOT USE UNLESS YOU HAVE A GOOD REASON). Sets --no-merge as well.")
 		("filter-failed-qc", "Remove fastq reads that fail sequencing QC (as indicated by the sequencer)")
+		("filter-min-exon", boost::program_options::value< unsigned int >()->default_value(0), "Minimal exon length to consider. Exons smaller than this will not be printed out in the exon quantifications, but will still count towards gene quantifications.")
 		("filter-remove-duplicates", "Remove duplicate sequencing reads in the process.");
     
     boost::program_options::options_description opt_parallel ("\x1B[32mParallelization\33[0m");
@@ -131,11 +132,21 @@ void quan_main(vector < string > & argv) {
         D.merge = false;
     }
     
+    if (D.options.count("filter-min-exon")){
+        vrb.bullet("Excluding exons smaller than" + );
+
+    }
+
     if (D.options.count("legacy-options")){
     	if (!D.options.count("no-merge")) vrb.bullet("Not merging overlapping mate pairs");
+    	D.min_exon = 2;
+    	vrb.bullet("Excluding exons smaller than " + stb.str(D.min_exon) );
         vrb.warning("You are using --legacy-options, do you know what you are doing?");
         D.old_wrong_split = true;
         D.merge = false;
+    }else{
+    	D.min_exon = D.options["filter-min-exon"].as < unsigned int > ();
+    	vrb.bullet("Excluding exons smaller than " + stb.str(D.min_exon) );
     }
 
     if (D.options.count("gene-types")){
