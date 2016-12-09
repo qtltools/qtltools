@@ -132,11 +132,6 @@ void quan_main(vector < string > & argv) {
         D.merge = false;
     }
     
-    if (D.options.count("filter-min-exon")){
-        vrb.bullet("Excluding exons smaller than" + );
-
-    }
-
     if (D.options.count("legacy-options")){
     	if (!D.options.count("no-merge")) vrb.bullet("Not merging overlapping mate pairs");
     	D.min_exon = 2;
