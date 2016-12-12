@@ -374,7 +374,10 @@ void quan_data::readBams(){
                                             idx = e;
                                             any_found2 = true;
                                             exon_overlap2.push_back(idx);
-                                            exon_overlap2_length.push_back(min(gene_grps[gr].genes[g].exons[idx].end, B.ends[i]) - max(gene_grps[gr].genes[g].exons[idx].start, B.starts[i]) + 1);
+                                            if ( old_wrong_split) {
+                                            	int mul = ( (int) B.starts[i] / 100000 != (int) B.ends[i] / 100000 && (int) gene_grps[gr].genes[g].exons[idx].start / 100000  != (int) gene_grps[gr].genes[g].exons[idx].end / 100000 ) ?  2 : 1;
+                                            	exon_overlap2_length.push_back(gene_grps[gr].genes[g].exons[idx].end - B.starts[i] < B.ends[i] - B.starts[i] ? (gene_grps[gr].genes[g].exons[idx].end - B.starts[i] + 1) * mul: B.lengths[i] * mul);
+                                            } else exon_overlap2_length.push_back(min(gene_grps[gr].genes[g].exons[idx].end, B.ends[i]) - max(gene_grps[gr].genes[g].exons[idx].start, B.starts[i]) + 1);
                                             exon_overlap2_length_total += exon_overlap2_length[i];
                                             exon_map2.push_back(i);
                                         }
