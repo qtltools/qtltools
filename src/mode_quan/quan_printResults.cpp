@@ -52,6 +52,7 @@ void quan_data::printBEDcount(string fout){
             for (int i = 0 ; i < bams.size(); i++) fdo << "\t" << gene_grps[gr].genes[g].read_count[i];
             fdo << endl;
             for (int e = 0 ; e < gene_grps[gr].genes[g].exons.size(); e++){
+            	if (gene_grps[gr].genes[g].exons[e].length < min_exon) continue;
                 fdoe << chr;
                 fdoe << "\t" << gene_grps[gr].genes[g].tss-1;
                 fdoe << "\t" << gene_grps[gr].genes[g].tss;
@@ -104,6 +105,7 @@ void quan_data::printBEDrpkm(string fout){
             for (int i = 0 ; i < bams.size(); i++) fdo << "\t" << ((gene_grps[gr].genes[g].read_count[i] * 1000.0) / (double) gene_grps[gr].genes[g].length) * (1000000.0 / (double)stats[i].exonic);
             fdo << endl;
             for (int e = 0 ; e < gene_grps[gr].genes[g].exons.size(); e++){
+            	if (gene_grps[gr].genes[g].exons[e].length < min_exon) continue;
                 fdoe << chr;
                 fdoe << "\t" << gene_grps[gr].genes[g].tss-1;
                 fdoe << "\t" << gene_grps[gr].genes[g].tss;

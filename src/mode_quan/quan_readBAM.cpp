@@ -212,8 +212,8 @@ void quan_data::readBams(){
                     for (int i = 0; i < c->n_cigar; ++i) {
                         int l = bam_cigar_oplen(cigar[i]);
                         char c = bam_cigar_opchr(cigar[i]);
-                        if(c=='S' || c=='D' || c =='H' || c=='P') continue;
-                        else if (c=='N' && l){
+                        if(c=='S' || c =='H' || c =='I' || c=='P') continue;
+                        else if ( (c=='N' || c == 'D' ) && l){
                             B.starts.push_back(bS);
                             B.ends.push_back(bS+bL-1);
                             B.lengths.push_back(bL);
@@ -241,12 +241,13 @@ void quan_data::readBams(){
                             	stat.mismatch+=2;
                             	continue;
                             }
-                            if(A.core.mtid != B.core.tid || (A.core.flag & BAM_FREVERSE) || !(B.core.flag & BAM_FREVERSE) || (B.core.pos < A.core.mpos) ){
+                            if(A.core.mtid != B.core.tid || (A.core.flag & BAM_FREVERSE) || !(B.core.flag & BAM_FREVERSE) || ( old_wrong_split && B.core.pos <= A.core.pos) || ( !old_wrong_split && B.core.pos < A.core.pos)){
                                 stat.failed[name] = 'p';
                                 if (debug) cerr << stat.failed[name] << "\t" << name << endl;
                                 stat.unpaired++;
                                 continue;
                             }
+
                             if (merge) A.merge(B);
                             stat.good +=2;
                             bool both_found = false;
@@ -262,7 +263,10 @@ void quan_data::readBams(){
                                                 idx = e;
                                                 any_found1 = true;
                                                 exon_overlap1.push_back(idx);
-                                                exon_overlap1_length.push_back(min(gene_grps[gr].genes[g].exons[idx].end, A.ends[i]) - max(gene_grps[gr].genes[g].exons[idx].start, A.starts[i]) + 1);
+                                                if ( old_wrong_split){
+                                                	int mul = ( (int) A.starts[i] / 100000 != (int) A.ends[i] / 100000 && (int) gene_grps[gr].genes[g].exons[idx].start / 100000  != (int) gene_grps[gr].genes[g].exons[idx].end / 100000 ) ?  2 : 1;
+                                                	exon_overlap1_length.push_back(gene_grps[gr].genes[g].exons[idx].end - A.starts[i] < A.ends[i] - A.starts[i] ? (gene_grps[gr].genes[g].exons[idx].end - A.starts[i] + 1) * mul : A.lengths[i] * mul);
+                                                }else exon_overlap1_length.push_back(min(gene_grps[gr].genes[g].exons[idx].end, A.ends[i]) - max(gene_grps[gr].genes[g].exons[idx].start, A.starts[i]) + 1);
                                                 exon_overlap1_length_total += exon_overlap1_length.back();
                                                 exon_map1.push_back(i);
                                             }
@@ -270,26 +274,8 @@ void quan_data::readBams(){
                                     }
                                     if (idx == -1) all_found1 = false;
                                 }
-                                if (!all_found1 && check_consistency){
-                                    if (debug){
-                                        cerr << "NCONS\t" << name<<endl;
-                                        cerr << gene_grps[gr].genes[g];
-                                        cerr << A;
-                                        cerr << "NCONS\t" << name<<endl;
-                                    }
-                                    continue;
-                                }
-                                if (!any_found1){
-                                    if (debug){
-                                        cerr << "NCONS\t" << name<<endl;
-                                        cerr << gene_grps[gr].genes[g];
-                                        cerr << A;
-                                        cerr << "NCONS\t" << name<<endl;
-                                    }
-                                    continue;
-                                }
-                                
-                                
+
+
                                 for (int i = 0 ; i < B.starts.size(); i++){
                                     int idx = -1;
                                     if (gene_grps[gr].genes[g].overlap(B.starts[i],B.ends[i])){
@@ -298,7 +284,10 @@ void quan_data::readBams(){
                                                 idx = e;
                                                 any_found2 = true;
                                                 exon_overlap2.push_back(idx);
-                                                exon_overlap2_length.push_back(min(gene_grps[gr].genes[g].exons[idx].end, B.ends[i]) - max(gene_grps[gr].genes[g].exons[idx].start, B.starts[i]) + 1);
+                                                if ( old_wrong_split) {
+                                                	int mul = ( (int) B.starts[i] / 100000 != (int) B.ends[i] / 100000 && (int) gene_grps[gr].genes[g].exons[idx].start / 100000  != (int) gene_grps[gr].genes[g].exons[idx].end / 100000 ) ?  2 : 1;
+                                                	exon_overlap2_length.push_back(gene_grps[gr].genes[g].exons[idx].end - B.starts[i] < B.ends[i] - B.starts[i] ? (gene_grps[gr].genes[g].exons[idx].end - B.starts[i] + 1) * mul: B.lengths[i] * mul);
+                                                }else exon_overlap2_length.push_back(min(gene_grps[gr].genes[g].exons[idx].end, B.ends[i]) - max(gene_grps[gr].genes[g].exons[idx].start, B.starts[i]) + 1);
                                                 exon_overlap2_length_total += exon_overlap2_length.back();
                                                 exon_map2.push_back(i);
                                             }
@@ -306,20 +295,41 @@ void quan_data::readBams(){
                                     }
                                     if (idx == -1) all_found2 = false;
                                 }
+
+                                if (!all_found1 && check_consistency){
+                                    if (debug){
+                                        cerr << "NCONSALL1\t" << name<<endl;
+                                        cerr << gene_grps[gr].genes[g];
+                                        cerr << A;
+                                        cerr << B;
+                                    }
+                                    continue;
+                                }
+                                //for debugging
+                                if (!any_found1){
+                                    if (debug){
+                                        cerr << "NCONSANY1\t" << name<<endl;
+                                        cerr << gene_grps[gr].genes[g];
+                                        cerr << A;
+                                        cerr << B;
+                                    }
+                                    continue;
+                                }
+                                
                                 if (!all_found2 && check_consistency){
                                     if (debug){
-                                        cerr << "NCONS\t" << name<<endl;
-                                        cerr << "NCONS\t" << name<<endl;
+                                        cerr << "NCONSALL2\t" << name<<endl;
                                         cerr << gene_grps[gr].genes[g];
+                                        cerr << A;
                                         cerr << B;
                                     }
                                     continue;
                                 }
                                 if (!any_found2){
                                     if(debug){
-                                        cerr << "NCONS\t" << name<<endl;
-                                        cerr << "NCONS\t" << name<<endl;
+                                        cerr << "NCONSANY2\t" << name<<endl;
                                         cerr << gene_grps[gr].genes[g];
+                                        cerr << A;
                                         cerr << B;
                                     }
                                     continue;
@@ -364,7 +374,10 @@ void quan_data::readBams(){
                                             idx = e;
                                             any_found2 = true;
                                             exon_overlap2.push_back(idx);
-                                            exon_overlap2_length.push_back(min(gene_grps[gr].genes[g].exons[idx].end, B.ends[i]) - max(gene_grps[gr].genes[g].exons[idx].start, B.starts[i]) + 1);
+                                            if ( old_wrong_split) {
+                                            	int mul = ( (int) B.starts[i] / 100000 != (int) B.ends[i] / 100000 && (int) gene_grps[gr].genes[g].exons[idx].start / 100000  != (int) gene_grps[gr].genes[g].exons[idx].end / 100000 ) ?  2 : 1;
+                                            	exon_overlap2_length.push_back(gene_grps[gr].genes[g].exons[idx].end - B.starts[i] < B.ends[i] - B.starts[i] ? (gene_grps[gr].genes[g].exons[idx].end - B.starts[i] + 1) * mul: B.lengths[i] * mul);
+                                            } else exon_overlap2_length.push_back(min(gene_grps[gr].genes[g].exons[idx].end, B.ends[i]) - max(gene_grps[gr].genes[g].exons[idx].start, B.starts[i]) + 1);
                                             exon_overlap2_length_total += exon_overlap2_length[i];
                                             exon_map2.push_back(i);
                                         }
