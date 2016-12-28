@@ -34,7 +34,7 @@ void printModes(){
     vrb.print("  eg: QTLtools cis --help");
     vrb.ctitle("Available modes:");
     vrb.print("  bamstat   Calculate basic QC metrics for BAM/SAM");
-    vrb.print("  match     Match VCF genotypes to BAM/SAM file");
+    vrb.print("  mbv       Match BAM to VCF ");
     vrb.print("  pca       Calculate principal components for a BED/VCF/BCF file");
     vrb.print("  correct   Covariate correction of a BED file");
     vrb.print("  cis       cis QTL analysis");
@@ -55,9 +55,11 @@ int main(int argc, char ** argv) {
 	timer running_timer;
 
 	//2. Open LOG file if necessary
+	bool match_mode = false;
 	for (int a = 1 ; a < argc - 1 ; a ++) {
 		if ((strcmp(argv[a], "--log") == 0) && !vrb.open_log(string(argv[a+1]))) vrb.error("Impossible to open log file!");
 		if (strcmp(argv[a], "--silent") == 0) vrb.set_silent();
+		if (strcmp(argv[a], "mbv") == 0) match_mode = true;
 	}
 
 	//3. Print header on screen
@@ -67,6 +69,8 @@ int main(int argc, char ** argv) {
 	vrb.bullet("Webpage : https://qtltools.github.io/qtltools/");
 	vrb.bullet("Version : " + string(QTLTOOLS_VERSION));
 	vrb.bullet("Date    : " + running_timer.date());
+	if (!match_mode) vrb.bullet("Citation: A complete tool set for molecular QTL discovery and analysis, https://doi.org/10.1101/068635");
+	else vrb.bullet("Citation: MBV; a method to solve sample mislabeling and detect technical bias in large combined genotype and sequencing assay data sets");
 
 	//4. Switch mode
 	vector < string > args;
@@ -83,7 +87,7 @@ int main(int argc, char ** argv) {
 	else if (strcmp(argv[1], "trans") == 0) trans_main(args);
 
 	//5.3. MATCH mode
-	else if (strcmp(argv[1], "match") == 0) match_main(args);
+	else if (strcmp(argv[1], "mbv") == 0) match_main(args);
 
 	//5.4. FENRICH mode
 	else if (strcmp(argv[1], "fenrich") == 0) fenrich_main(args);

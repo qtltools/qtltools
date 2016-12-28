@@ -20,6 +20,8 @@ void match_data::writeOutput(string filename) {
 	vrb.title("Write summary report in ["  + filename + "]");
 	output_file fd (filename);
 
+	fd << "SampleID n_geno_missing n_het_total n_hom_total n_het_covered n_hom_covered n_het_consistent n_hom_consistent perc_het_consistent perc_hom_consistent n_het_in_ase" << endl;
+
 	for (int i = 0 ; i < sample_count ; i ++) {
 		unsigned int n_mis_tot = 0, n_het_tot = 0, n_hom_tot = 0, n_het_cov = 0, n_hom_cov = 0, n_het_fit = 0, n_hom_fit = 0, n_het_ase = 0;
 		for (int r = 0; r < regions.size() ; r ++) {
@@ -61,7 +63,10 @@ void match_data::writeOutput(string filename) {
 		fd << " " << n_hom_cov;
 		fd << " " << n_het_fit;
 		fd << " " << n_hom_fit;
-		fd << " " << n_het_ase << endl;
+		fd << " " << n_het_fit/n_het_cov;
+		fd << " " << n_hom_fit/n_hom_cov;
+		fd << " " << n_het_ase;
+		fd << endl;
 	}
 	fd.close();
 }
