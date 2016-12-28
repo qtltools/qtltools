@@ -13,17 +13,21 @@
 <body>
 <div class="content">
 	<div class="item"  id="item1">
-		<h1>How to run match?</h1>
+		<h1>How to cite MBV?</h1>
 		<p>
-		The <b>match</b> mode of QTLtools implements the MBV (Match BAM to VCF) method extensively described in the following paper:
+		If you use this particular tool in your study, please cite this paper: 
 		</p>
 
 		<p>
 		Fort et al. MBV: an efficient sample mislabeling and technical bias detection method for combined genotype and sequencing assay data sets (in review).
 		</p>
-	
+	</div>
+
+	<div class="item"  id="item1">
+
+		<h1>How to run mbv?</h1>
 		<p>
-		It requires two files as input:
+		The <b>mbv</b> mode of QTLtools (previously called match) requires two files as input:
 		</p>
 
 		<ul>
@@ -41,11 +45,11 @@
 		</ul>
 
 		<p>
-		Then, you can run <b>match</b> on these two files running the command:
+		Then, you can run <b>mbv</b> on these two files running the command:
 		</p>
 
 		<code>
-		QTLtools <b>match</b> --bam HG00381.chr22.bam --vcf genotypes.chr22.vcf.gz --filter-mapping-quality 150 --out HG00381.chr22.bamstat.txt
+		QTLtools <b>mbv</b> --bam HG00381.chr22.bam --vcf genotypes.chr22.vcf.gz --filter-mapping-quality 150 --out HG00381.chr22.bamstat.txt
 		</code>
 		
 		<p>
@@ -94,7 +98,7 @@
 		On this plot, we can clearly identify the set of genotyped samples that do not match the sequence data (in red) with the best match as a clear outlier (in green).
 		</p> 
 
-		<p>Hereafter the list of options that the <b>match</b> can use to tune the analysis:</p>
+		<p>Hereafter the list of options that the <b>mbv</b> mode can use to tune the analysis:</p>
 
 		<ul>
 			<li><i>--filter-mapping-quality [10]</i>: Minimal phred mapping quality for a read to be considered in the matching</li>
