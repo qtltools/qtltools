@@ -54,6 +54,22 @@ desktop: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/li
 desktop: LDFLAG=$(LDFLAG_REL)
 desktop: $(BFILE)
 
+#UNIGE DESKTOP RELEASE VERSION
+desktop-old: CXX=g++ -std=c++0x
+desktop-old: RMATH_INC=$(HOME)/Tools/R-3.2.2/src/include
+desktop-old: RMATH_LIB=$(HOME)/Tools/R-3.2.2/src/nmath/standalone
+desktop-old: HTSLD_INC=$(HOME)/Tools/htslib-1.3
+desktop-old: HTSLD_LIB=$(HOME)/Tools/htslib-1.3
+desktop-old: BOOST_INC=/usr/include
+desktop-old: BOOST_LIB=/usr/lib
+desktop-old: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
+desktop-old: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
+desktop-old: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
+desktop-old: LDFLAG=$(LDFLAG_REL)
+desktop-old: $(BFILE)
+
+
+
 #UNIGE DESKTOP DEBUG VERSION
 desktop-dbg: RMATH_INC=$(HOME)/Tools/R-3.2.2/src/include
 desktop-dbg: RMATH_LIB=$(HOME)/Tools/R-3.2.2/src/nmath/standalone
