@@ -28,7 +28,7 @@ OFILE=$(shell for file in `find src -name *.cpp`; do echo obj/$$(basename $$file
 VPATH=$(shell for file in `find src -name *.cpp`; do echo $$(dirname $$file); done)
 
 #DEFAULT VERSION (I.E. UNIGE DESKTOP RELEASE VERSION)
-all: default
+all: desktop
 
 #UNIGE DESKTOP RELEASE VERSION
 desktop: RMATH_INC=$(HOME)/Tools/R-3.2.2/src/include
