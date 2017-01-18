@@ -1,0 +1,197 @@
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"/>
+<meta http-equiv="Cache-Control" content="max-age=3600"/>
+<meta name="description" content="description"/>
+<meta name="keywords" content="keywords"/> 
+<meta name="author" content="author"/> 
+<link rel="stylesheet" type="text/css" href="../style/default.css" media="screen"/>
+<title>QTLtools</title>
+</head>
+
+<body>
+<div class="content">
+	<div class="item"  id="figures">
+	<div class="options">
+		<h1>Paper figures</h1>
+		<p>
+		Hereafter are all the <i>R</i> scripts and data to reproduce most of the figures presented in the QTLtools paper (<a href="http://www.biorxiv.org/content/early/2016/08/10/068635" target='_top'>LINK</a>).
+		</p>
+		
+		<p>
+		To generate the figure 2 for instance, first download the R script and the required data using the links given by the table below, then untar the data using:
+		</p>
+		
+		<code>
+		tar xzvf figure2.tar.gz
+		</code>
+		
+		<p>
+		Then, run the R script to generate the pdf of the figure using:
+		</p>
+		
+		<code>
+		Rscript figure2.R
+		</code>
+		
+		<p>
+		This will generate a PDF file <b>figure2.pdf</b> for the required figure. Now if you want to convert it in png for instance, run:
+		</p>
+		
+		<code>
+		convert -quality 100 -density 300 figure2.pdf figure2.png
+		</code> 
+		
+		<br>
+		
+		<table WIDTH=100%>
+			<tr>
+				<th width=10%>Figures</th>
+				<th width=20%>Thumbnail</th>
+				<th width=60%>Legend</th>
+				<th width=10%>Links</th>
+			</tr>
+			<tr>
+				<td>Main figure 2</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/main_figure2.png"></img></td>
+				<td>
+				<b>Outcome of the permutation, conditional and functional analyses on Geuvadis.</b> Panel (A) shows the number of eGenes discovered (y-axis) as a function of the number of Principal Components (x-axis) used to correct for technical variance for three different ways of aggregating signal at multiple exons: at the quantification level (in red) or at the QTL mapping level (supplementary method 7) by using either the extended permutation scheme (in blue) or Principal Component Analysis (in green). Panel (B) shows the numbers of eGenes (y-axis) with a unique eQTL (solid lines) or multiple eQTLs (dotted lines) as a function of the number of Principal Components (x-axis) used to correct for technical variance. This is shown for two approaches for aggregating the signal at multiple exons: at the quantification level (in red) or at the QTL mapping level by using the extended permutation scheme (in blue). Panel (C) shows the enrichments of the 4 types of eQTLs resulting from the analysis performed for panel (B) (primary versus secondary eQTLs and gene quantification versus phenotype grouping) within 3 types of functional annotations (supplementary method 12.2). The odd ratios and the –log10 of the enrichment P-values are shown on the x-axis and y-axis, respectively. The percentages of eQTLs falling within these annotations are shown next to the corresponding points.
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/main_figure2.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/main_figure2.R" download>SCRIPT</a></td>
+			</tr>
+			<tr>
+				<td>Supp figure 2</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/figure2.png"></img></td>
+				<td>
+				<b>Quality Control of the sequence data.</b> For each of the 258 Geuvadis samples (on the x-axis), this plot shows the total numbers of reads in green, the number of reads passing all QC filters described in supplementary method 1 in blue and the number of exonic reads in red (all on the y-axis).
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/figure2.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/figure2.R" download>SCRIPT</a></td>
+			</tr>
+			<tr>
+				<td>Supp figure 3</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/figure3.png"></img></td>
+				<td>
+				<b>Matching sequence and genotype data.</b> For all possible pairwise combinations between sequenced and genotyped samples in Geuvadis (n = 358 x 358 = 128,164 pairs), the concordance between the sequence and genotype data is measured separately for homozygous (y-axis) and heterozygous (x-axis) genotypes (supplementary method 2). All pairs with matching sample IDs are shown in green while all pairs with different sample IDs are shown in red. When the sample IDs match, the concordance measures are high meaning that there is no mislabeling between the sequence and genotype data.
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/figure3.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/figure3.R" download>SCRIPT</a></td>
+			</tr>
+			<tr>
+				<td>Supp figure 4</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/figure4.png"></img></td>
+				<td>
+				<b>Gene expression quantification.</b> We measured gene expression levels as RPKMs (Reads Per Kilobase per Million mapped reads; supplementary method 3) for all genes reported in GENCODE v19 [1] (shown with white bars). Then, we only kept the subset of genes with non-zero quantifications in at least 50% of the Geuvadis samples (shown with dark blue bars), resulting in a set of 22,147 genes kept for downstream analysis.
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/figure4.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/figure4.R" download>SCRIPT</a></td>
+			</tr>
+			<tr>
+				<td>Supp figure 5</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/figure5.png"></img></td>
+				<td>
+				<b>Stratification of the genotype and sequence data.</b> Scatter plots of sample coordinates on the first (x-axis) and second (y-axis) principal components (PC) for genotype data, gene quantifications and exon quantifications (from left to right). Colors here are just indicative of the sample various ancestries.
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/figure5.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/figure5.R" download>SCRIPT</a></td>
+			</tr>
+			<tr>
+				<td>Supp figure 6</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/figure6.png"></img></td>
+				<td>
+				<b>Beta approximation of the permutation process.</b> These two scatter plots compare the P-values adjusted for multiple genetic variants being tested in cis via (i) the beta approximation on 1,000 permutations (x-axis) and (ii) the direct method on 100,000 permutations (y-axis). The comparison is made on linear (left panel) and log scales (right panel); in both cases for the Geuvadis data set (supplementary method 6). The red diagonal shows idealistic correspondence between both sets of adjusted P-values.   				
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/figure6.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/figure6.R" download>SCRIPT</a></td>
+			</tr>
+			<tr>
+				<td>Supp figure 7</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/figure7.png"></img></td>
+				<td>
+				<b>Adjusted P-value range.</b> This Quantile-Quantile plot compares the expected (x-axis) and observed (y-axis) distributions of adjusted P-values via beta approximation on the Geuvadis data set. The smallest observed P-value reaches 4.62 x 10-98.
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/figure7.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/figure7.R" download>SCRIPT</a></td>
+			</tr>
+			<tr>
+				<td>Supp figure 8</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/figure8.png"></img></td>
+				<td>
+				<b>Running times for eQTL mapping in cis for the entire GTEx v6p data set.</b> This plot shows the running times required to map eQTL in cis for each of the 44 tissues of the GTEx v6p study [7] as a function of the sample sizes.
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/figure8.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/figure8.R" download>SCRIPT</a></td>
+			</tr>
+			<tr>
+				<td>Supp figure 9</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/figure9.png"></img></td>
+				<td>
+				<b>Effect of the number of PCA-derived covariates on the discoveries.</b> This plot shows in red the number of genes with at least an eQTL (i.e. eGenes) discovered in Geuvadis (y-axis) as a function of the number of Principal Components (PCs; 0 to 100) derived from gene expression data in order to correct for technical variance (y-axis). Beside this, the grey line shows the outcome when using 100 PEER factors [2] instead of PCs; a widely adopted method in the field.
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/figure9.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/figure9.R" download>SCRIPT</a></td>
+			</tr>
+			<tr>
+				<td>Supp figure 10</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/figure10.png"></img></td>
+				<td>
+				<b>Effect of phenotype filtering on the discoveries.</b> This plot shows in red the number of eGenes discovered in Geuvadis (y-axis) as a function of the filtering criterion used to exclude poorly quantified genes (x-axis). Specifically, we measured the percentage of individuals per gene not being quantified; that is with a read count equal to 0 and filtered genes accordingly to this percentage from 0% to 90%.
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/figure10.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/figure10.R" download>SCRIPT</a></td>
+			</tr>
+			<tr>
+				<td>Supp figure 11</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/figure11.png"></img></td>
+				<td>
+				<b>Three specific eQTL examples.</b> Three different examples of significant eQTLs discovered in Geuvadis. The raw genotype and sequence data were extracted using the QTLtools extract mode and plotted with the R/plot function. Each plot shows the effect of genotype dosages at a given eQTL on gene expression measured via RPKM. Regression lines are shown in red.
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/figure11.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/figure11.R" download>SCRIPT</a></td>
+			</tr>
+			<tr>
+				<td>Supp figure 13</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/figure13.png"></img></td>
+				<td>
+				<b>Comparison between gene quantification and phenotype grouping.</b> These six scatter plots compare on a per gene basis the –log10 of adjusted P-values obtained when running the QTL mapping on gene level quantifications (x-axis) or by using phenotype grouping (extended permutation scheme; y-axis; supplementary method 7). Adjusted P-values have been compared in six categories, depending on the number of exons the genes contain: 1 (in red), 2 to 5 (in blue), 6 to 10 (in green), 11 to 20 (in purple), 21 to 50 (in orange) or more than 50 (in brown).
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/figure13.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/figure13.R" download>SCRIPT</a></td>
+			</tr>
+			<tr>
+				<td>Supp figure 14</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/figure14.png"></img></td>
+				<td>
+				<b>Number of independent signals per gene.</b> This plot shows the numbers of eGenes on a log scale (y-axis) as a function of the number of independent eQTLs discovered for those (x-axis). Results are shown for two approaches to aggregate the signal of multiple exons: at the quantification level (in red) or at the QTL mapping level by using the extended permutation process (in blue).
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/figure14.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/figure14.R" download>SCRIPT</a></td>
+			</tr>
+			<tr>
+				<td>Supp figure 15</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/figure15.png"></img></td>
+				<td>
+				<b>Replication of eQTLs.</b> These two histograms show the nominal p-value distributions in GTEx [4] for both primary (left panel) and secondary (right panel) eQTLs discovered in Geuvadis. For each, we estimated the percentages of eQTLs that are significant in GTEx via R/qvalue (i.e. PI1 statistic; supplementary method 9).
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/figure15.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/figure15.R" download>SCRIPT</a></td>
+			</tr>
+			<tr>
+				<td>Supp figure 16</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/figure16.png"></img></td>
+				<td>
+				<b>QQplot of trans analysis.</b> Quantile-Quantile plot produced from trans QTL analysis. Each blue solid line compares the P-values of associations of the original gene expression data to those obtained from a permuted data set. In total, 100 permutations have been performed, resulting in 100 blue lines. This QQplot shows the signal enrichment obtained after having applied the full permutation scheme for trans analysis (supplementary method 10.1).
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/figure16.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/figure16.R" download>SCRIPT</a></td>
+			</tr>
+			<tr>
+				<td>Supp figure 17</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/figure17.png"></img></td>
+				<td>
+				<b>Performance of the approximation for trans QTL mapping.</b> The left panel shows the number of genes with at least a significant eQTL in trans for 3 different configurations: (i) the full permutation scheme (in red; supplementary method 10.1), (ii) the approximation scheme (supplementary method 10.2) using either the BH (in blue; Benjamini and Hochberg [5]) or ST (in green; Storey et Tibshirani [6]) FDR procedures to correct for the number of genes being tested. The two other panels compare the FDR estimates on a per gene basis obtained by (i) and (iii) on linear (middle panel) and log (right panel) scales.
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/figure17.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/figure17.R" download>SCRIPT</a></td>
+			</tr>
+			<tr>
+				<td>Supp figure 19</td>
+				<td><img WIDTH=250 src="http://jungle.unige.ch/QTLtools_figures/figure19.png"></img></td>
+				<td>
+				<b>Integration with functional annotations.</b> This plot shows the density of transcription factor binding sites (TFBS) as number of TFBS per kb (supplementary method 12.1) around the positions of 4 types of eQTLs discovered in Geuvadis (primary versus secondary, gene quantification versus phenotype grouping).
+				</td>
+				<td><a href="http://jungle.unige.ch/QTLtools_figures/figure19.tar.gz" download>DATA</a> / <a href="http://jungle.unige.ch/QTLtools_figures/figure19.R" download>SCRIPT</a></td>
+			</tr>
+		</table>
+	
+	</div>
+	
+	<div class="log">Wednesday 18th January 2017</div>
+</div>
+</body>
+</html>
