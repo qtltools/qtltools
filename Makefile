@@ -49,6 +49,7 @@ desktop-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
 desktop-dbg: LDFLAG=$(CXXFLAG_DBG)
 
 #VITAL-IT RELEASE VERSION
+cluster: LIB_FLAGS=-lz -lgsl -lblas -lbz2 -lm -lpthread
 cluster: RMATH_INC=/software/R/3.1.1/include
 cluster: RMATH_LIB=/software/R/3.1.1/lib64
 cluster: HTSLD_INC=/software/UHTS/Analysis/samtools/1.2/include
