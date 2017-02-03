@@ -124,7 +124,10 @@ int main(int argc, char ** argv) {
     //5.14. FDENSITY mode
     else if (strcmp(argv[1], "fdensity") == 0) fdensity_main(args);
 
-	//5.15. UNRECOGNIZED mode
+    //5.15. REPLICATION mode
+    else if (strcmp(argv[1], "rep") == 0) rep_main(args);
+
+	//5.16. UNRECOGNIZED mode
     else if (strcmp(argv[1], "--help") == 0) {
         printModes();
         exit(EXIT_SUCCESS);
