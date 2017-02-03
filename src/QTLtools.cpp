@@ -27,6 +27,7 @@
 #include "mode_union/union_data.h"
 #include "mode_bamstat/bamstat_data.h"
 #include "mode_fdensity/fdensity_data.h"
+#include "mode_rep/rep_data.h"
 
 void printModes(){
     vrb.ctitle("Usage:");
@@ -47,6 +48,7 @@ void printModes(){
     vrb.print("  extract   Data extraction mode");
     vrb.print("  quan      Quantification mode");
     vrb.print("  ase       Measure allelic imbalance at every het genotype");
+    vrb.print("  rep       Replicate QTL associations into independent data set");
 }
 
 int main(int argc, char ** argv) {

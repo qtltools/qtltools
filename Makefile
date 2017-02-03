@@ -144,6 +144,9 @@ obj/bamstat_%.o: bamstat_%.cpp bamstat_data.h src/common/data.h src/common/filte
 obj/fdensity_%.o: fdensity_%.cpp fdensity_data.h src/common/data.h src/common/filter.h $(TFILE)
 	$(CXX) -o $@ -c $< $(CXXFLAG) $(IFLAG)
 	
+obj/rep_%.o: rep_%.cpp rep_data.h src/common/data.h src/common/filter.h $(TFILE)
+	$(CXX) -o $@ -c $< $(CXXFLAG) $(IFLAG)
+	
 clean: 
 	rm -f obj/*.o $(BFILE)
 
@@ -188,5 +191,9 @@ clean-bamstat:
 		
 clean-fdensity:
 	rm -f obj/fdensity_*.o $(BFILE)
+		
+clean-rep:
+	rm -f obj/rep_*.o $(BFILE)
+		
 		
 		

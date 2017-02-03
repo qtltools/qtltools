@@ -79,6 +79,10 @@ public:
         inclusion_map.insert(value);
     }
     
+    void addInclusion(vector < string > & values){
+    	for (int e = 0 ; e < values.size() ; e ++) inclusion_map.insert(values[e]);
+    }
+
     void addExclusion(string value){
         exclusion_map.insert(value);
     }
