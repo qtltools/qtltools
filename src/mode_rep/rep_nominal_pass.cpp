@@ -44,7 +44,7 @@ void rep_data::runNominalPass(string fout) {
 		if (i_phenotype >= 0 && i_genotype >= 0) {
 
 			//STEP4: VERBOSE PROCESSED PHENOTYPES
-			vrb.title("Testing [" + phenotype_id[i_phenotype] + "] against [" + genotype_id[i_genotype] + "] / Progress [" + stb.str(i_phenotype+1) + "/" + stb.str(qtl_count) + "]");
+			vrb.title("Testing [" + phenotype_id[i_phenotype] + "] against [" + genotype_id[i_genotype] + "] / Progress [" + stb.str(p+1) + "/" + stb.str(qtl_count) + "]");
 			double curr_correlation = getCorrelation(genotype_val[i_genotype], phenotype_val[i_phenotype]);
 			double pvalue = getPvalue(curr_correlation, sample_count - 2);
 			double slope = getSlope(curr_correlation, genotype_sd[i_genotype], phenotype_sd[i_phenotype]);

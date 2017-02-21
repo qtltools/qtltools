@@ -67,14 +67,14 @@ void rep_data::readGenotypesVCF(string fvcf) {
         if (linecount % 100000 == 0) vrb.bullet("Read " + stb.str(linecount) + " lines");
 		line =  bcf_sr_get_line(sr, 0);
 		if (line->n_allele == 2) {
-			ngt = bcf_get_genotypes(sr->readers[0].header, line, &gt_arr, &ngt_arr);
-			nds = bcf_get_format_float(sr->readers[0].header, line,"DS", &ds_arr, &nds_arr);
-			if (nds == n_samples || ngt == 2*n_samples) {
-				bcf_unpack(line, BCF_UN_STR);
-				string sid = string(line->d.id);
-				string chr = string(bcf_hdr_id2name(sr->readers[0].header, line->rid));
-				int pos = line->pos + 1;
-				if (filter_genotype.check(sid) && filter_position.check(chr + "_" + stb.str(pos))) {
+			bcf_unpack(line, BCF_UN_STR);
+			string sid = string(line->d.id);
+			string chr = string(bcf_hdr_id2name(sr->readers[0].header, line->rid));
+			int pos = line->pos + 1;
+			if (filter_genotype.check(sid) && filter_position.check(chr + "_" + stb.str(pos))) {
+				ngt = bcf_get_genotypes(sr->readers[0].header, line, &gt_arr, &ngt_arr);
+				nds = bcf_get_format_float(sr->readers[0].header, line,"DS", &ds_arr, &nds_arr);
+				if (nds == n_samples || ngt == 2*n_samples) {
 					genotype_id.push_back(sid);
 					genotype_chr.push_back(chr);
 					string genotype_ref = string(line->d.allele[0]);
@@ -83,7 +83,6 @@ void rep_data::readGenotypesVCF(string fvcf) {
 					if (nsl >= 0 && nsl_arr == 1) genotype_end.push_back(sl_arr[0]);
 					else genotype_end.push_back(genotype_start.back() + genotype_ref.size() - 1);
 					genotype_val.push_back(vector < float > (sample_count, 0.0));
-
 					for(int i = 0 ; i < n_samples ; i ++) {
 						if (mappingS[i] >= 0) {
 							if (nds > 0) genotype_val.back()[mappingS[i]] = ds_arr[i];
@@ -94,8 +93,8 @@ void rep_data::readGenotypesVCF(string fvcf) {
 						}
 					}
 					n_includedG++;
-				} else n_excludedG_user ++;
-			} else n_excludedG_void ++;
+				} else n_excludedG_void ++;
+			} else n_excludedG_user ++;
 		} else n_excludedG_mult ++;
 	}
 

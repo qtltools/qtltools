@@ -33,8 +33,8 @@ all: desktop
 #UNIGE DESKTOP RELEASE VERSION
 desktop: RMATH_INC=$(HOME)/Tools/R-3.2.2/src/include
 desktop: RMATH_LIB=$(HOME)/Tools/R-3.2.2/src/nmath/standalone
-desktop: HTSLD_INC=$(HOME)/Tools/htslib-1.3.1
-desktop: HTSLD_LIB=$(HOME)/Tools/htslib-1.3.1
+desktop: HTSLD_INC=$(HOME)/Tools/htslib-1.3
+desktop: HTSLD_LIB=$(HOME)/Tools/htslib-1.3
 desktop: BOOST_INC=/usr/include
 desktop: BOOST_LIB=/usr/lib/x86_64-linux-gnu
 desktop: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)

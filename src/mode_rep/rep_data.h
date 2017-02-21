@@ -80,6 +80,7 @@ public:
     void normalTransform(vector < float > &);
 	void normalize(vector < float > &);
 	void normalize(vector < vector < float > > &);
+	void mapping();
 
 	//COMPUTATION METHODS [ALL INLINES FOR SPEED]
 	double getCorrelation(vector < float > &, vector < float > &);
@@ -96,7 +97,7 @@ public:
 //***************************************************************//
 //******************** DECLARE FUNCTIONS *************************//
 //***************************************************************//
-void cis_main(vector < string > &);
+void rep_main(vector < string > &);
 
 //***************************************************************//
 //******************** INLINE FUNCTIONS *************************//

@@ -34,7 +34,7 @@ void quan_data::printBEDcount(string fout){
     if (fdoe.fail()) vrb.error("Cannot open file [" + prefix + ".exon.count.bed" + ext + "]");
     fdo.precision(10);
     fdoe.precision(10);
-    fdo << "#chr\tstart\tend\tgene\tlength\tstrand";
+    fdo << "#chr\tstart\tend\tgene\tinfo\tstrand";
     fdoe << "#chr\tstart\tend\texon\tgeneID\tstrand";
     for (int i = 0 ; i < samples.size(); i++) {fdo << "\t" << samples[i]; fdoe << "\t" << samples[i];}
     fdo<<endl;
@@ -47,7 +47,7 @@ void quan_data::printBEDcount(string fout){
             fdo << "\t" << gene_grps[gr].genes[g].tss-1;
             fdo << "\t" << gene_grps[gr].genes[g].tss;
             fdo << "\t" << gene_grps[gr].genes[g].ID;
-            fdo << "\t" << gene_grps[gr].genes[g].length;
+            fdo << "\tL=" << gene_grps[gr].genes[g].length << ";T=" << gene_grps[gr].genes[g].exons[0].gene_type << ";R=" << gene_grps[gr].genes[g].region << ";N=" << gene_grps[gr].genes[g].exons[0].gene_name;
             fdo << "\t" << (gene_grps[gr].genes[g].strand == -1 ? "-" : "+");
             for (int i = 0 ; i < bams.size(); i++) fdo << "\t" << gene_grps[gr].genes[g].read_count[i];
             fdo << endl;
@@ -87,7 +87,7 @@ void quan_data::printBEDrpkm(string fout){
 
     fdo.precision(10);
     fdoe.precision(10);
-    fdo << "#chr\tstart\tend\tgene\tlength\tstrand";
+    fdo << "#chr\tstart\tend\tgene\tinfo\tstrand";
     fdoe << "#chr\tstart\tend\texon\tgeneID\tstrand";
     for (int i = 0 ; i < samples.size(); i++) {fdo << "\t" << samples[i]; fdoe << "\t" << samples[i];}
     fdo<<endl;
@@ -100,7 +100,7 @@ void quan_data::printBEDrpkm(string fout){
             fdo << "\t" << gene_grps[gr].genes[g].tss-1;
             fdo << "\t" << gene_grps[gr].genes[g].tss;
             fdo << "\t" << gene_grps[gr].genes[g].ID;
-            fdo << "\t" << gene_grps[gr].genes[g].length;
+            fdo << "\tL=" << gene_grps[gr].genes[g].length << ";T=" << gene_grps[gr].genes[g].exons[0].gene_type << ";R=" << gene_grps[gr].genes[g].region << ";N=" << gene_grps[gr].genes[g].exons[0].gene_name;
             fdo << "\t" << (gene_grps[gr].genes[g].strand == -1 ? "-" : "+");
             for (int i = 0 ; i < bams.size(); i++) fdo << "\t" << ((gene_grps[gr].genes[g].read_count[i] * 1000.0) / (double) gene_grps[gr].genes[g].length) * (1000000.0 / (double)stats[i].exonic);
             fdo << endl;

@@ -92,3 +92,14 @@ void rep_data::normalize(vector < vector < float > > & X) {
 		for (int s = 0; s < sample_count ; s ++) X[x][s] /= sum;
 	}
 }
+
+void rep_data::mapping() {
+
+	vrb.title("Map QTL IDs to data IDs");
+	for (int q = 0 ; q < qtl_count ; q ++) {
+		qtl_idx.first.push_back(-1);
+		qtl_idx.second.push_back(-1);
+		for (int p = 0 ; p < phenotype_count ; p ++) if (phenotype_id[p] == qtl_ids.first[q]) qtl_idx.first.back() = p;
+		for (int g = 0 ; g < genotype_count ; g ++) if (genotype_id[g] == qtl_ids.second[q]) qtl_idx.second.back() = g;
+	}
+}

@@ -36,13 +36,14 @@ public:
     string name;
     string gene_id;
     string gene_name;
+    string gene_type;
     short int strand;
     vector < double > read_count;
     bool merged;
-    quan_exon(){chr="NA";name="NA";start=0;end=0;gene_id="NA";gene_name="NA";strand = 0;;merged=false;length=0;}
+    quan_exon(){chr="NA";name="NA";start=0;end=0;gene_id="NA";gene_name="NA";gene_type="NA";strand = 0;;merged=false;length=0;}
     ~quan_exon(){read_count.clear();}
-    quan_exon(string c , unsigned int s, unsigned int e, string gi, string gn, string st, unsigned int nof){chr=c;start=s;end=e;gene_id=gi;name = gi + "_" + stb.str(start) + "_" + stb.str(end);gene_name = gn; strand = st == "-" ? -1 : 1; length = end - start + 1; merged=false; read_count=vector < double >(nof,0.0);}
-    quan_exon(string c , unsigned int s, unsigned int e, string gi, string gn, string st){chr=c;start=s;end=e;gene_id=gi;name = gi + "_" + stb.str(start) + "_" + stb.str(end);gene_name = gn; strand = st == "-" ? -1 : 1; length = end - start + 1; merged=false;}
+    quan_exon(string c , unsigned int s, unsigned int e, string gi, string gn, string gt, string st, unsigned int nof){chr=c;start=s;end=e;gene_id=gi;name = gi + "_" + stb.str(start) + "_" + stb.str(end);gene_name = gn; gene_type =gt; strand = st == "-" ? -1 : 1; length = end - start + 1; merged=false; read_count=vector < double >(nof,0.0);}
+    quan_exon(string c , unsigned int s, unsigned int e, string gi, string gn, string gt, string st){chr=c;start=s;end=e;gene_id=gi;name = gi + "_" + stb.str(start) + "_" + stb.str(end);gene_name = gn; gene_type =gt; strand = st == "-" ? -1 : 1; length = end - start + 1; merged=false;}
     void allocate(unsigned int nof) { read_count=vector < double >(nof,0.0); }
     
     void resize(unsigned int s, unsigned int e){start = s; end = e;length = end - start + 1; name = gene_id + "_" + stb.str(start) + "_" + stb.str(end);merged=true;}

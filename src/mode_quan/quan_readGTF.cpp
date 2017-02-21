@@ -48,7 +48,7 @@ void quan_data::readGTF(string fgtf, unsigned int nof){
         if (gene_type != "" && gene_types.size() && !gene_types.count(gene_type)) continue;
         if (trans_type != "" && gene_types.size() && !gene_types.count(trans_type)) continue;
         //cerr << gene_id << " " << gene_name << " " << chr << " "  << start << " " << end << " " << strand << " " << type << endl;
-        quan_exon E(chr, start, end, gene_id, gene_name, strand);
+        quan_exon E(chr, start, end, gene_id, gene_name, gene_type, strand);
         if (!genes_map.count(gene_id)){
             genes_map[gene_id] = genes.size();
             genes.push_back(quan_gene());

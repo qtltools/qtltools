@@ -17,6 +17,7 @@
 
 void rep_data::readQTLs(string fqtl) {
 	string buffer; vector < string > tokens;
+	qtl_count = 0;
 
 	vrb.title("Reading QTL data in [" + fqtl + "]");
 	input_file fdr(fqtl);
@@ -25,7 +26,7 @@ void rep_data::readQTLs(string fqtl) {
 		stb.split(buffer, tokens);
 		if (tokens.size() != 2) vrb.error("Incorrect number of columns, needs to be 2!");
 		qtl_ids.first.push_back(tokens[0]);
-		qtl_ids.second.push_back(tokens[0]);
+		qtl_ids.second.push_back(tokens[1]);
 		qtl_count++;
 	}
 	fdr.close();

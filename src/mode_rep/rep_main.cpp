@@ -90,6 +90,7 @@ void rep_main(vector < string > & argv) {
 	D.readPhenotypes(D.options["bed"].as < string > ());										//Read data in BED
 	D.readGenotypes(D.options["vcf"].as < string > ());											//Read data in VCF
 	if (D.options.count("cov")) D.readCovariates(D.options["cov"].as < string > ());
+	D.mapping();
 
 	//------------------------
 	// 10. INITIALIZE ANALYSIS
