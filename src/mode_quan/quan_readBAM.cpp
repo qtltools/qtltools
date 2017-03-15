@@ -31,6 +31,8 @@ int quan_data::read_bam(void *data, bam1_t *b, quan_stats &f, unsigned int &mmc)
                 case 'd': f.dup++; break;
                 case 'm': f.mapQ++; break;
                 case 'p': f.unpaired++; break;
+                case 's': f.unpaired++; break;
+                case 'S': f.unpaired++; break;
                 case 'M': f.mismatch++; break;
             }
 			continue;
@@ -66,7 +68,7 @@ int quan_data::read_bam(void *data, bam1_t *b, quan_stats &f, unsigned int &mmc)
         
 		if (b->core.flag & BAM_FPAIRED) {
 			if ((b->core.flag & BAM_FREVERSE) == (b->core.flag & BAM_FMREVERSE) || (b->core.flag & BAM_FMUNMAP) ){
-				f.failed[name] = 'p';
+				f.failed[name] = 's';
                 if (debug) cerr << f.failed[name] << "\t" << name << endl;
 				f.unpaired++;
 				continue;
@@ -205,30 +207,37 @@ void quan_data::readBams(){
                 const bam1_core_t *c = &b->core;
                 if (c->n_cigar) { // cigar
                     quan_block B;
+                    B.core = b->core;
                     B.mmc = mmc;
                     unsigned int bS = b->core.pos+1;
                     unsigned int bL = 0;
                     uint32_t *cigar = bam_get_cigar(b);
+                    if (debug) cerr<< name << "\t" << b->core.flag << "\t";
                     for (int i = 0; i < c->n_cigar; ++i) {
                         int l = bam_cigar_oplen(cigar[i]);
                         char c = bam_cigar_opchr(cigar[i]);
+                        if (debug) cerr << l << c;
                         if(c=='S' || c =='H' || c =='I' || c=='P') continue;
-                        else if ( (c=='N' || c == 'D' ) && l){
-                            B.starts.push_back(bS);
-                            B.ends.push_back(bS+bL-1);
-                            B.lengths.push_back(bL);
-                            B.block_overlap.push_back(1.0);
-                            B.read_length+=bL;
+                        else if ((c=='N' || c=='D') && l){
+                            if (bL){
+								B.starts.push_back(bS);
+								B.ends.push_back(bS+bL-1);
+								B.lengths.push_back(bL);
+								B.block_overlap.push_back(1.0);
+								B.read_length+=bL;
+                            }
                             bS+=bL+l;
                             bL = 0;
                         }else bL += l;
                     }
-                    B.starts.push_back(bS);
-                    B.ends.push_back(bS+bL-1);
-                    B.lengths.push_back(bL);
-                    B.block_overlap.push_back(1.0);
-                    B.read_length+=bL;
-                    B.core = b->core;
+                    if(debug) cerr << endl;
+                    if(bL){
+						B.starts.push_back(bS);
+						B.ends.push_back(bS+bL-1);
+						B.lengths.push_back(bL);
+						B.block_overlap.push_back(1.0);
+						B.read_length+=bL;
+                    }
                     if (b->core.flag & BAM_FPAIRED){
                         if(read_sink.count(name)){
                             quan_block A = read_sink[name];
@@ -242,8 +251,8 @@ void quan_data::readBams(){
                             	continue;
                             }
                             if(A.core.mtid != B.core.tid || (A.core.flag & BAM_FREVERSE) || !(B.core.flag & BAM_FREVERSE) || ( old_wrong_split && B.core.pos <= A.core.pos) || ( !old_wrong_split && B.core.pos < A.core.pos)){
-                                stat.failed[name] = 'p';
-                                if (debug) cerr << stat.failed[name] << "\t" << name << endl;
+                                stat.failed[name] = 'S';
+                                if (debug) cerr << stat.failed[name] << "\t" << name << "\tc:" << (A.core.mtid != B.core.mtid) << "\t1s:" << (A.core.flag & BAM_FREVERSE) << "\t2s:" << !(B.core.flag & BAM_FREVERSE) << "\to:" << ( old_wrong_split && B.core.pos <= A.core.pos) << "\tn:" << ( !old_wrong_split && B.core.pos < A.core.pos) << "\t" << A.core.flag << "\t" << B.core.flag << endl;;
                                 stat.unpaired++;
                                 continue;
                             }
@@ -339,11 +348,11 @@ void quan_data::readBams(){
                                 both_found= true;
                                 for (int i = 0 ; i < exon_overlap1.size(); i++) {
                                     gene_grps[gr].genes[g].exons[exon_overlap1[i]].read_count[bm] += (double)exon_overlap1_length[i] / (double)exon_overlap1_length_total * A.block_overlap[exon_map1[i]];
-                                    if (debug) cerr << gene_grps[gr].genes[g].exons[exon_overlap1[i]].name << "\t" << name << "\t" <<(double)exon_overlap1_length[i] / (double)exon_overlap1_length_total * A.block_overlap[exon_map1[i]] << endl;
+                                    if (debug) cerr << gene_grps[gr].genes[g].exons[exon_overlap1[i]].name << "\t" << name << "\t" <<(double)exon_overlap1_length[i] / (double)exon_overlap1_length_total * A.block_overlap[exon_map1[i]] << "\t" << exon_overlap1_length[i] << "\t" << exon_overlap1_length_total << "\t" << A.block_overlap[exon_map1[i]] << "\t" << A.starts[exon_map1[i]] << "\t" << A.ends[exon_map1[i]] << "\tA" << endl;
                                 }
                                 for (int i = 0 ; i < exon_overlap2.size(); i++) {
                                     gene_grps[gr].genes[g].exons[exon_overlap2[i]].read_count[bm] += (double)exon_overlap2_length[i] / (double)exon_overlap2_length_total * B.block_overlap[exon_map2[i]];
-                                    if (debug) cerr << gene_grps[gr].genes[g].exons[exon_overlap2[i]].name << "\t" << name << "\t" <<(double)exon_overlap2_length[i] / (double)exon_overlap2_length_total * B.block_overlap[exon_map2[i]] << endl;
+                                    if (debug) cerr << gene_grps[gr].genes[g].exons[exon_overlap2[i]].name << "\t" << name << "\t" <<(double)exon_overlap2_length[i] / (double)exon_overlap2_length_total * B.block_overlap[exon_map2[i]] << "\t" << exon_overlap2_length[i] << "\t" << exon_overlap2_length_total << "\t" << B.block_overlap[exon_map2[i]] << "\t" << B.starts[exon_map2[i]] << "\t" << B.ends[exon_map2[i]] << "\tB" << endl;
                                 }
                                 gene_grps[gr].genes[g].read_count[bm]+= A.total_contribution + B.total_contribution;
                                 if (debug){
