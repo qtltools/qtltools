@@ -183,7 +183,6 @@ void cis_main(vector < string > & argv) {
 	//---------------
 	D.processBasicOptions();
 	D.readSampleFromBED(D.options["bed"].as < string > ());										//Read samples in BED
-
    	htsFile * fp = hts_open(D.options["vcf"].as < string > ().c_str(),"r");						
    	if (fp->format.format == sam) D.readSampleFromBED(D.options["vcf"].as < string > ());
 	else D.readSampleFromVCF(D.options["vcf"].as < string > ());

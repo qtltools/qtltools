@@ -148,6 +148,9 @@ obj/fdensity_%.o: fdensity_%.cpp fdensity_data.h src/common/data.h src/common/fi
 obj/rep_%.o: rep_%.cpp rep_data.h src/common/data.h src/common/filter.h $(TFILE)
 	$(CXX) -o $@ -c $< $(CXXFLAG) $(IFLAG)
 	
+obj/gwas_%.o: gwas_%.cpp gwas_data.h src/common/data.h src/common/filter.h $(TFILE)
+	$(CXX) -o $@ -c $< $(CXXFLAG) $(IFLAG)
+	
 clean: 
 	rm -f obj/*.o $(BFILE)
 
@@ -196,5 +199,7 @@ clean-fdensity:
 clean-rep:
 	rm -f obj/rep_*.o $(BFILE)
 		
-		
+clean-gwas:
+	rm -f obj/gwas_*.o $(BFILE)
+
 		

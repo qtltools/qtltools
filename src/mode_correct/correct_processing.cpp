@@ -44,8 +44,9 @@ void correct_data::processBED(string fin, string fout) {
 	if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
 	for (int t = 6 ; t < tokens.size() ; t ++) {
 		mappingS.push_back(findSample(tokens[t]));
-		if (mappingS.back() >= 0) fdo << "\t" << tokens[t];
+		//if (mappingS.back() >= 0) fdo << "\t" << tokens[t];
 	}
+	for (int i = 0 ; i < sample_count ; i ++) fdo << "\t" << sample_id[i];
 	fdo << endl;
 
 	//Read phenotypes

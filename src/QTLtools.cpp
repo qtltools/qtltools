@@ -28,6 +28,7 @@
 #include "mode_bamstat/bamstat_data.h"
 #include "mode_fdensity/fdensity_data.h"
 #include "mode_rep/rep_data.h"
+#include "mode_gwas/gwas_data.h"
 
 void printModes(){
     vrb.ctitle("Usage:");
@@ -49,6 +50,7 @@ void printModes(){
     vrb.print("  quan      Quantification mode");
     vrb.print("  ase       Measure allelic imbalance at every het genotype");
     vrb.print("  rep       Replicate QTL associations into independent data set");
+    vrb.print("  gwas      GWAS tests");
 }
 
 int main(int argc, char ** argv) {
@@ -127,7 +129,10 @@ int main(int argc, char ** argv) {
     //5.15. REPLICATION mode
     else if (strcmp(argv[1], "rep") == 0) rep_main(args);
 
-	//5.16. UNRECOGNIZED mode
+    //5.16. GWAS mode
+    else if (strcmp(argv[1], "gwas") == 0) gwas_main(args);
+
+	//5.17. UNRECOGNIZED mode
     else if (strcmp(argv[1], "--help") == 0) {
         printModes();
         exit(EXIT_SUCCESS);
