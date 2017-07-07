@@ -26,13 +26,6 @@ void genrich_data::overlapGWASandQTL(string fout) {
 	vrb.bullet("#qtls=" + stb.str(qtl_idx.size()));
 	vrb.bullet("#gwas=" + stb.str(gwas_idx.size()));
 
-	vector < bool > overlap_qtl = vector < bool > (qtl_idx.size() , false);
-	for (int q = 0 ; q < qtl_idx.size() ; q ++) for (int g = 0 ; g < gwas_idx.size() && !overlap_qtl[q] ; g ++) overlap_qtl[q] = isSameSignal(gwas_idx[g], qtl_idx[q]);
-
-	unsigned int n_obs_overlap = 0;
-	for (int q = 0 ; q < qtl_idx.size() ; q ++) if (overlap_qtl[q]) n_obs_overlap ++;
-	vrb.bullet("#observed overlap=" + stb.str(n_obs_overlap) + " (=" + stb.str(n_obs_overlap * 100.0 / qtl_idx.size(), 2) + " %)");
-
 	vrb.title("Classifying null variants");
 	vector < vector < unsigned int > > null_sets = vector < vector < unsigned int > > (bin_min_maf.size());
 	for (int v = 0 ; v < genotype_pos.size() ; v ++) if (!genotype_qtl[v] && genotype_bin[v] >= 0) null_sets[genotype_bin[v]].push_back(v);
@@ -42,6 +35,29 @@ void genrich_data::overlapGWASandQTL(string fout) {
 		//cerr << b << " " << null_sets[b].size() << " " << 	bin_min_maf[b] << " " << bin_max_maf[b] << " " << bin_min_dist[b] << " " << bin_max_dist[b] << endl;
 	}
 	vrb.bullet("#null variants per bin = " + stb.str(bs_null_count.mean(),3) + " +/-" + stb.str(bs_null_count.sd(), 3));
+
+	vrb.title("Discarding poorly populated bins");
+	int n_discarded = 0, n_removed_qtl = 0;
+	for (int b = 0 ; b < null_sets.size() ; b ++) if (null_sets[b].size() < 3) {
+		for (int q = 0 ; q < qtl_idx.size() ; q ++) if (genotype_bin[qtl_idx[q]] == b) {
+			genotype_bin[qtl_idx[q]] = -1;
+			n_removed_qtl ++;
+		}
+		n_discarded ++;
+	}
+	vrb.bullet("#bin discarded=" + stb.str(n_discarded) + " out of " + stb.str(null_sets.size()));
+	vrb.bullet("#qtl discarded=" + stb.str(n_removed_qtl) + " out of " + stb.str(qtl_idx.size()));
+
+	vrb.title("Calculating overlap between OBSERVED set of variants and GWAS hits");
+	vector < bool > overlap_qtl = vector < bool > (qtl_idx.size() , false);
+	for (int q = 0 ; q < qtl_idx.size() ; q ++) {
+		if (genotype_bin[qtl_idx[q]] >= 0) {
+			for (int g = 0 ; g < gwas_idx.size() && !overlap_qtl[q] ; g ++) overlap_qtl[q] = isSameSignal(gwas_idx[g], qtl_idx[q]);
+		}
+	}
+	unsigned int n_obs_overlap = 0;
+	for (int q = 0 ; q < qtl_idx.size() ; q ++) if (overlap_qtl[q]) n_obs_overlap ++;
+	vrb.bullet("#observed overlap=" + stb.str(n_obs_overlap) + " (=" + stb.str(n_obs_overlap * 100.0 / qtl_idx.size(), 2) + " %)");
 
 	vrb.title("Calculating overlap between NULL sets of variants and GWAS hits");
 	vrb.bullet("#permutations=" + stb.str(n_permutations));
@@ -53,17 +69,23 @@ void genrich_data::overlapGWASandQTL(string fout) {
 		//cerr << "1. Permutation " << p << endl;
 		vector < int > seq_null_qtl;
 		for (int q = 0 ; q < qtl_idx.size() ; q ++) {
-			unsigned int idx_bin = genotype_bin[qtl_idx[q]];
-			unsigned int idx_rnd = rng.getInt(null_sets[idx_bin].size());
-			//cerr << q << " " << idx_bin << " " << idx_rnd << " " <<  null_sets[idx_bin].size() << endl;
-			seq_null_qtl.push_back(null_sets[idx_bin][idx_rnd]);
+			if (genotype_bin[qtl_idx[q]] >= 0) {
+				unsigned int idx_bin = genotype_bin[qtl_idx[q]];
+				unsigned int idx_rnd = rng.getInt(null_sets[idx_bin].size());
+				//cerr << q << " " << idx_bin << " " << idx_rnd << " " <<  null_sets[idx_bin].size() << endl;
+				seq_null_qtl.push_back(null_sets[idx_bin][idx_rnd]);
+			} else seq_null_qtl.push_back(-1);
 		}
 		//cerr << "1. Size = " << seq_null_qtl.size() << endl;
 
 		//step2: work out overlap
 		//cerr << "2. Overlap " << p << endl;
 		overlap_qtl = vector < bool > (qtl_idx.size() , false);
-		for (int q = 0 ; q < qtl_idx.size() ; q ++) for (int g = 0 ; g < gwas_idx.size() && !overlap_qtl[q] ; g ++) overlap_qtl[q] = isSameSignal(gwas_idx[g], seq_null_qtl[q]);
+		for (int q = 0 ; q < qtl_idx.size() ; q ++) {
+			if (seq_null_qtl[q] >= 0) {
+				for (int g = 0 ; g < gwas_idx.size() && !overlap_qtl[q] ; g ++) overlap_qtl[q] = isSameSignal(gwas_idx[g], seq_null_qtl[q]);
+			}
+		}
 
 		//step3: count overlaps
 		//cerr << "3. Count overlaps " << p << endl;

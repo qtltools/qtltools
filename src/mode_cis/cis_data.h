@@ -20,6 +20,7 @@
 #define CIS_PERM	1
 #define CIS_NOMI	2
 #define CIS_COND	3
+#define CIS_EXTR	4
 
 //AGGREGATION MODES
 #define GRP_NONE	0

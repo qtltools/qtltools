@@ -102,7 +102,7 @@ void fdensity_data::runDensityCalculation(string fout) {
 		for (int t = 0 ; t < tss_count ; t ++) {
 			vector < Interval < bool > > ann_in_bin;
 			Itree[t].findOverlapping(wfrom, wto, ann_in_bin);
-			n_annotation += ann_in_bin.size();
+			n_annotation += (ann_in_bin.size() > 0);
 		}
 
 		fdo << wfrom << " " << wto << " " << n_annotation << endl;

@@ -56,20 +56,35 @@ void correct_data::readQTLCovariates(string fqtl, string fvcf) {
 	string buffer; vector < string > tokens;
 
 	//File qtl
-	map < string, string > map_qtl;
+	map < string, vector < string > > map_qtl;
+	map < string, vector < string > > :: iterator it_map_qtl;
 	vrb.title("Reading QTLs in [" + fqtl + "]");
 	input_file fd (fqtl);
 	if (fd.fail()) vrb.error("Cannot open file!");
+	int n_variant_covariates = 0;
+	int n_variant_duplicates = 0;
 	while (getline(fd, buffer)) {
 		stb.split(buffer, tokens);
 		if (tokens.size() != 2) vrb.error("Wrong Incorrect number of columns, expected 2!");
-		map_qtl.insert(pair < string, string > (tokens[1], tokens[0]));
+		string variant = tokens[1];
+		string gene = tokens[0];
+
+		it_map_qtl = map_qtl.find(variant);
+		if (it_map_qtl == map_qtl.end()) {
+			vector < string > value = vector < string >(1, gene);
+			map_qtl.insert(pair < string, vector < string > > (tokens[1], value));
+			n_variant_covariates ++;
+		} else {
+			it_map_qtl->second.push_back(gene);
+			n_variant_duplicates ++;
+		}
 	}
-	vrb.bullet(stb.str(map_qtl.size()) + " QTL(s) read");
+	vrb.bullet(stb.str(n_variant_covariates) + " unique variants used as covariates");
+	vrb.bullet(stb.str(n_variant_duplicates) + " unique variants act on multiple genes");
 	fd.close();
 
 	//
-	for (int c = 0 ; c < covariate_count ; c ++) covariate_target.push_back("ALL");
+	for (int c = 0 ; c < covariate_count ; c ++) covariate_target.push_back(vector < string > (1, "ALL"));
 
 	//File VCF
 	vector < int > mappingS;
@@ -103,9 +118,9 @@ void correct_data::readQTLCovariates(string fqtl, string fvcf) {
 				bcf_unpack(line, BCF_UN_STR);
 				string sid = string(line->d.id);
 
-				map < string, string > :: iterator itM = map_qtl.find(sid);
+				it_map_qtl = map_qtl.find(sid);
 
-				if (itM != map_qtl.end() && filter_covariate.check(sid)) {
+				if (it_map_qtl != map_qtl.end() && filter_covariate.check(sid)) {
 					covariate_val.push_back(vector < string > (sample_count, "0"));
 					for(int i = 0 ; i < n_samples ; i ++) {
 						if (mappingS[i] >= 0) {
@@ -116,7 +131,8 @@ void correct_data::readQTLCovariates(string fqtl, string fvcf) {
 							}
 						}
 					}
-					covariate_target.push_back(itM->second);
+					covariate_target.push_back(vector < string >());
+					for (int g = 0 ; g  < it_map_qtl->second.size() ; g ++) covariate_target.back().push_back(it_map_qtl->second[g]);
 					covariate_count++;
 					n_includedG++;
 				} else n_excludedG ++;

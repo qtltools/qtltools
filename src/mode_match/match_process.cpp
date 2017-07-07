@@ -63,8 +63,8 @@ void match_data::writeOutput(string filename) {
 		fd << " " << n_hom_cov;
 		fd << " " << n_het_fit;
 		fd << " " << n_hom_fit;
-		fd << " " << n_het_fit/n_het_cov;
-		fd << " " << n_hom_fit/n_hom_cov;
+		fd << " " << n_het_fit*1.0/n_het_cov;
+		fd << " " << n_hom_fit*1.0/n_hom_cov;
 		fd << " " << n_het_ase;
 		fd << endl;
 	}

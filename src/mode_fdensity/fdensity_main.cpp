@@ -30,7 +30,7 @@ void fdensity_main(vector < string > & argv) {
 
 	boost::program_options::options_description opt_parameters ("\x1B[32mParameters\33[0m");
 	opt_parameters.add_options()
-		("window", boost::program_options::value< int >()->default_value(1000000), "Window size arround TSS in bp.")
+		("window", boost::program_options::value< int >()->default_value(1000000), "Window size around TSS in bp.")
 		("bin", boost::program_options::value< int >()->default_value(1000), "Bin size in bp.");
 
 	D.option_descriptions.add(opt_files).add(opt_parameters);

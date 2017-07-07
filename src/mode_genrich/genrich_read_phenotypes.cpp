@@ -34,7 +34,7 @@ void genrich_data::readPhenotypes(string fbed) {
 	while (hts_getline(fp, KS_SEP_LINE, &str) >= 0) {
 		stb.split(string(str.s), tokens);
 		if (str.l && str.s[0] != '#') {
-			if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
+			if (tokens.size() < 6) vrb.error("Incorrect number of columns!");
 			if (filter_phenotype.check(tokens[3])) {
 				int chr_idx = findCHR(tokens[0]);
 				if (chr_idx < 0) {

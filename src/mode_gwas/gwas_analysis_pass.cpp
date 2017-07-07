@@ -15,7 +15,7 @@
 
 #include "gwas_data.h"
 
-void gwas_data::runGwasPass(string fvcf, string fout) {
+void gwas_data::runGwasPassOnVCF(string fvcf, string fout) {
 	vrb.title("Sweep through genotype data in [" + fvcf + "]");
 	bcf_sweep_t * sw = bcf_sweep_init(fvcf.c_str());
 	if (!sw) vrb.error("Cannot open file for reading [" + fvcf + "]");
@@ -28,10 +28,9 @@ void gwas_data::runGwasPass(string fvcf, string fout) {
 	bcf_hdr_set_samples(hdr, concat_id.c_str(), 0);
 	vrb.bullet("#samples=" + stb.str(sample_count));
 
-	unsigned long n_pos_tests = 0, n_variants = 0, n_curr_tests = 0, n_prev_tests = 0;
-    int mDS = 0, mGT = 0;
+	unsigned long n_variants = 0, n_curr_tests = 0, n_prev_tests = 0;
+    int mDS = 0;
     float * vDS = NULL;
-    int * vGT = NULL;
     bcf1_t * rec;
 
 	timer testing_speed_timer;
@@ -45,7 +44,6 @@ void gwas_data::runGwasPass(string fvcf, string fout) {
 		string chr = string(bcf_hdr_id2name(hdr, rec->rid));
 		int pos = rec->pos + 1;
 		if (rec->n_allele == 2) {
-			bool variant_is_to_be_processed = false;
 			int n_captured = bcf_get_format_float(hdr, rec, "DS", &vDS, &mDS);
 			if (n_captured == sample_count) {
 				imputeGenotypes(vDS);
@@ -54,14 +52,14 @@ void gwas_data::runGwasPass(string fvcf, string fout) {
 					double rcorr = fastCorrelation(phenotype_val[p], vDS);
 					double npval = getNominalPvalue(abs(rcorr), sample_count - 2);
 					fdhits << phenotype_id[p] << " " << chr << " " << pos << " " << vid << " " << npval << " " << rcorr << endl;
-					if (n_curr_tests % 1000 == 0) {
-						unsigned int elapsed_msecs = testing_speed_timer.rel_time();
-						vrb.bullet("#variants=" + stb.str(n_variants) + "\t#tests=" + stb.str(n_curr_tests) + "\t" + stb.str(n_curr_tests) + "\tspeed=" + stb.str((n_curr_tests - n_prev_tests) * 1.0 / (elapsed_msecs * 1000), 2) + "MT/s");
-						testing_speed_timer.clock();
-						n_prev_tests = n_curr_tests;
-					}
 				}
-				n_curr_tests ++;
+				if ((n_curr_tests/phenotype_count) % 1000 == 0) {
+					unsigned int elapsed_msecs = testing_speed_timer.rel_time();
+					vrb.bullet("#variants=" + stb.str(n_variants) + "\t#tests=" + stb.str(n_curr_tests) + "\t" + stb.str(n_curr_tests) + "\tspeed=" + stb.str((n_curr_tests - n_prev_tests) * 1.0 / (elapsed_msecs * 1000), 2) + "MT/s");
+					testing_speed_timer.clock();
+					n_prev_tests = n_curr_tests;
+				}
+				n_curr_tests += phenotype_count;
 			}
 		}
 		n_variants ++;
@@ -72,3 +70,70 @@ void gwas_data::runGwasPass(string fvcf, string fout) {
 	bcf_sweep_destroy(sw);
 	fdhits.close();
 }
+
+
+void gwas_data::runGwasPassOnBED(string fbed, string fout) {
+	vrb.title("Sweep through BED file [" + fbed + "]");
+	htsFile *fp = hts_open(fbed.c_str(),"r");
+	if (!fp) vrb.error("Cannot open file");
+	tbx_t *tbx = tbx_index_load(fbed.c_str());
+	if (!tbx) vrb.error("Cannot open index file");
+	kstring_t str = {0,0,0};
+	if (hts_getline(fp, KS_SEP_LINE, &str) <= 0 || !str.l || str.s[0] != tbx->conf.meta_char ) vrb.error("Cannot read header line!");
+
+	//Process sample names
+	vector < string > tokens;
+	vector < int > mappingS;
+	stb.split(string(str.s), tokens);
+	if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
+	for (int t = 6 ; t < tokens.size() ; t ++) mappingS.push_back(findSample(tokens[t]));
+	vrb.bullet("#samples=" + stb.str(sample_count));
+
+	//Read phenotypes
+	int n_tested_variants = 0, n_ntested_variants = 0;
+	vector < float > values = vector < float > (sample_count, 0.0);
+	output_file fdhits (fout);
+    if (fdhits.fail()) vrb.error("Cannot open file for writing [" + fout + "]");
+	while (hts_getline(fp, KS_SEP_LINE, &str) >= 0) {
+		stb.split(string(str.s), tokens);
+		if (str.l && str.s[0] != tbx->conf.meta_char) {
+			if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
+
+			string vid = tokens[3];
+			string chr = tokens[0];
+			string sta = tokens[1];
+			string sto = tokens[2];
+
+			if (filter_genotype.check(vid)) {
+				for (int t = 6 ; t < tokens.size() ; t ++) {
+					if (mappingS[t-6] >= 0) {
+						if (tokens[t] == "NA") values[mappingS[t-6]] = bcf_float_missing;
+						else values[mappingS[t-6]] = stof(tokens[t]);
+					}
+				}
+				imputeValues(values);
+				normalize(values);
+				for (int p = 0 ; p < phenotype_count ; p ++) {
+					double rcorr = fastCorrelation(phenotype_val[p], values);
+					double npval = getNominalPvalue(abs(rcorr), sample_count - 2);
+					fdhits << phenotype_id[p] << " " << chr << " " << sta << " " << sto << " " << vid << " " << npval << " " << rcorr << endl;
+				}
+				n_tested_variants ++;
+			} else n_ntested_variants ++;
+		}
+	}
+
+	//Finalize & verbose
+	tbx_destroy(tbx);
+	if (hts_close(fp)) vrb.error("Cannot properly close file");
+	vrb.bullet(stb.str(n_tested_variants) + " variables tested");
+	if (n_ntested_variants > 0) vrb.bullet(stb.str(n_ntested_variants) + " variables not tested");
+	fdhits.close();
+}
+
+
+
+
+
+
+

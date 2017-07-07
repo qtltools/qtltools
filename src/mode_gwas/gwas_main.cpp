@@ -31,23 +31,9 @@ void gwas_main(vector < string > & argv) {
 
 	boost::program_options::options_description opt_parameters ("\x1B[32mParameters\33[0m");
 	opt_parameters.add_options()
-		("normal", "Quantile normalize phenotype data.")
-		("window", boost::program_options::value< double >()->default_value(5e6, "5e6"), "Cis-window of variants to be excluded.")
-		("threshold", boost::program_options::value< double >()->default_value(1e-5, "1e-5"), "P-value threshold below which hits are reported.")
-		("bins", boost::program_options::value< unsigned int >()->default_value(1000), "Number of bins to use to categorize all p-values above --threshold.");
+		("normal", "Quantile normalize phenotype data.");
 
-	boost::program_options::options_description opt_modes ("\x1B[32mAnalysis type\33[0m");
-	opt_modes.add_options()
-		("nominal", "MODE1: NOMINAL PASS [Pvalues are not adjusted].")
-		("adjust", boost::program_options::value< string >(), "MODE2: ADJUSTED PASS [Pvalues are adjusted].")
-		("permute", "MODE3: PERMUTATION PASS [Permute all phenotypes once].")
-		("sample", boost::program_options::value< unsigned int >(), "MODE4: PERMUTATION PASS [Permute randomly chosen phenotypes multiple times].");
-    
-    boost::program_options::options_description opt_parallel ("\x1B[32mParallelization\33[0m");
-    opt_parallel.add_options()
-        ("chunk", boost::program_options::value< vector < int > >()->multitoken(), "Specify which chunk needs to be processed");
-
-	D.option_descriptions.add(opt_files).add(opt_parameters).add(opt_modes).add(opt_parallel);
+	D.option_descriptions.add(opt_files).add(opt_parameters);
 
 	//-------------------
 	// 2. PARSE OPTIONS
@@ -63,7 +49,7 @@ void gwas_main(vector < string > & argv) {
 	//---------------------
 	// 3. PRINT HELP/HEADER
 	//---------------------
-	vrb.ctitle("MAPPING QTL IN TRANS");
+	vrb.ctitle("PERFORM A GWAS PASS");
 	if (D.options.count("help")) {
 		cout << D.option_descriptions << endl;
 		exit(EXIT_SUCCESS);
@@ -77,16 +63,17 @@ void gwas_main(vector < string > & argv) {
 	if (!D.options.count("out")) vrb.error("Output needs to be specified with --out [file.out]");
 
 
-
 	//--------------
 	// 6. SET PARAMS
 	//--------------
+	bool is_vcf = true;
 	D.processBasicOptions();
-	D.readSampleFromBED(D.options["bed"].as < string > ());										//Read samples in BED
+	D.readSampleFromCOV(D.options["bed"].as < string > ());										//Read samples in BED
    	htsFile * fp = hts_open(D.options["vcf"].as < string > ().c_str(),"r");
-   	if (fp->format.format == sam) D.readSampleFromBED(D.options["vcf"].as < string > ());
+   	if (fp->format.format == sam) is_vcf = false;
+   	hts_close(fp);
+   	if (!is_vcf) D.readSampleFromBED(D.options["vcf"].as < string > ());
 	else D.readSampleFromVCF(D.options["vcf"].as < string > ());
-	hts_close(fp);
 	if (D.options.count("cov")) D.readSampleFromCOV(D.options["cov"].as < string > ());			//Read samples in COV
 	D.mergeSampleLists();																		//Merge all sample lists
 
@@ -106,5 +93,6 @@ void gwas_main(vector < string > & argv) {
 	//----------------
 	// 8. RUN ANALYSIS
 	//----------------
-	D.runGwasPass(D.options["vcf"].as < string > (), D.options["out"].as < string > ());
+	if (is_vcf) D.runGwasPassOnVCF(D.options["vcf"].as < string > (), D.options["out"].as < string > ());
+	else D.runGwasPassOnBED(D.options["vcf"].as < string > (), D.options["out"].as < string > ());
 }

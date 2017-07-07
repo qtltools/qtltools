@@ -60,11 +60,22 @@ void correct_data::processBED(string fin, string fout) {
 			if (residualize) {
 				if (covariate_target.size() > 0) {
 					covariate_engine = new residualizer (sample_count);
+					int all_covariates = 0;
+					int qtl_covariates = 0;
 					for (int c = 0 ; c < covariate_count ; c ++) {
-						if (covariate_target[c] == "ALL") covariate_engine->push(covariate_val[c]);
-						if (covariate_target[c] == tokens[4]) covariate_engine->push(covariate_val[c]);
+						for (int g = 0 ; g < covariate_target[c].size() ; g ++) {
+							if (covariate_target[c][g] == "ALL") {
+								covariate_engine->push(covariate_val[c]);
+								all_covariates ++;
+							}
+							if (covariate_target[c][g] == tokens[3]) {
+								covariate_engine->push(covariate_val[c]);
+								qtl_covariates ++;
+							}
+						}
 					}
 					covariate_engine->build();
+					vrb.bullet (tokens[3] + " residualized for #cov_common = " + stb.str(all_covariates) + "\t#cov_qtl=" + stb.str(qtl_covariates));
 				}
 				covariate_engine->residualize(values);
 				if (covariate_target.size() > 0) {

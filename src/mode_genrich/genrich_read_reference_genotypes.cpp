@@ -40,7 +40,7 @@ void genrich_data::readReferenceGenotypes(string fvcf) {
 	vrb.bullet("#samples = " + stb.str(included_sample));
 
 	//Variant processing
-	unsigned int n_excludedV_mult = 0, n_excludedV_void = 0, n_excludedV_rare = 0, n_excludedV_uchr = 0, n_line = 0;
+	unsigned int n_excludedV_mult = 0, n_excludedV_void = 0, n_excludedV_rare = 0, n_excludedV_uchr = 0, n_line = 0, n_excludedV_toofar = 0;
 	int ngt, ngt_arr = 0, *gt_arr = NULL;
 	bcf1_t * line;
 	while(bcf_sr_next_line (sr)) {
@@ -66,19 +66,21 @@ void genrich_data::readReferenceGenotypes(string fvcf) {
 					if (maf > 0.5) maf = 1.0 - maf;
 					if (maf >= threshold_maf) {
 						int dist_tss = getDistance(chr_idx, pos);
-						string tmp_id = chr + "_" + stb.str(pos);
-						genotype_uuid.insert(pair < string, unsigned int > (tmp_id, genotype_pos.size()));
-						genotype_chr.push_back(chr_idx);
-						genotype_pos.push_back(pos);
-						genotype_maf.push_back(maf);
-						genotype_dist.push_back(dist_tss);
-						genotype_haps.push_back(vector < bool > (2 * included_sample, false));
-						for(int i = 0 ; i < n_samples ; i ++) {
-							if (mappingS[i] >= 0) {
-								genotype_haps.back()[2 * mappingS[i] + 0] = bcf_gt_allele(gt_arr[2 * i + 0]);
-								genotype_haps.back()[2 * mappingS[i] + 1] = bcf_gt_allele(gt_arr[2 * i + 1]);
+						if (dist_tss < 1e6) {
+							string tmp_id = chr + "_" + stb.str(pos);
+							genotype_uuid.insert(pair < string, unsigned int > (tmp_id, genotype_pos.size()));
+							genotype_chr.push_back(chr_idx);
+							genotype_pos.push_back(pos);
+							genotype_maf.push_back(maf);
+							genotype_dist.push_back(dist_tss);
+							genotype_haps.push_back(vector < bool > (2 * included_sample, false));
+							for(int i = 0 ; i < n_samples ; i ++) {
+								if (mappingS[i] >= 0) {
+									genotype_haps.back()[2 * mappingS[i] + 0] = bcf_gt_allele(gt_arr[2 * i + 0]);
+									genotype_haps.back()[2 * mappingS[i] + 1] = bcf_gt_allele(gt_arr[2 * i + 1]);
+								}
 							}
-						}
+						} else n_excludedV_toofar++;
 					} else n_excludedV_rare ++;
 				} else n_excludedV_void ++;
 			} else n_excludedV_uchr ++;
@@ -98,4 +100,5 @@ void genrich_data::readReferenceGenotypes(string fvcf) {
 	if (n_excludedV_mult > 0) vrb.bullet(stb.str(n_excludedV_mult) + " multi-allelic variants excluded");
 	if (n_excludedV_uchr > 0) vrb.bullet(stb.str(n_excludedV_uchr) + " variants with unreferenced chromosome in --tss");
 	if (n_excludedV_rare > 0) vrb.bullet(stb.str(n_excludedV_rare) + " maf filtered variants");
+	if (n_excludedV_toofar > 0) vrb.bullet(stb.str(n_excludedV_toofar) + " too far variants");
 }

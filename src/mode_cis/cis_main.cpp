@@ -39,7 +39,7 @@ void cis_main(vector < string > & argv) {
 	boost::program_options::options_description opt_modes ("\x1B[32mAnalysis type\33[0m");
 	opt_modes.add_options()
 		("permute", boost::program_options::value< int >(), "MODE1: PERMUTATION PASS.")
-		("nominal", boost::program_options::value< double >(), "MODE2: NOMINAL PASS.")
+		("nominal", boost::program_options::value< string >(), "MODE2: NOMINAL PASS.")
 		("mapping", boost::program_options::value< string >(), "MODE3: MAPPING PASS.");
 
 	boost::program_options::options_description opt_aggr ("\x1B[32mPhenotype aggregation methods\33[0m");
@@ -102,9 +102,12 @@ void cis_main(vector < string > & argv) {
 	//ONLY MODE2: NOMINAL PASS
 	if (D.options.count("nominal")) {
 		D.mode = CIS_NOMI;
-		if (D.options["nominal"].as < double >() <= 0 || D.options["nominal"].as < double >() > 1.0) vrb.error("Significance threshold is outside of the range ]0,1]");
-		else vrb.bullet("TASK: Report all nominal associations with p <= " + stb.str(D.options["nominal"].as < double >()));
-		D.threshold = D.options["nominal"].as < double >();
+		string argument = D.options["nominal"].as < string >();
+		if (stb.numeric(argument)) {
+			if (D.options["nominal"].as < double >() <= 0 || D.options["nominal"].as < double >() > 1.0) vrb.error("Significance threshold is outside of the range ]0,1]");
+			else vrb.bullet("TASK: Report all nominal associations with p <= " + stb.str(D.options["nominal"].as < double >()));
+			D.threshold = atof(argument.c_str());
+		} else vrb.bullet("TASK: Report all nominal associations with p below thresholds in [" + argument +"]");
 	}
 	//ONLY MODE3: MAPPING PASS
 	if (D.options.count("mapping")) {
@@ -194,6 +197,10 @@ void cis_main(vector < string > & argv) {
 	D.readGenotypes(D.options["vcf"].as < string > ());											//Read data in VCF
 	if (D.options.count("cov")) D.readCovariates(D.options["cov"].as < string > ());
 	if (D.options.count("mapping")) D.readThresholds(D.options["mapping"].as < string > ());
+	if (D.options.count("nominal")) {
+		string argument = D.options["nominal"].as < string >();
+		if (!stb.numeric(argument)) D.readThresholds(argument);
+	}
 
 	//------------------------
 	// 10. INITIALIZE ANALYSIS

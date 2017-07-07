@@ -15,53 +15,40 @@
 
 #include "gwas_data.h"
 
-void gwas_data::readPhenotypes(string fbed) {
-	int n_includedS = 0;
+void gwas_data::readPhenotypes(string ftxt) {
 	int n_includedP = 0;
 	int n_excludedP = 0;
-	int n_negativeStrd = 0;
+	string buffer;
 	vector < int > mappingS;
+	vector < string > tokens;
 
 	//Open BED file
-	vrb.title("Reading phenotype data in [" + fbed + "]");
-	htsFile *fp = hts_open(fbed.c_str(),"r");
-	if (!fp) vrb.error("Cannot open file");
-	tbx_t *tbx = tbx_index_load(fbed.c_str());
-	if (!tbx) vrb.error("Cannot open index file");
-	kstring_t str = {0,0,0};
-	if (hts_getline(fp, KS_SEP_LINE, &str) <= 0 || !str.l || str.s[0] != tbx->conf.meta_char ) vrb.error("Cannot read header line!");
+	vrb.title("Reading phenotype data in [" + ftxt + "]");
+	input_file fd(ftxt);
 
-	//Process sample names
-	vector < string > tokens;
-	stb.split(string(str.s), tokens);
-	if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
-	for (int t = 6 ; t < tokens.size() ; t ++) {
-		mappingS.push_back(findSample(tokens[t]));
-		if (mappingS.back() >= 0) n_includedS++;
-	}
+	getline(fd, buffer);
+	stb.split(buffer, tokens);
+	if (tokens.size() < 2) vrb.error("Incorrect number of columns!");
+	for (int t = 1 ; t < tokens.size() ; t ++) mappingS.push_back(findSample(tokens[t]));
 
     //Read phenotypes
-	while (hts_getline(fp, KS_SEP_LINE, &str) >= 0) {
-		stb.split(string(str.s), tokens);
-		if (str.l && str.s[0] != tbx->conf.meta_char) {
-			if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
-			if (filter_phenotype.check(tokens[3])) {
-				phenotype_id.push_back(tokens[3]);
-				phenotype_val.push_back(vector < float > (sample_count, 0.0));
-				for (int t = 6 ; t < tokens.size() ; t ++) {
-					if (mappingS[t-6] >= 0) {
-						if (tokens[t] == "NA") phenotype_val.back()[mappingS[t-6]] = bcf_float_missing;
-						else phenotype_val.back()[mappingS[t-6]] = stof(tokens[t]);
-					}
+	while (getline(fd, buffer)) {
+		stb.split(buffer, tokens);
+		if (tokens.size() < 2) vrb.error("Incorrect number of columns!");
+		if (filter_phenotype.check(tokens[0])) {
+			phenotype_id.push_back(tokens[0]);
+			phenotype_val.push_back(vector < float > (sample_count, 0.0));
+			for (int t = 1 ; t < tokens.size() ; t ++) {
+				if (mappingS[t-1] >= 0) {
+					if (tokens[t] == "NA") phenotype_val.back()[mappingS[t-1]] = bcf_float_missing;
+					else phenotype_val.back()[mappingS[t-1]] = stof(tokens[t]);
 				}
-				n_includedP++;
-			} else n_excludedP ++;
-		}
+			}
+			n_includedP++;
+		} else n_excludedP++;
 	}
 
-	//Finalize & verbose
-	tbx_destroy(tbx);
-	if (hts_close(fp)) vrb.error("Cannot properly close file");
+	fd.close();
 	phenotype_count = phenotype_id.size();
 	vrb.bullet(stb.str(n_includedP) + " phenotypes included");
 	if (n_excludedP > 0) vrb.bullet(stb.str(n_excludedP) + " phenotypes excluded by user");

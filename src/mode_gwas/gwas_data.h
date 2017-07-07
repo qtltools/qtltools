@@ -45,6 +45,7 @@ public:
 	void computeDosages(int *, float *);
 	void imputeGenotypes(float *);
 	void imputePhenotypes();
+	void imputeValues(vector < float > &);
 	void normalizePhenotypes();
 	void normalize(float *);
 	void normalize(vector < float > &);
@@ -53,11 +54,13 @@ public:
 
 	//COMPUTATION METHODS [ALL INLINES FOR SPEED]
 	double fastCorrelation(vector < float > &, float *);
+	double fastCorrelation(vector < float > &, vector < float > &);
 	double slowCorrelation(vector < float > &, float *);
 	double getNominalPvalue(double, double);
 
 	//ANALYSIS
-	void runGwasPass(string, string);
+	void runGwasPassOnVCF(string, string);
+	void runGwasPassOnBED(string, string);
 };
 
 //***************************************************************//
@@ -73,6 +76,30 @@ void gwas_main(vector < string > &);
  * Fast implementation of inner_product optimized for 64 bytes cache lines.
  */
 inline double gwas_data::fastCorrelation(vector < float > & P, float * G) {
+	int i = 0;
+	int repeat = (sample_count / 4);
+	int left = (sample_count % 4);
+	double sum0 = 0, sum1 = 0, sum2 = 0, sum3 = 0;
+
+	while (repeat --) {
+		sum0 += P[i] * G[i];
+		sum1 += P[i+1] * G[i+1];
+		sum2 += P[i+2] * G[i+2];
+		sum3 += P[i+3] * G[i+3];
+		i += 4;
+	}
+
+	switch (left) {
+	case 3:	sum0 += P[i+2] * G[i+2];
+	case 2:	sum0 += P[i+1] * G[i+1];
+	case 1:	sum0 += P[i+0] * G[i+0];
+	case 0: ;
+	}
+
+	return sum0 + sum1 + sum2 + sum3;
+}
+
+inline double gwas_data::fastCorrelation(vector < float > & P, vector < float > & G) {
 	int i = 0;
 	int repeat = (sample_count / 4);
 	int left = (sample_count % 4);

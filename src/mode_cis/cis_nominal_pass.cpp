@@ -104,7 +104,10 @@ void cis_data::runNominalPass(string fout) {
 			//STEP10: PRINT RESULTS IN FILE
 			for (unsigned int p = 0 ; p < group_idx[i_group].size() ; p ++) {
 				for (unsigned int v = 0 ; v < variant_indexes.size() ; v ++) {
-					if (pval_nom[v * group_idx[i_group].size() + p] <= 	threshold) {
+					bool toBeWritten = false;
+					if ((phenotype_threshold.size() == 0) && (pval_nom[v * group_idx[i_group].size() + p] <= threshold)) toBeWritten = true;
+					if ((phenotype_threshold.size() != 0) && (pval_nom[v * group_idx[i_group].size() + p] <= phenotype_threshold[group_idx[i_group][p]])) toBeWritten = true;
+					if (toBeWritten) {
 						if (grp_mode == GRP_NONE) fdo << phenotype_id[group_idx[i_group][p]];
 						else fdo << phenotype_grp[group_idx[i_group][p]];
 						fdo << " " << phenotype_chr[group_idx[i_group][p]];

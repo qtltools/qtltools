@@ -50,6 +50,19 @@ void gwas_data::imputePhenotypes() {
 	}
 }
 
+void gwas_data::imputeValues(vector < float > & V) {
+	double mean = 0.0;
+	int c_mean= 0;
+	for (int s = 0; s < sample_count; s ++) {
+		if (V[s] != bcf_float_missing) {
+			mean += V[s];
+			c_mean ++;
+		}
+	}
+	mean /= c_mean;
+	for (int s = 0; s < sample_count ; s ++) if (V[s] == bcf_float_missing) V[s] = mean;
+}
+
 void gwas_data::normalize(float * G) {
 	double mean = 0.0, sum = 0.0;
 	for (int s = 0; s < sample_count ; s ++) mean += G[s];
