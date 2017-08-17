@@ -45,7 +45,7 @@ int quan_data::read_bam(void *data, bam1_t *b, quan_stats &f, unsigned int &mmc)
 			continue;
 		}
 
-		if(aux->fail_qc && b->core.flag & BAM_FQCFAIL){
+		if(aux->fail_qc && (b->core.flag & BAM_FQCFAIL)){
 			f.failed[name] = 'u';
             if (debug) cerr << f.failed[name] << "\t" << name << endl;
 			f.unmapped++;
@@ -80,7 +80,7 @@ int quan_data::read_bam(void *data, bam1_t *b, quan_stats &f, unsigned int &mmc)
                 continue;
             }
 		}
-        
+        //This is adapted from sam.c in htslib original author Heng Li
 		if (aux->max_mismatch_count >= 0 || aux->max_mismatch_count_total >= 0){
 			unsigned int mc = 0;
 			uint8_t *s = bam_get_aux(b);
