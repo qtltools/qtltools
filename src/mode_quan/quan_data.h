@@ -22,9 +22,9 @@
 class quan_stats{
 public:
 	map < string , char > failed;
-	unsigned long int mapQ,mismatch,unmapped,unpaired,dup,notexon,good,total;
+	unsigned long int mapQ,mismatch,unmapped,unpaired,dup,notexon,good,total,exonicint;
     double exonic;
-    quan_stats(){mapQ=0;mismatch=0;unmapped=0;dup=0;unpaired=0;notexon=0;exonic=0.0;total=0;good=0;}
+    quan_stats(){mapQ=0;mismatch=0;unmapped=0;dup=0;unpaired=0;notexon=0;exonic=0.0;total=0;good=0;exonicint=0;}
 };
 
 class quan_exon{

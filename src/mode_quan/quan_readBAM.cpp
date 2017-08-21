@@ -361,7 +361,7 @@ void quan_data::readBams(){
                                 }
 
                             }//gene loop
-                            if(both_found) stat.exonic+= A.total_contribution + B.total_contribution;
+                            if(both_found) {stat.exonic+= A.total_contribution + B.total_contribution; stat.exonicint+=2;}
                             else stat.notexon+=2;
                         }else read_sink[name]= B;
                     }else{
@@ -404,7 +404,7 @@ void quan_data::readBams(){
                             }
                             gene_grps[gr].genes[g].read_count[bm] += B.total_contribution;
                         }//gene loop
-                        if(both_found) stat.exonic += B.total_contribution;
+                        if(both_found) {stat.exonic += B.total_contribution; stat.exonicint++;}
                         else stat.notexon+=1;
                     }
                 }//cigar
