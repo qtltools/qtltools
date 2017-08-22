@@ -13,9 +13,9 @@
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
-#include "quan_data.h"
+#include "quan2_data.h"
 
-void quan_data::readGTF(string fgtf, unsigned int nof){
+void quan2_data::readGTF(string fgtf){
     string buffer;
     vector < string > str;
 
@@ -48,55 +48,16 @@ void quan_data::readGTF(string fgtf, unsigned int nof){
         if (gene_type != "" && gene_types.size() && !gene_types.count(gene_type)) continue;
         if (trans_type != "" && gene_types.size() && !gene_types.count(trans_type)) continue;
         //cerr << gene_id << " " << gene_name << " " << chr << " "  << start << " " << end << " " << strand << " " << type << endl;
-        quan_exon E(chr, start, end, gene_id, gene_name, gene_type, strand);
+        my_exon E(chr, start, end, gene_id, gene_name, gene_type, strand);
         if (!genes_map.count(gene_id)){
             genes_map[gene_id] = genes.size();
-            genes.push_back(quan_gene());
+            genes.push_back(my_gene());
             genes.back().assign(E);
         }else genes[genes_map[gene_id]].assign(E);
 
     }
-    groupGenes();
+    sort(genes.begin(),genes.end());
     //for (int i = 0 ; i < genes.size(); i++) cout << genes[i];
 }
 
 
-void quan_data::groupGenes(){
-    vrb.title("Sorting and grouping genes");
-    sort(genes.begin(),genes.end());
-    string pC ="";
-    unsigned int pE = 0;
-    unsigned int pS = UINT_MAX;
-    vector < quan_gene > temp;
-    for (int i = 0 ; i < genes.size(); i++){
-        if ( pC != "" && (genes[i].chr != pC || genes[i].start - pE > max_read_length)){
-            gene_grps.push_back(quan_gene_grp());
-            gene_grps.back().genes = temp;
-            gene_grps.back().chr = pC;
-            gene_grps.back().start = pS;
-            gene_grps.back().end = pE;
-            gene_grps.back().region = pC + ":" + stb.str(pS) + "-" + stb.str(pE);
-            temp.clear();
-            temp.push_back(genes[i]);
-            pC = genes[i].chr;
-            pE = genes[i].end;
-            pS = genes[i].start;
-        }else{
-            pC = genes[i].chr;
-            pE = pE < genes[i].end ? genes[i].end : pE;
-            pS = pS < genes[i].start ? pS : genes[i].start;
-            temp.push_back(genes[i]);
-        }
-    }
-    gene_grps.push_back(quan_gene_grp());
-    gene_grps.back().genes = temp;
-    gene_grps.back().chr = pC;
-    gene_grps.back().start = pS;
-    gene_grps.back().end = pE;
-    gene_grps.back().region = pC + ":" + stb.str(pS) + "-" + stb.str(pE);
-    temp.clear();
-    vrb.bullet("Number of genes = " + stb.str(genes.size()));
-    vrb.bullet("Number of genes groups = " + stb.str(gene_grps.size()));
-    genes.clear();
-    genes_map.clear();
-}
