@@ -31,8 +31,7 @@ void quan2_main(vector < string > & argv) {
 	boost::program_options::options_description opt_parameters ("\x1B[32mParameters\33[0m");
 	opt_parameters.add_options()
 		("rpkm", "Print RPKM values.")
-		("gene-types", boost::program_options::value< vector < string > > ()->multitoken(), "Gene types to quantify. (Requires gene_type attribute in GTF. It will also use transcript_type if present).")
-		("max-read-length", boost::program_options::value< unsigned int >()->default_value(1000), "Group genes separated by this much together. Set this larger than your read length");
+		("gene-types", boost::program_options::value< vector < string > > ()->multitoken(), "Gene types to quantify. (Requires gene_type attribute in GTF. It will also use transcript_type if present).");
 
     boost::program_options::options_description opt_filters ("\x1B[32mFilters\33[0m");
     opt_filters.add_options()
@@ -85,8 +84,8 @@ void quan2_main(vector < string > & argv) {
 
     D.filter.min_mapQ = D.options["filter-mapping-quality"].as < unsigned int > ();
     vrb.bullet("Minimum mapping quality: " + stb.str(D.filter.min_mapQ));
-    D.filter.max_read_length = D.options["max-read-length"].as < unsigned int > ();
-    vrb.bullet("Maximum read length: " + stb.str(D.filter.max_read_length));
+    //D.filter.max_read_length = D.options["max-read-length"].as < unsigned int > ();
+    //vrb.bullet("Maximum read length: " + stb.str(D.filter.max_read_length));
     double intpart;
 
     D.filter.max_mismatch_count_total = D.options["filter-mismatch-total"].as < double > ();
@@ -94,7 +93,7 @@ void quan2_main(vector < string > & argv) {
     	if(D.filter.max_mismatch_count_total > 1) vrb.error("--filter-mismatch-total cannot be greater than 1 when not an integer");
     	else D.filter.fraction_mmt = true;
     }
-    if ( D.filter.max_mismatch_count_total >= 0) vrb.bullet("Maximum mismatch count per mate-pair: " + stb.str(D.filter.max_mismatch_count_total));
+    vrb.bullet("Maximum mismatch count per mate-pair: " + stb.str(D.filter.max_mismatch_count_total));
 
     D.filter.max_mismatch_count = D.options["filter-mismatch"].as < double > ();
     if(D.filter.max_mismatch_count >= 0 && modf(D.filter.max_mismatch_count, &intpart) != 0.0) {
@@ -102,45 +101,44 @@ void quan2_main(vector < string > & argv) {
     	else D.filter.fraction_mm = true;
     }
     if (D.filter.max_mismatch_count < 0 && D.filter.max_mismatch_count_total >= 0 && !D.filter.fraction_mmt) D.filter.max_mismatch_count = D.filter.max_mismatch_count_total;
-    if ( D.filter.max_mismatch_count >= 0) vrb.bullet("Maximum mismatch count per read: " + stb.str(D.filter.max_mismatch_count));
+    vrb.bullet("Maximum mismatch count per read: " + stb.str(D.filter.max_mismatch_count));
 
 
 
     if (D.options.count("check-proper-pairing")){
         vrb.bullet("Checking properly paired flag");
         D.filter.proper_pair = true;
-    }
+    }else vrb.bullet("Not checking properly paired flag");
 
     if (D.options.count("check-consistency")){
         vrb.bullet("Checking if all blocks of a split read are consistent with the annotation");
         D.filter.check_consistency = true;
-    }
+    }else vrb.bullet("Not checking if all blocks of a split read are consistent with the annotation");
 
     if (D.options.count("filter-remove-duplicates")){
         vrb.bullet("Filtering reads flagged as duplicate");
         D.filter.dup_remove = true;
-    }
+    }else vrb.bullet("Not filtering reads flagged as duplicate");
 
     if (D.options.count("filter-failed-qc")){
         vrb.bullet("Filtering reads flagged as failing QC");
         D.filter.fail_qc = true;
-    }
+    }else vrb.bullet("Not filtering reads flagged as failing QC");
 
     if (D.options.count("no-merge")){
         vrb.bullet("Not merging overlapping mate pairs");
         D.filter.merge = false;
-    }
+    }else if (!D.options.count("legacy-options")) vrb.bullet("Merging overlapping mate pairs");
 
     if (D.options.count("legacy-options")){
     	if (!D.options.count("no-merge")) vrb.bullet("Not merging overlapping mate pairs");
     	D.filter.min_exon = 2;
     	vrb.bullet("Excluding exons smaller than " + stb.str(D.filter.min_exon) );
-        vrb.warning("You are using --legacy-options, do you know what you are doing?");
         D.filter.old_wrong_split = true;
         D.filter.merge = false;
     }else{
     	D.filter.min_exon = D.options["filter-min-exon"].as < unsigned int > ();
-    	vrb.bullet("Excluding exons smaller than " + stb.str(D.filter.min_exon) );
+    	vrb.bullet("Excluding exons smaller than " + stb.str(D.filter.min_exon) + "bp only in exon quantifications" );
     }
 
     if (D.options.count("gene-types")){
@@ -150,7 +148,9 @@ void quan2_main(vector < string > & argv) {
         ostringstream temp;
         copy(D.gene_types.begin(), D.gene_types.end(), ostream_iterator<string>(temp, delim));
         vrb.bullet("Genes included: " + temp.str());
-    }
+    }else vrb.bullet("Including all gene types");
+
+    if (D.options.count("legacy-options")) vrb.warning("You are using --legacy-options, do you know what you are doing?");
 
     /*if (D.options.count("debug")) D.debug = true;
 

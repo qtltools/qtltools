@@ -239,7 +239,7 @@ public:
 
 
     //void read_Sample_Names(vector < string > &);
-    vector <my_gene> binary_find(vector < my_gene > &, my_block &);
+    inline vector <my_gene> binary_find(vector < my_gene > &, my_block &);
     void readGTF(string);
     //void groupGenes();
     void readBam(string);
@@ -251,7 +251,7 @@ public:
 
 void quan2_main(vector < string > & );
 
-static bool cmp_blocks (const my_block &a, const my_block &b){
+inline static bool cmp_blocks (const my_block &a, const my_block &b){
 	if (a.chr == b.chr && a.end >= b.start && a.start <= b.end) return false;
 	else return (a < b);
 }

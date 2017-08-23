@@ -44,9 +44,17 @@ desktop: LDFLAG=$(CXXFLAG_REL)
 desktop: $(BFILE)
 
 #UNIGE DESKTOP DEBUG VERSION
-desktop-dbg: desktop
+desktop-dbg: RMATH_INC=$(HOME)/Tools/R-3.2.2/src/include
+desktop-dbg: RMATH_LIB=$(HOME)/Tools/R-3.2.2/src/nmath/standalone
+desktop-dbg: HTSLD_INC=$(HOME)/Tools/htslib-1.3
+desktop-dbg: HTSLD_LIB=$(HOME)/Tools/htslib-1.3
+desktop-dbg: BOOST_INC=/usr/include
+desktop-dbg: BOOST_LIB=/usr/lib/x86_64-linux-gnu
 desktop-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
+desktop-dbg: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
+desktop-dbg: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
 desktop-dbg: LDFLAG=$(CXXFLAG_DBG)
+desktop-dbg: $(BFILE)
 
 #VITAL-IT RELEASE VERSION
 cluster: LIB_FLAGS=-lz -lgsl -lblas -lbz2 -lm -lpthread

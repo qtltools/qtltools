@@ -7,7 +7,7 @@
 
 #include "quan2_data.h"
 
-vector <my_gene> quan2_data::binary_find(vector < my_gene > &input, my_block &item){
+inline vector <my_gene> quan2_data::binary_find(vector < my_gene > &input, my_block &item){
 	vector <my_gene>::iterator lower = lower_bound(input.begin(),input.end(),item,cmp_blocks);
 	vector <my_gene>::iterator upper = upper_bound(input.begin(),input.end(),item,cmp_blocks);
 	if (lower >= upper) return vector <my_gene>(0);
@@ -17,6 +17,7 @@ vector <my_gene> quan2_data::binary_find(vector < my_gene > &input, my_block &it
 my_cont_blocks quan2_data::keep_read(bam1_t *b) {
 	my_cont_blocks block; //Filter is set to pass by default so no need to set it to pass explicitly here
 	block.name = bam_get_qname(b);
+	block.core = b->core;
 
 	//Check if secondary first so that we can ignore this alingment
 	if (b->core.flag & BAM_FSECONDARY) {
@@ -161,7 +162,6 @@ my_cont_blocks quan2_data::keep_read(bam1_t *b) {
 	//If we made it this far then we are OK thus break the alignment into continuous blocks based on the cigar string
     const bam1_core_t *c = &b->core;
     if (c->n_cigar) { // cigar
-        block.core = b->core;
         unsigned int bS = b->core.pos+1;
         unsigned int bL = 0;
         uint32_t *cigar = bam_get_cigar(b);
@@ -212,6 +212,7 @@ void quan2_data::readBam(string fbam){
     vrb.bullet("reading index file");
     hts_idx_t *idx = sam_index_load(fd, fbam.c_str());
     if (idx == NULL) vrb.error("Failed to load index");
+    vrb.bullet("reading BAM file");
 
     map < string, my_cont_blocks> read_sink;
     bam1_t * b = bam_init1();
@@ -222,12 +223,16 @@ void quan2_data::readBam(string fbam){
     		vrb.bullet(stb.str(line_count) + " lines read");
     	}
     	my_cont_blocks B = keep_read(b);
+
     	//Skip if it is a secondary alignment
     	if (B.filter == SECD){
     		stats.secondary++;
     		continue;
     	}
-    	B.chr = string(header->target_name[b->core.tid]);
+        if (b->core.tid >= 0){ //if this is less than 0 it means it is unmapped
+        	if(b->core.tid >= header->n_targets) vrb.error("Chromosome for [" + B.name + "] is not found in the BAM header");
+        	B.chr = string(header->target_name[b->core.tid]);
+        }
     	stats.total++;
     	//Check if paired end
     	if (b->core.flag & BAM_FPAIRED){
@@ -235,7 +240,7 @@ void quan2_data::readBam(string fbam){
             if(read_sink.count(B.name)){
                 my_cont_blocks A = read_sink[B.name]; //Get the first mate
                 read_sink.erase(B.name); //We are done with this read
-                //Check if any of the reads fail
+                //Check if any of the reads fail filters
                 if (A.filter == UNMAP || B.filter == UNMAP){
                 	stats.unmapped +=2;
                 	continue;
@@ -401,11 +406,39 @@ void quan2_data::readBam(string fbam){
             }
     	}else{
     		//Single end
+
+            //Check if the read fails filters
+            if (B.filter == UNMAP){
+            	stats.unmapped +=1;
+            	continue;
+            }
+            if (B.filter == FAILQC){
+            	stats.failqc +=1;
+            	continue;
+            }
+            if (B.filter == DUP){
+            	stats.dup +=1;
+            	continue;
+            }
+            if (B.filter == MAPQ){
+            	stats.mapQ +=1;
+            	continue;
+            }
+            if (B.filter == NPP){
+            	stats.unpaired +=1;
+            	continue;
+            }
+            if (B.filter == MISM){
+            	stats.mismatch +=1;
+            	continue;
+            }
+
     		if (filter.max_mismatch_count_total >= 0 && filter.fraction_mmt && (double) (B.mmc) / (double) (B.core.l_qseq) > filter.max_mismatch_count_total) {
     			stats.mismatch+=1;
     			continue;
     		}
     		stats.good +=1;
+
     		//Check we overlap with a gene
     		my_block temp = my_block(B.chr, B.starts[0], B.ends.back());
     		vector < my_gene > overlapping_genes = binary_find(genes,temp);
@@ -452,6 +485,7 @@ void quan2_data::readBam(string fbam){
     	}//single end
     }//BAM loop
     vrb.bullet("DONE: " + stb.str(line_count) + " lines read");
+    if (read_sink.size()) vrb.warning(stb.str(read_sink.size() + " unmatched mate pairs found"));
     bam_destroy1(b);
     hts_idx_destroy(idx);
     bam_hdr_destroy(header);
