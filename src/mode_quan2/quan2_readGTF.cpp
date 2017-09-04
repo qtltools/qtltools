@@ -57,7 +57,18 @@ void quan2_data::readGTF(string fgtf){
 
     }
     sort(genes.begin(),genes.end());
-    //for (int i = 0 ; i < genes.size(); i++) cout << genes[i];
+    for (int i = 0 ; i < genes.size(); i++) {
+    	genes_map[genes[i].gene_id] = i;
+    	int sb = genes[i].start / binsize;
+    	int eb = genes[i].end / binsize;
+    	while (sb <= eb){
+    		genome[genes[i].chr][sb].push_back(i);
+    		sb++;
+    	}
+#ifdef DEBUG
+    	cerr << genes[i] << endl;
+#endif
+    }
 }
 
 

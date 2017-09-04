@@ -26,7 +26,8 @@ void quan2_main(vector < string > & argv) {
     	("gtf", boost::program_options::value< string >(), "Annotation in GTF format")
 		("bam", boost::program_options::value< string >(), "Sequence data in BAM/SAM format.")
 		("sample",boost::program_options::value< string > (), "Sample name. [Optional]")
-		("out-prefix", boost::program_options::value< string >(), "Output file prefix.");
+		("out-prefix", boost::program_options::value< string >(), "Output file prefix.")
+        ("no-hash", "Don't include a hash signifying the options used in the quantification in the file names.");
 
 	boost::program_options::options_description opt_parameters ("\x1B[32mParameters\33[0m");
 	opt_parameters.add_options()
@@ -46,12 +47,11 @@ void quan2_main(vector < string > & argv) {
 		("filter-min-exon", boost::program_options::value< unsigned int >()->default_value(0), "Minimal exon length to consider. Exons smaller than this will not be printed out in the exon quantifications, but will still count towards gene quantifications.")
 		("filter-remove-duplicates", "Remove duplicate sequencing reads in the process.");
 
-    /*boost::program_options::options_description opt_parallel ("\x1B[32mParallelization\33[0m");
+    boost::program_options::options_description opt_parallel ("\x1B[32mParallelization\33[0m");
     opt_parallel.add_options()
-    	("chunk", boost::program_options::value< vector < int > >()->multitoken(), "Specify which chunk needs to be processed")
-		("region", boost::program_options::value< string >(), "Region of interest.");*/
+		("region", boost::program_options::value< string >(), "Region of interest.");
 
-    D.option_descriptions.add(opt_files).add(opt_parameters).add(opt_filters);//.add(opt_parallel);
+    D.option_descriptions.add(opt_files).add(opt_parameters).add(opt_filters).add(opt_parallel);
 
     //-------------------
     // 2. PARSE OPTIONS
@@ -80,6 +80,7 @@ void quan2_main(vector < string > & argv) {
     if (!D.options.count("gtf")) vrb.error("Genotype data needs to be specified with --gtf [file.gtf]");
     if (!D.options.count("bam")) vrb.error("Sequence data needs to be specified with --bam [file.bam]");
     if (!D.options.count("out-prefix")) vrb.error("Output needs to be specified with --out [file.out]");
+    if (D.options.count("rpkm") && D.options.count("region") ) vrb.error("Option --region and --rpkm cannot be combined since we won't be parsing the whole BAM file");
 
 
     D.filter.min_mapQ = D.options["filter-mapping-quality"].as < unsigned int > ();
@@ -138,31 +139,32 @@ void quan2_main(vector < string > & argv) {
         D.filter.merge = false;
     }else{
     	D.filter.min_exon = D.options["filter-min-exon"].as < unsigned int > ();
-    	vrb.bullet("Excluding exons smaller than " + stb.str(D.filter.min_exon) + "bp only in exon quantifications" );
+    	vrb.bullet("Excluding exons smaller than " + stb.str(D.filter.min_exon) + " bp only in exon quantifications" );
     }
-
+    ostringstream gts;
     if (D.options.count("gene-types")){
     	vector < string > t = D.options["gene-types"].as < vector < string > > ();
     	D.gene_types = set < string > (t.begin(),t.end());
         const char* const delim = " ";
-        ostringstream temp;
-        copy(D.gene_types.begin(), D.gene_types.end(), ostream_iterator<string>(temp, delim));
-        vrb.bullet("Genes included: " + temp.str());
+        copy(D.gene_types.begin(), D.gene_types.end(), ostream_iterator<string>(gts, delim));
+        vrb.bullet("Genes included: " + gts.str());
     }else vrb.bullet("Including all gene types");
 
+    if(D.options.count("region")){
+    	vrb.bullet("Region = [" + D.options["region"].as < string > () +"]");
+    	if(!D.setRegion(D.options["region"].as < string >())) vrb.error("Cannot parse region!");
+    }
+
+    if(!D.options.count("no-hash")){
+    	string opts_hash = stb.str(QUAN_VERSION) + "#" + D.options["gtf"].as < string > () + "#" + stb.str(D.filter.min_mapQ) + "#" + stb.str(D.filter.max_mismatch_count) + "#" + stb.str(D.filter.max_mismatch_count_total) + "#" +
+    					   stb.str(D.filter.proper_pair) + "#" + stb.str(D.filter.check_consistency) + "#" + stb.str(D.filter.dup_remove) + "#" + stb.str(D.filter.fail_qc) + "#" + stb.str(D.filter.min_exon) + "#" +
+						   stb.str(D.filter.old_wrong_split) + "#" + gts.str() + "#" + D.region.get();
+    	size_t h = hash<string>{}(opts_hash);
+    	D.hash = D.convertToBase(h);
+    	vrb.bullet("Unique hash for this combination of options and GTF file: " + D.hash);
+    }
+
     if (D.options.count("legacy-options")) vrb.warning("You are using --legacy-options, do you know what you are doing?");
-
-    /*if (D.options.count("debug")) D.debug = true;
-
-    int k=1,K=1;
-    if (D.options.count("chunk")) {
-        vector < int > nChunk = D.options["chunk"].as < vector < int > > ();
-        if (nChunk.size() != 2 || nChunk[0] > nChunk[1]) vrb.error("Incorrect --chunk arguments!");
-        vrb.bullet("Chunk = [" + stb.str(nChunk[0]) + "/" + stb.str(nChunk[1]) + "]");
-        k=nChunk[0] , K = nChunk[1];
-    } else if(D.options.count("region")) vrb.bullet("Region = [" + D.options["region"].as < string > () +"]");*/
-
-    //TO DO CHECK PARAMETER VALUES
 
 
     //------------------------------------------

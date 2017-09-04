@@ -8,15 +8,19 @@
 #ifndef SRC_MODE_QUAN2_QUAN2_DATA_H_
 #define SRC_MODE_QUAN2_QUAN2_DATA_H_
 
+#define QUAN_VERSION 1
+
 #include "../common/data.h"
+#include <functional>
+
 
 enum FILTER { PASS, UNMAP, SECD, FAILQC , DUP, NPP, MAPQ, STRAND, MISM};
 
 class my_stats{
 public:
-	unsigned long int mapQ,mismatch,unmapped,unpaired,dup,notexon,good,total,exonicint,secondary,failqc;
-    double exonic;
-    my_stats(){mapQ=0;mismatch=0;unmapped=0;dup=0;unpaired=0;notexon=0;exonic=0.0;total=0;good=0;exonicint=0;secondary=0;failqc=0;}
+	unsigned long int mapQ,mismatch,unmapped,unpaired,dup,notexon,good,total,exonicint,exonicint_multi,secondary,failqc;
+    double exonic,exonic_multi;
+    my_stats(){mapQ=0;mismatch=0;unmapped=0;dup=0;unpaired=0;notexon=0;exonic=0.0;total=0;good=0;exonicint=0;secondary=0;failqc=0;exonic_multi=0.0;exonicint_multi=0;}
 };
 
 
@@ -36,26 +40,25 @@ public:
     my_cont_blocks(){read_length=0;mmc=0; total_contribution = 1.0;filter=PASS;name="";chr="NA";}
     void merge(my_cont_blocks &B){
         for (int i =0 ; i < starts.size(); i++){
-            for (int j =i; j < B.starts.size(); j++){
+            for (int j =i; j < B.starts.size() && ends[i] <= starts[j]; j++){
                 if(starts[i] <= B.ends[j] && ends[i] >= B.starts[j]){
                     unsigned int overlap = min(ends[i], B.ends[j]) - max(starts[i], B.starts[j]) + 1;
-                    block_overlap[i] = 0.5 + ((lengths[i] - overlap) / lengths[i] * 0.5);
-                    B.block_overlap[j] = 0.5 + ((B.lengths[j] - overlap) / B.lengths[j] * 0.5);
-                    break;
+                    block_overlap[i] -= (double) overlap * 0.5 / (double) lengths[i];
+                    B.block_overlap[j] -= (double) overlap * 0.5 / (double) B.lengths[j];
                 }
             }
         }
         double total = 0.0;
-        for (int i = 0 ; i < block_overlap.size(); i++) total += (double) lengths[i] * block_overlap[i];
-        total_contribution = total / (double) read_length;
+        for (int i = 0 ; i < block_overlap.size(); i++) total +=  (double) lengths[i] / (double) read_length * block_overlap[i];
+        total_contribution = total;
         total = 0.0;
-        for (int i = 0 ; i < B.block_overlap.size(); i++) total += (double) B.lengths[i] * B.block_overlap[i];
-        B.total_contribution = total / (double) B.read_length;
+        for (int i = 0 ; i < B.block_overlap.size(); i++) total += (double) B.lengths[i] / (double) B.read_length * B.block_overlap[i];
+        B.total_contribution = total;
     }
     friend ostream& operator<<(ostream& out, my_cont_blocks& g){
-        out << g.read_length << "\t" << g.mmc << "\t" << g.core.pos << "\t" << g.core.mpos << "\t" << g.total_contribution << g.chr;
+        out<< g.name << "\t" << g.read_length << "\t" << g.mmc << "\t" << g.core.pos << "\t" << g.core.mpos << "\t" << g.total_contribution <<"\t" << g.chr;
         for (int i =0; i < g.starts.size(); i++ ) out << "\t" << g.starts[i] << "," << g.ends[i] << " " << g.block_overlap[i];
-        out << endl;
+        //out << endl;
         return out;
     }
 };
@@ -102,6 +105,11 @@ public:
         if (start > p.start) return false;
         if (end < p.end) return true;
         return false;
+    }
+
+    friend ostream& operator<<(ostream& out, my_block& g){
+        out << g.chr << "\t" << g.start << "\t" << g.end;
+        return out;
     }
 
 };
@@ -216,7 +224,7 @@ public:
 
     friend ostream& operator<<(ostream& out, my_gene& g){
         out << g.chr << "\t" << g.start << "\t" << g.end << "\t" << g.gene_id << "\t" << g.length << "\t" << (g.strand == 1 ? "+" : "-") << "\t" << 2<<endl;
-        sort(g.exons.begin(), g.exons.end());
+        //sort(g.exons.begin(), g.exons.end());
         for (int i =0; i < g.exons.size(); i++ ) out << g.exons[i];
         return out;
     }
@@ -232,28 +240,25 @@ public:
     string  sample;
     set < string > gene_types;
     filters filter;
+    genomic_region region;
+    string hash;
 
-    //void setChunk(int,int);
-    //void setRegion(string);
-    //genomic_region region;
+    map < string , map < int , vector < int > > > genome;
 
+    static const int binsize = 100000;
 
-    //void read_Sample_Names(vector < string > &);
-    inline vector <my_gene> binary_find(vector < my_gene > &, my_block &);
+    bool setRegion(string reg) {return region.parse(reg);}
+    inline vector <my_gene> getOverlappingGenesQ(my_block &);
     void readGTF(string);
-    //void groupGenes();
     void readBam(string);
     my_cont_blocks keep_read(bam1_t *b);
     void printBEDcount(string);
     void printBEDrpkm(string);
     void printStats(string);
+    string convertToBase(unsigned long long int, unsigned int = 62);
 };
 
 void quan2_main(vector < string > & );
 
-inline static bool cmp_blocks (const my_block &a, const my_block &b){
-	if (a.chr == b.chr && a.end >= b.start && a.start <= b.end) return false;
-	else return (a < b);
-}
 
 #endif /* SRC_MODE_QUAN2_QUAN2_DATA_H_ */

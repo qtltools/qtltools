@@ -133,6 +133,7 @@ void quan_data::printStats(string fout){
     }
 	output_file fdo(prefix+".stats" + ext);
 	if (fdo.fail()) vrb.error("Cannot open file [" + prefix + ".stats" + ext + "]");
-	fdo << "sample\tunmmaped_in_genic_regions\tduplicate_reads_in_genic_regions\tfails_mapQ_in_genic_regions:" << min_mapQ <<"\tunpaired_in_genic_regions\tfails_mismatch_in_genic_regions:" << max_mismatch_count << ":" << max_mismatch_count_total << "\tgood_reads_in_genic_regions\tnot_exonic_in_genic_regions\texonic_in_genic_regions\ttotal_reads_in_genic_regions" << endl;
-	for (int i = 0 ; i < samples.size(); i++) fdo << samples[i] <<"\t" << stats[i].unmapped << "\t" << stats[i].dup << "\t" << stats[i].mapQ << "\t"<< stats[i].unpaired <<"\t" << stats[i].mismatch << "\t" << stats[i].good << "\t" << stats[i].notexon << "\t" << stats[i].exonicint << "\t" << stats[i].total << endl;
+	fdo.precision(16);
+	fdo << "sample\tunmmaped_in_genic_regions\tduplicate_reads_in_genic_regions\tfails_mapQ_in_genic_regions:" << min_mapQ <<"\tunpaired_in_genic_regions\tfails_mismatch_in_genic_regions:" << max_mismatch_count << ":" << max_mismatch_count_total << "\tgood_reads_in_genic_regions\tnot_exonic_in_genic_regions\texonic_in_genic_regions\trpkm_divisor\ttotal_reads_in_genic_regions" << endl;
+	for (int i = 0 ; i < samples.size(); i++) fdo << samples[i] <<"\t" << stats[i].unmapped << "\t" << stats[i].dup << "\t" << stats[i].mapQ << "\t"<< stats[i].unpaired <<"\t" << stats[i].mismatch << "\t" << stats[i].good << "\t" << stats[i].notexon << "\t" << stats[i].exonicint << "\t" << stats[i].exonic << "\t" << stats[i].total << endl;
 }

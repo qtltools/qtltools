@@ -7,11 +7,21 @@
 
 #include "quan2_data.h"
 
-inline vector <my_gene> quan2_data::binary_find(vector < my_gene > &input, my_block &item){
-	vector <my_gene>::iterator lower = lower_bound(input.begin(),input.end(),item,cmp_blocks);
-	vector <my_gene>::iterator upper = upper_bound(input.begin(),input.end(),item,cmp_blocks);
-	if (lower >= upper) return vector <my_gene>(0);
-	else return vector <my_gene>(lower,upper);
+
+inline vector < my_gene > quan2_data::getOverlappingGenesQ(my_block & bl){
+	if (!genome.count(bl.chr)) return vector < my_gene >(0);
+	set <int> list;
+	set <int>::iterator it;
+	for (int sb = bl.start/binsize; sb <= bl.end/binsize; sb++){
+		if (genome[bl.chr].count(sb)){
+			for (int i = 0 ; i < genome[bl.chr][sb].size(); i++){
+				if (genes[genome[bl.chr][sb][i]].overlap(bl.start,bl.end)) list.insert(genome[bl.chr][sb][i]);
+			}
+		}
+	}
+	vector < my_gene > res(0);
+	for(it=list.begin(); it != list.end();it++) res.push_back(genes[(*it)]);
+	return res;
 }
 
 my_cont_blocks quan2_data::keep_read(bam1_t *b) {
@@ -217,11 +227,36 @@ void quan2_data::readBam(string fbam){
     map < string, my_cont_blocks> read_sink;
     bam1_t * b = bam_init1();
     unsigned int line_count = 0;
-    while (sam_read1(fd, header, b) >= 0) {
-    	line_count++;
-    	if (line_count % 10000000 == 0){
-    		vrb.bullet(stb.str(line_count) + " lines read");
+    hts_itr_t * iter = NULL;
+    if(region.isSet()){
+    	iter = sam_itr_querys(idx, header, region.get().c_str());
+    	if(iter==NULL){
+    	    bam_destroy1(b);
+    	    hts_itr_destroy(iter);
+    	    hts_idx_destroy(idx);
+    	    bam_hdr_destroy(header);
+    	    sam_close(fd);
+    		vrb.error("Problem jumping to region [" + region.get() + "]");
     	}
+    }
+    //GET THE NUMBER OF READS FROM INDEX
+    uint64_t totr = 0;
+    for (int i = 0; i < header->n_targets; ++i) {
+        uint64_t u, v;
+        hts_idx_get_stat(idx, i, &u, &v);
+        totr+= u + v;
+    }
+    totr += hts_idx_get_n_no_coor(idx);
+    if (!region.isSet()) vrb.bullet("Expecting " + stb.str(totr) + " lines");
+    //while (sam_read1(fd, header, b) >= 0) {
+    int ret;
+    while (1){
+		ret = iter ? sam_itr_next(fd, iter, b) : sam_read1(fd, header, b);
+		if (ret < 0) break;
+    	line_count++;
+    	if (!region.isSet()) vrb.progress( ((float) line_count) / (float) totr);
+    	else if (line_count % 1000000 == 0) vrb.bullet(stb.str(line_count) + " lines read");
+
     	my_cont_blocks B = keep_read(b);
 
     	//Skip if it is a secondary alignment
@@ -286,11 +321,15 @@ void quan2_data::readBam(string fbam){
                 if (filter.merge) A.merge(B); //if we are merging overlapping mate pair do that
                 //Check we overlap with a gene
                 my_block temp = my_block(A.chr, A.starts[0], B.ends.back());
-                vector < my_gene > overlapping_genes = binary_find(genes,temp);
+                vector < my_gene > overlapping_genes = getOverlappingGenesQ(temp);
                 if (overlapping_genes.size()){
                 	//overlapping genes found
                 	bool both_found = false;
+                	int total_genes_found = 0;
                     for (int g = 0 ; g < overlapping_genes.size(); g++){
+#ifdef DEBUG
+                    	cerr << "CHECKING " << A << " " << B << " in " << temp << " for " << overlapping_genes[g].gene_id <<" " << g+1 << "/" << overlapping_genes.size()<< endl;
+#endif
                         vector < int > exon_overlap1,exon_overlap2,exon_overlap1_length,exon_overlap2_length,exon_map1,exon_map2;
                         bool all_found1 = true, all_found2 = true , any_found1 = false, any_found2 = false;
                         unsigned long int exon_overlap1_length_total = 0 , exon_overlap2_length_total = 0;
@@ -339,8 +378,8 @@ void quan2_data::readBam(string fbam){
 #ifdef DEBUG
                         	cerr << "NCONSALL1\t" << A.name <<endl;
                         	cerr << overlapping_genes[g];
-                        	cerr << A;
-                        	cerr << B;
+                        	cerr << A << endl;
+                        	cerr << B << endl;
 #endif
                         	continue;
                         }
@@ -349,8 +388,8 @@ void quan2_data::readBam(string fbam){
 #ifdef DEBUG
                         	cerr << "NCONSANY1\t" << A.name<<endl;
                         	cerr << overlapping_genes[g];
-                        	cerr << A;
-                        	cerr << B;
+                        	cerr << A << endl;
+                        	cerr << B << endl;
 #endif
                         	continue;
                         }
@@ -360,8 +399,8 @@ void quan2_data::readBam(string fbam){
 #ifdef DEBUG
                         	cerr << "NCONSALL2\t" << B.name<<endl;
                         	cerr << overlapping_genes[g];
-                        	cerr << A;
-                        	cerr << B;
+                        	cerr << A << endl;
+                        	cerr << B << endl;
 #endif
                         	continue;
                         }
@@ -369,13 +408,14 @@ void quan2_data::readBam(string fbam){
 #ifdef DEBUG
                         	cerr << "NCONSANY2\t" << B.name<<endl;
                         	cerr << overlapping_genes[g];
-                        	cerr << A;
-                        	cerr << B;
+                        	cerr << A << endl;
+                        	cerr << B << endl;
 #endif
                         	continue;
                         }
 
                         both_found= true;
+                        total_genes_found++;
                         for (int i = 0 ; i < exon_overlap1.size(); i++) {
                         	genes[genes_map[overlapping_genes[g].gene_id]].exons[exon_overlap1[i]].read_count += (double)exon_overlap1_length[i] / (double)exon_overlap1_length_total * A.block_overlap[exon_map1[i]];
 #ifdef DEBUG
@@ -390,11 +430,16 @@ void quan2_data::readBam(string fbam){
                         }
                         genes[genes_map[overlapping_genes[g].gene_id]].read_count += A.total_contribution + B.total_contribution;
 #ifdef DEBUG
-                        cerr << overlapping_genes[g].gene_id << "\t" << name << "\t" << A.total_contribution <<endl;
-                        cerr << overlapping_genes[g].gene_id << "\t" << name << "\t" << B.total_contribution <<endl;
+                        cerr << overlapping_genes[g].gene_id << "\t" << A.name << "\t" << A.total_contribution <<endl;
+                        cerr << overlapping_genes[g].gene_id << "\t" << B.name << "\t" << B.total_contribution <<endl;
 #endif
                     }//gene loop
-                    if(both_found) {stats.exonic+= A.total_contribution + B.total_contribution; stats.exonicint+=2;}
+                    if(both_found) {
+                    	stats.exonic += A.total_contribution + B.total_contribution;
+                    	stats.exonicint += 2;
+                    	stats.exonic_multi += (A.total_contribution + B.total_contribution) * total_genes_found;
+                    	stats.exonicint_multi += 2 * total_genes_found;
+                    }
                     else stats.notexon+=2;
                 }else{
                 	//non-exonic
@@ -441,7 +486,7 @@ void quan2_data::readBam(string fbam){
 
     		//Check we overlap with a gene
     		my_block temp = my_block(B.chr, B.starts[0], B.ends.back());
-    		vector < my_gene > overlapping_genes = binary_find(genes,temp);
+            vector < my_gene > overlapping_genes = getOverlappingGenesQ(temp);
     		if (overlapping_genes.size()){
     			//overlapping genes found
     			bool both_found = false;
@@ -485,7 +530,7 @@ void quan2_data::readBam(string fbam){
     	}//single end
     }//BAM loop
     vrb.bullet("DONE: " + stb.str(line_count) + " lines read");
-    if (read_sink.size()) vrb.warning(stb.str(read_sink.size() + " unmatched mate pairs found"));
+    if (read_sink.size() && !region.isSet()) vrb.warning(stb.str(read_sink.size()) + " unmatched mate pairs found");
     bam_destroy1(b);
     hts_idx_destroy(idx);
     bam_hdr_destroy(header);

@@ -361,7 +361,13 @@ void quan_data::readBams(){
                                 }
 
                             }//gene loop
-                            if(both_found) {stat.exonic+= A.total_contribution + B.total_contribution; stat.exonicint+=2;}
+                            if(both_found) {
+                            	stat.exonic+= A.total_contribution + B.total_contribution; stat.exonicint+=2;
+                            	if (debug) {
+                            		cerr << "ADDING " << gr << " " << name << " " << A.total_contribution << endl;
+                            		cerr << "ADDING " << gr << " " << name << " " << B.total_contribution << endl;
+                            	}
+                            }
                             else stat.notexon+=2;
                         }else read_sink[name]= B;
                     }else{
