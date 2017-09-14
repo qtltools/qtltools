@@ -77,9 +77,9 @@ void quan2_main(vector < string > & argv) {
     //-----------------
     // 4. COMMON CHECKS
     //-----------------
-    if (!D.options.count("gtf")) vrb.error("Genotype data needs to be specified with --gtf [file.gtf]");
+    if (!D.options.count("gtf")) vrb.error("Gene annotation needs to be specified with --gtf [file.gtf]");
     if (!D.options.count("bam")) vrb.error("Sequence data needs to be specified with --bam [file.bam]");
-    if (!D.options.count("out-prefix")) vrb.error("Output needs to be specified with --out [file.out]");
+    if (!D.options.count("out-prefix")) vrb.error("Output needs to be specified with --out-prefix [file.out]");
     if (D.options.count("rpkm") && D.options.count("region") ) vrb.error("Option --region and --rpkm cannot be combined since we won't be parsing the whole BAM file");
 
 
@@ -159,7 +159,7 @@ void quan2_main(vector < string > & argv) {
     	string opts_hash = stb.str(QUAN_VERSION) + "#" + D.options["gtf"].as < string > () + "#" + stb.str(D.filter.min_mapQ) + "#" + stb.str(D.filter.max_mismatch_count) + "#" + stb.str(D.filter.max_mismatch_count_total) + "#" +
     					   stb.str(D.filter.proper_pair) + "#" + stb.str(D.filter.check_consistency) + "#" + stb.str(D.filter.dup_remove) + "#" + stb.str(D.filter.fail_qc) + "#" + stb.str(D.filter.min_exon) + "#" +
 						   stb.str(D.filter.old_wrong_split) + "#" + gts.str() + "#" + D.region.get();
-    	size_t h = hash<string>{}(opts_hash);
+    	unsigned long long int h = D.fnv1a_hash(opts_hash);
     	D.hash = D.convertToBase(h);
     	vrb.bullet("Unique hash for this combination of options and GTF file: " + D.hash);
     }

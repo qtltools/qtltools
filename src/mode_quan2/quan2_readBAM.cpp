@@ -176,13 +176,13 @@ my_cont_blocks quan2_data::keep_read(bam1_t *b) {
         unsigned int bL = 0;
         uint32_t *cigar = bam_get_cigar(b);
 #ifdef DEBUG
-        cerr<< block.name << "\t" << b->core.flag << "\t";
+        cerr<< block.name << "\t" << b->core.flag << "\t" << c->n_cigar;
 #endif
         for (int i = 0; i < c->n_cigar; ++i) {
             int l = bam_cigar_oplen(cigar[i]);
             char c = bam_cigar_opchr(cigar[i]);
 #ifdef DEBUG
-            cerr << l << c;
+            cerr << " " << l << c;
 #endif
             if(c=='S' || c =='H' || c =='I' || c=='P') continue;
             else if ((c=='N' || c=='D') && l){
@@ -190,7 +190,7 @@ my_cont_blocks quan2_data::keep_read(bam1_t *b) {
 					block.starts.push_back(bS);
 					block.ends.push_back(bS+bL-1);
 					block.lengths.push_back(bL);
-					block.block_overlap.push_back(1.0);
+					block.base_count.push_back(vector <my_basic_overlap> (0));
 					block.read_length+=bL;
                 }
                 bS+=bL+l;
@@ -204,10 +204,13 @@ my_cont_blocks quan2_data::keep_read(bam1_t *b) {
 			block.starts.push_back(bS);
 			block.ends.push_back(bS+bL-1);
 			block.lengths.push_back(bL);
-			block.block_overlap.push_back(1.0);
+			block.base_count.push_back(vector <my_basic_overlap> (0));
 			block.read_length+=bL;
         }
     }
+#ifdef DEBUG
+        cerr << block << endl;
+#endif
     return(block);
 }
 
@@ -319,6 +322,7 @@ void quan2_data::readBam(string fbam){
                 //Passed all filters, good on the reads
                 stats.good+=2;
                 if (filter.merge) A.merge(B); //if we are merging overlapping mate pair do that
+                if (A.merged || B.merged ) stats.merged +=2;
                 //Check we overlap with a gene
                 my_block temp = my_block(A.chr, A.starts[0], B.ends.back());
                 vector < my_gene > overlapping_genes = getOverlappingGenesQ(temp);
@@ -326,32 +330,46 @@ void quan2_data::readBam(string fbam){
                 	//overlapping genes found
                 	bool both_found = false;
                 	int total_genes_found = 0;
+                	double total_read1_count = 0.0 , total_read2_count = 0.0;
                     for (int g = 0 ; g < overlapping_genes.size(); g++){
 #ifdef DEBUG
                     	cerr << "CHECKING " << A << " " << B << " in " << temp << " for " << overlapping_genes[g].gene_id <<" " << g+1 << "/" << overlapping_genes.size()<< endl;
 #endif
-                        vector < int > exon_overlap1,exon_overlap2,exon_overlap1_length,exon_overlap2_length,exon_map1,exon_map2;
+                        vector < unsigned int > exon_overlap1,exon_overlap2;
+                        vector <double> exon_count1,exon_count2;
                         bool all_found1 = true, all_found2 = true , any_found1 = false, any_found2 = false;
-                        unsigned long int exon_overlap1_length_total = 0 , exon_overlap2_length_total = 0;
+                        double exon_overlap1_length_total = 0.0 , exon_overlap2_length_total = 0.0;
                         //check if the first mate is overlapping any exons
+                        //iterate through all blocks without gaps
                         for (int i = 0 ; i < A.starts.size() ; i++){
                             int idx = -1;
-                            if (overlapping_genes[g].overlap(A.starts[i],A.ends[i])){
-                                for (int e = 0 ; e < overlapping_genes[g].exons.size();e++){
-                                    if(overlapping_genes[g].exons[e].overlap(A.starts[i],A.ends[i])){
+                            if (overlapping_genes[g].overlap(A.starts[i],A.ends[i])){ //if this block is overlapping with a gene
+                                for (int e = 0 ; e < overlapping_genes[g].exons.size();e++){ // iterate trough all the exons of the gene
+                                    if(overlapping_genes[g].exons[e].overlap(A.starts[i],A.ends[i])){ //if we overlap with this exon
                                         idx = e;
-                                        any_found1 = true;
-                                        exon_overlap1.push_back(idx);
-                                        if ( filter.old_wrong_split){
+                                        any_found1 = true; //at least one block of this read overlaps with an exon
+                                        exon_overlap1.push_back(idx); //record which exon we overlap
+                                        unsigned int rs = max(overlapping_genes[g].exons[idx].start, A.starts[i]); //restrictive start position of the overlap
+                                        unsigned int re = min(overlapping_genes[g].exons[idx].end, A.ends[i]); //restrictive end position of the overlap
+                                        if ( filter.old_wrong_split){ //This replicates a bug in the old quantification script in the Dermitzakis lab
+                                        	//Check if the start and end positions fall into different bins, as defined in the old script and if so multi count them
                                         	int mul = ( (int) A.starts[i] / 100000 != (int) A.ends[i] / 100000 && (int) overlapping_genes[g].exons[idx].start / 100000  != (int) overlapping_genes[g].exons[idx].end / 100000 ) ?  2 : 1;
-                                        	exon_overlap1_length.push_back(overlapping_genes[g].exons[idx].end - A.starts[i] < A.ends[i] - A.starts[i] ? (overlapping_genes[g].exons[idx].end - A.starts[i] + 1) * mul : A.lengths[i] * mul);
-                                        }else exon_overlap1_length.push_back(min(overlapping_genes[g].exons[idx].end, A.ends[i]) - max(overlapping_genes[g].exons[idx].start, A.starts[i]) + 1);
-                                        exon_overlap1_length_total += exon_overlap1_length.back();
-                                        exon_map1.push_back(i);
+                                        	//The buggy way of calculating overlap
+                                        	unsigned int ovrlp = overlapping_genes[g].exons[idx].end - A.starts[i] < A.ends[i] - A.starts[i] ? (overlapping_genes[g].exons[idx].end - A.starts[i] + 1) * mul : A.lengths[i] * mul;
+                                        	exon_count1.push_back((double) ovrlp);
+                                        	exon_overlap1_length_total += ovrlp;
+                                        }else {
+                                        	unsigned int ovrlp = re - rs + 1; //overlap length
+                                        	double total_count = 0.0;
+                                        	for (int mbo = 0 ; mbo < A.base_count[i].size(); mbo++) total_count += (double) A.base_count[i][mbo].overlap(rs,re); //Check if any of the bases of the overlap include bases that are covered by both of the mate pairs
+                                        	exon_count1.push_back((total_count * 0.5) + ((double) ovrlp - total_count)); //If there are bases covered by both mate pairs then these contribute half of a base that is covered by only one of the mate pairs
+                                        	exon_overlap1_length_total += (double) ovrlp;
+                                        	//The denominator will be the total length of the read that overlaps with exons, which may be less than the aligned read length, so that they add up to 1
+                                        }
                                     }
                                 }
                             }
-                            if (idx == -1) all_found1 = false;
+                            if (idx == -1) all_found1 = false; //If one of the block
                         }//mate1 loop
 
                         //check if the second mate is overlapping any exons
@@ -363,12 +381,20 @@ void quan2_data::readBam(string fbam){
                                         idx = e;
                                         any_found2 = true;
                                         exon_overlap2.push_back(idx);
+                                        unsigned int rs = max(overlapping_genes[g].exons[idx].start, B.starts[i]);
+                                        unsigned int re = min(overlapping_genes[g].exons[idx].end, B.ends[i]);
                                         if ( filter.old_wrong_split) {
                                         	int mul = ( (int) B.starts[i] / 100000 != (int) B.ends[i] / 100000 && (int) overlapping_genes[g].exons[idx].start / 100000  != (int) overlapping_genes[g].exons[idx].end / 100000 ) ?  2 : 1;
-                                        	exon_overlap2_length.push_back(overlapping_genes[g].exons[idx].end - B.starts[i] < B.ends[i] - B.starts[i] ? (overlapping_genes[g].exons[idx].end - B.starts[i] + 1) * mul: B.lengths[i] * mul);
-                                        }else exon_overlap2_length.push_back(min(overlapping_genes[g].exons[idx].end, B.ends[i]) - max(overlapping_genes[g].exons[idx].start, B.starts[i]) + 1);
-                                        exon_overlap2_length_total += exon_overlap2_length.back();
-                                        exon_map2.push_back(i);
+                                        	unsigned int ovrlp = overlapping_genes[g].exons[idx].end - B.starts[i] < B.ends[i] - B.starts[i] ? (overlapping_genes[g].exons[idx].end - B.starts[i] + 1) * mul: B.lengths[i] * mul;
+                                        	exon_count2.push_back((double) ovrlp);
+                                        	exon_overlap2_length_total += (double) ovrlp;
+                                        }else{
+                                        	unsigned int ovrlp = re - rs + 1;
+                                        	double total_count = 0.0;
+                                        	for (int mbo = 0 ; mbo < B.base_count[i].size(); mbo++) total_count += (double) B.base_count[i][mbo].overlap(rs,re);
+                                        	exon_count2.push_back((total_count * 0.5) + ((double) ovrlp - total_count));
+                                        	exon_overlap2_length_total += (double) ovrlp;
+                                        }
                                     }
                                 }
                             }
@@ -384,7 +410,7 @@ void quan2_data::readBam(string fbam){
                         	continue;
                         }
 
-                        if (!any_found1){
+                        if (!any_found1){ //If any of the blocks overlap with an exon
 #ifdef DEBUG
                         	cerr << "NCONSANY1\t" << A.name<<endl;
                         	cerr << overlapping_genes[g];
@@ -416,33 +442,42 @@ void quan2_data::readBam(string fbam){
 
                         both_found= true;
                         total_genes_found++;
+                        float tot_re1 = 0.0, tot_re2 = 0.0;
                         for (int i = 0 ; i < exon_overlap1.size(); i++) {
-                        	genes[genes_map[overlapping_genes[g].gene_id]].exons[exon_overlap1[i]].read_count += (double)exon_overlap1_length[i] / (double)exon_overlap1_length_total * A.block_overlap[exon_map1[i]];
+                        	double ttlc = exon_count1[i] / exon_overlap1_length_total;
+                        	genes[genes_map[overlapping_genes[g].gene_id]].exons[exon_overlap1[i]].read_count += ttlc;
+                        	tot_re1 += ttlc;
+                        	total_read1_count += ttlc;
 #ifdef DEBUG
-                        	cerr << genes[genes_map[overlapping_genes[g].gene_id]].exons[exon_overlap1[i]].name << "\t" << A.name << "\t" <<(double)exon_overlap1_length[i] / (double)exon_overlap1_length_total * A.block_overlap[exon_map1[i]] << "\t" << exon_overlap1_length[i] << "\t" << exon_overlap1_length_total << "\t" << A.block_overlap[exon_map1[i]] << "\t" << A.starts[exon_map1[i]] << "\t" << A.ends[exon_map1[i]] << "\tA" << endl;
+                        	cerr << genes[genes_map[overlapping_genes[g].gene_id]].exons[exon_overlap1[i]].name << "\t" << A.name << "\t" << ttlc << "\t" << exon_count1[i] << "\t" << exon_overlap1_length_total << "\tA" << endl;
 #endif
                         }
                         for (int i = 0 ; i < exon_overlap2.size(); i++) {
-                        	genes[genes_map[overlapping_genes[g].gene_id]].exons[exon_overlap2[i]].read_count += (double)exon_overlap2_length[i] / (double)exon_overlap2_length_total * B.block_overlap[exon_map2[i]];
+                        	double ttlc = exon_count2[i] / exon_overlap2_length_total;
+                        	genes[genes_map[overlapping_genes[g].gene_id]].exons[exon_overlap2[i]].read_count += ttlc ;
+                        	tot_re2 += ttlc;
+                        	total_read2_count += ttlc;
 #ifdef DEBUG
-                        	cerr << genes[genes_map[overlapping_genes[g].gene_id]].exons[exon_overlap2[i]].name << "\t" << B.name << "\t" <<(double)exon_overlap2_length[i] / (double)exon_overlap2_length_total * B.block_overlap[exon_map2[i]] << "\t" << exon_overlap2_length[i] << "\t" << exon_overlap2_length_total << "\t" << B.block_overlap[exon_map2[i]] << "\t" << B.starts[exon_map2[i]] << "\t" << B.ends[exon_map2[i]] << "\tB" << endl;
+                        	cerr << genes[genes_map[overlapping_genes[g].gene_id]].exons[exon_overlap2[i]].name << "\t" << B.name << "\t" << ttlc << "\t" << exon_count2[i] << "\t" << exon_overlap2_length_total << "\tB" << endl;
 #endif
                         }
-                        genes[genes_map[overlapping_genes[g].gene_id]].read_count += A.total_contribution + B.total_contribution;
+                        genes[genes_map[overlapping_genes[g].gene_id]].read_count += tot_re1 + tot_re2;
 #ifdef DEBUG
-                        cerr << overlapping_genes[g].gene_id << "\t" << A.name << "\t" << A.total_contribution <<endl;
-                        cerr << overlapping_genes[g].gene_id << "\t" << B.name << "\t" << B.total_contribution <<endl;
+                        cerr << overlapping_genes[g].gene_id << "\t" << A.name << "\t" << tot_re1 <<endl;
+                        cerr << overlapping_genes[g].gene_id << "\t" << B.name << "\t" << tot_re2 <<endl;
 #endif
                     }//gene loop
                     if(both_found) {
-                    	stats.exonic += A.total_contribution + B.total_contribution;
                     	stats.exonicint += 2;
-                    	stats.exonic_multi += (A.total_contribution + B.total_contribution) * total_genes_found;
+                    	stats.exonic_multi += total_read1_count + total_read2_count;
                     	stats.exonicint_multi += 2 * total_genes_found;
                     }
                     else stats.notexon+=2;
                 }else{
                 	//non-exonic
+#ifdef DEBUG
+                	cerr << "NONEXONIC " << A.name << " " << temp << endl;
+#endif
                 	stats.notexon+=2;
                 }
             }else{
@@ -487,44 +522,63 @@ void quan2_data::readBam(string fbam){
     		//Check we overlap with a gene
     		my_block temp = my_block(B.chr, B.starts[0], B.ends.back());
             vector < my_gene > overlapping_genes = getOverlappingGenesQ(temp);
+            float total_read2_count = 0.0;
+            int total_genes_found = 0;
     		if (overlapping_genes.size()){
     			//overlapping genes found
     			bool both_found = false;
     			for (int g = 0 ; g < overlapping_genes.size(); g++){
-    				vector < int >exon_overlap2,exon_overlap2_length,exon_map2;
-    				int exon_overlap2_length_total = 0;
+    				vector < int >exon_overlap2;
+					vector <float> exon_count2;
+    				float exon_overlap2_length_total = 0.0;
     				bool all_found2 = true , any_found2 = false;
-    				//check if the second mate is overlapping any exons
-    				for (int i = 0 ; i < B.starts.size(); i++){
-    					int idx = -1;
-    					if (overlapping_genes[g].overlap(B.starts[i],B.ends[i])){
-    						for (int e = 0 ; e < overlapping_genes[g].exons.size(); e++){
-    							if(overlapping_genes[g].exons[e].overlap(B.starts[i],B.ends[i])){
-    								idx = e;
-    								any_found2 = true;
-    								exon_overlap2.push_back(idx);
-    								if ( filter.old_wrong_split) {
-    									int mul = ( (int) B.starts[i] / 100000 != (int) B.ends[i] / 100000 && (int) overlapping_genes[g].exons[idx].start / 100000  != (int) overlapping_genes[g].exons[idx].end / 100000 ) ?  2 : 1;
-    									exon_overlap2_length.push_back(overlapping_genes[g].exons[idx].end - B.starts[i] < B.ends[i] - B.starts[i] ? (overlapping_genes[g].exons[idx].end - B.starts[i] + 1) * mul: B.lengths[i] * mul);
-    								}else exon_overlap2_length.push_back(min(overlapping_genes[g].exons[idx].end, B.ends[i]) - max(overlapping_genes[g].exons[idx].start, B.starts[i]) + 1);
-    								exon_overlap2_length_total += exon_overlap2_length.back();
-    								exon_map2.push_back(i);
-    							}
-    						}
-    					}
-    					if (idx == -1) all_found2 = false;
-    				}//mate2 loop
+                    //check if the second mate is overlapping any exons
+                    for (int i = 0 ; i < B.starts.size(); i++){
+                        int idx = -1;
+                        if (overlapping_genes[g].overlap(B.starts[i],B.ends[i])){
+                            for (int e = 0 ; e < overlapping_genes[g].exons.size(); e++){
+                                if(overlapping_genes[g].exons[e].overlap(B.starts[i],B.ends[i])){
+                                    idx = e;
+                                    any_found2 = true;
+                                    exon_overlap2.push_back(idx);
+                                    unsigned int rs = max(overlapping_genes[g].exons[idx].start, B.starts[i]);
+                                    unsigned int re = min(overlapping_genes[g].exons[idx].end, B.ends[i]);
+                                    if ( filter.old_wrong_split) {
+                                    	int mul = ( (int) B.starts[i] / 100000 != (int) B.ends[i] / 100000 && (int) overlapping_genes[g].exons[idx].start / 100000  != (int) overlapping_genes[g].exons[idx].end / 100000 ) ?  2 : 1;
+                                    	unsigned int ovrlp = overlapping_genes[g].exons[idx].end - B.starts[i] < B.ends[i] - B.starts[i] ? (overlapping_genes[g].exons[idx].end - B.starts[i] + 1) * mul: B.lengths[i] * mul;
+                                    	exon_count2.push_back((float) ovrlp);
+                                    	exon_overlap2_length_total += (float) ovrlp;
+                                    }else{
+                                    	unsigned int ovrlp = re - rs + 1;
+                                    	float total_count = 0.0;
+                                    	for (int mbo = 0 ; mbo < B.base_count[i].size(); mbo++) total_count += (float) B.base_count[i][mbo].overlap(rs,re);
+                                    	exon_count2.push_back((total_count * 0.5) + ((float) ovrlp - total_count));
+                                    	exon_overlap2_length_total += (float) ovrlp;
+                                    }
+                                }
+                            }
+                        }
+                        if (idx == -1) all_found2 = false;
+                    }//mate2 loop
                     if (!all_found2 && filter.check_consistency) continue;
                     if (!any_found2) continue;
 
                     both_found = true;
-
+                    total_genes_found++;
+                    float tot_re2 = 0.0;
                     for (int i = 0 ; i < exon_overlap2.size(); i++) {
-                    	genes[genes_map[overlapping_genes[g].gene_id]].exons[exon_overlap2[i]].read_count += (double)exon_overlap2_length[i] / (double)exon_overlap2_length_total * B.block_overlap[exon_map2[i]];
+                    	float ttlc = exon_count2[i] / exon_overlap2_length_total;
+                    	genes[genes_map[overlapping_genes[g].gene_id]].exons[exon_overlap2[i]].read_count += ttlc ;
+                    	tot_re2 += ttlc;
+                    	total_read2_count += ttlc;
                     }
-                    genes[genes_map[overlapping_genes[g].gene_id]].read_count += B.total_contribution;
+                    genes[genes_map[overlapping_genes[g].gene_id]].read_count += tot_re2;
     			}
-                if(both_found) {stats.exonic += B.total_contribution; stats.exonicint++;}
+                if(both_found) {
+                	stats.exonicint += 1;
+                	stats.exonic_multi += total_read2_count;
+                	stats.exonicint_multi += total_genes_found;
+                }
                 else stats.notexon+=1;
     		}else stats.notexon++;
     	}//single end

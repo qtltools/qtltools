@@ -139,27 +139,28 @@ void quan2_data::printStats(string fout){
 	fdo << "total_mapQ_less_than_" << filter.min_mapQ << "\t" << stats.mapQ << endl;
 	fdo << "total_notpaired\t" << stats.unpaired << endl;
 	fdo << "total_mismatches_greater_than_" << filter.max_mismatch_count << "_" << filter.max_mismatch_count_total << "\t" << stats.mismatch << endl;
+	fdo << "total_merged_reads\t" << stats.merged << endl;
 	fdo << "total_good\t" << stats.good << endl;
 	fdo << "total_exonic\t" << stats.exonicint << endl;
-	fdo << "total_exonic_after_merge\t" << stats.exonic << endl;
+	//fdo << "total_exonic_after_merge\t" << stats.exonic << endl;
 	fdo << "total_exonic_multi_counting\t" << stats.exonicint_multi << endl;
-	fdo << "total_exonic_multi_counting_after_merge_(rpkm_divisor)\t" << stats.exonic_multi << endl;
+	fdo << "total_exonic_multi_counting_after_merge_(used_for_rpkm)\t" << stats.exonic_multi << endl;
 	fdo << "good_over_total\t" << (double)stats.good / (double)stats.total << endl;
-	fdo << "exonic_over_total\t" << (double)stats.exonic / (double)stats.total << endl;
-	fdo << "exonic_over_good\t" << (double)stats.exonic / (double)stats.good << endl;
+	fdo << "exonic_over_total\t" << (double)stats.exonicint / (double)stats.total << endl;
+	fdo << "exonic_over_good\t" << (double)stats.exonicint / (double)stats.good << endl;
 }
 
 
 string quan2_data::convertToBase(unsigned long long num , unsigned base ){
-    char digits[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    char digits[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-+=;~";
     int i;
-    char buf[66];
+    char buf[514]; //enough to hold a 512 bit in base 2
     
-    if (base < 2 || base > 62) return "";
+    if (base < 2 || base > 68) return "";
     if (!num) return "0";
     
-    buf[65] = '\0';
-    i = 65;
+    buf[513] = '\0';
+    i = 513;
     
     while (num) {
         buf[--i] = digits[num % base];

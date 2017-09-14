@@ -16,11 +16,20 @@
 
 enum FILTER { PASS, UNMAP, SECD, FAILQC , DUP, NPP, MAPQ, STRAND, MISM};
 
+class my_basic_overlap{
+public:
+	unsigned int start,end;
+	my_basic_overlap(){start=0;end=0;}
+	my_basic_overlap(unsigned int s , unsigned int e){start=s;end=e;}
+	bool isSet(){return (start!=0 || end!=0);}
+	unsigned int overlap(unsigned int s , unsigned int e) {return isSet() && start <= e && end >= s ? min(end,e) - max(start,s) + 1 : 0;}
+};
+
 class my_stats{
 public:
-	unsigned long int mapQ,mismatch,unmapped,unpaired,dup,notexon,good,total,exonicint,exonicint_multi,secondary,failqc;
+	unsigned long int mapQ,mismatch,unmapped,unpaired,dup,notexon,good,total,exonicint,exonicint_multi,secondary,failqc,merged;
     double exonic,exonic_multi;
-    my_stats(){mapQ=0;mismatch=0;unmapped=0;dup=0;unpaired=0;notexon=0;exonic=0.0;total=0;good=0;exonicint=0;secondary=0;failqc=0;exonic_multi=0.0;exonicint_multi=0;}
+    my_stats(){mapQ=0;mismatch=0;unmapped=0;dup=0;unpaired=0;notexon=0;exonic=0.0;total=0;good=0;exonicint=0;secondary=0;failqc=0;exonic_multi=0.0;exonicint_multi=0;merged=0;}
 };
 
 
@@ -30,34 +39,34 @@ public:
     vector < unsigned int > starts;
     vector < unsigned int > ends;
     vector < unsigned int > lengths;
-    vector < double > block_overlap;
-    double total_contribution;
+    vector < vector <my_basic_overlap> > base_count;
     unsigned int read_length;
     unsigned int mmc;
     FILTER filter;
     bam1_core_t core;
     string name;
-    my_cont_blocks(){read_length=0;mmc=0; total_contribution = 1.0;filter=PASS;name="";chr="NA";}
+    bool merged;
+    my_cont_blocks(){read_length=0;mmc=0;filter=PASS;name="";chr="NA";merged=false;}
     void merge(my_cont_blocks &B){
         for (int i =0 ; i < starts.size(); i++){
-            for (int j =i; j < B.starts.size() && ends[i] <= starts[j]; j++){
+            for (int j =i; j < B.starts.size() && ends[i] >= B.starts[j] ; j++){
                 if(starts[i] <= B.ends[j] && ends[i] >= B.starts[j]){
-                    unsigned int overlap = min(ends[i], B.ends[j]) - max(starts[i], B.starts[j]) + 1;
-                    block_overlap[i] -= (double) overlap * 0.5 / (double) lengths[i];
-                    B.block_overlap[j] -= (double) overlap * 0.5 / (double) B.lengths[j];
+                	B.merged = true;
+                	merged=true;
+                	unsigned int s = max(starts[i], B.starts[j]);
+                	unsigned int e = min(ends[i], B.ends[j]);
+                    base_count[i].push_back(my_basic_overlap(s,e));
+                    B.base_count[j].push_back(my_basic_overlap(s,e));
+#ifdef DEBUG
+                	cerr<< "MERGING " << name << " " << starts[i] << "," << ends[i] << " and " << B.starts[j] << "," << B.ends[j]  << " to " << s << " " << e << endl;
+#endif
                 }
             }
         }
-        double total = 0.0;
-        for (int i = 0 ; i < block_overlap.size(); i++) total +=  (double) lengths[i] / (double) read_length * block_overlap[i];
-        total_contribution = total;
-        total = 0.0;
-        for (int i = 0 ; i < B.block_overlap.size(); i++) total += (double) B.lengths[i] / (double) B.read_length * B.block_overlap[i];
-        B.total_contribution = total;
     }
     friend ostream& operator<<(ostream& out, my_cont_blocks& g){
-        out<< g.name << "\t" << g.read_length << "\t" << g.mmc << "\t" << g.core.pos << "\t" << g.core.mpos << "\t" << g.total_contribution <<"\t" << g.chr;
-        for (int i =0; i < g.starts.size(); i++ ) out << "\t" << g.starts[i] << "," << g.ends[i] << " " << g.block_overlap[i];
+        out<< g.name << "\t" << g.read_length << "\t" << g.mmc << "\t" << g.core.pos << "\t" << g.core.mpos << "\t" << g.base_count.size() <<"\t" << g.chr;
+        for (int i =0; i < g.starts.size(); i++ ) out << "\t" << g.starts[i] << "," << g.ends[i];
         //out << endl;
         return out;
     }
@@ -255,6 +264,13 @@ public:
     void printBEDcount(string);
     void printBEDrpkm(string);
     void printStats(string);
+    unsigned long long int fnv1a_hash (string &str){
+        unsigned long long int h = 14695981039346656037ull;
+        for (int i = 0; i < str.length(); i++) {
+            h = (h ^ (unsigned char) str[i]) * 1099511628211ull;
+        }
+        return h;
+    }
     string convertToBase(unsigned long long int, unsigned int = 62);
 };
 
