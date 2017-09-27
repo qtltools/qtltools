@@ -114,6 +114,62 @@ void quan2_data::printBEDrpkm(string fout){
     }
 }
 
+void quan2_data::printBEDtpm(string fout){
+	vrb.title("Printing TPM");
+    string ext ="";
+    string prefix = fout;
+    if (fout.substr(fout.find_last_of(".") + 1) == "gz") {
+    	ext = ".gz";
+    	prefix = fout.substr(0,fout.find_last_of("."));
+    }
+    if (fout.substr(fout.find_last_of(".") + 1) == "bz2"){
+    	ext = ".bz2";
+    	prefix = fout.substr(0,fout.find_last_of("."));
+    }
+    string hash_to_add = !options.count("no-hash") ? "." + hash : "";
+	output_file fdo(prefix+hash_to_add+".gene.tpm.bed" + ext);
+    output_file fdoe(prefix+hash_to_add+".exon.tpm.bed" + ext);
+    if (fdo.fail()) vrb.error("Cannot open file [" + prefix + ".gene.tpm.bed" + ext + "]");
+    if (fdoe.fail()) vrb.error("Cannot open file [" + prefix + ".exon.tpm.bed" + ext + "]");
+
+
+    fdo.precision(10);
+    fdoe.precision(10);
+    fdo << "#chr\tstart\tend\tgene\tinfo\tstrand\t" << sample << endl;
+    fdoe << "#chr\tstart\tend\texon\tgeneID\tstrand\t" << sample << endl;
+    double tpm_gene = 0.0, tpm_exon = 0.0;
+    for (int g = 0 ; g < genes.size(); g++){
+    	tpm_gene += (genes[g].read_count * 1000.0) / (double) genes[g].length;
+    	for (int e = 0 ; e < genes[g].exons.size(); e++){
+    		tpm_exon += (genes[g].exons[e].read_count * 1000.0) / (double) genes[g].exons[e].length;
+    	}
+    }
+    for (int g = 0 ; g < genes.size(); g++){
+    	if(region.isSet() && !genes[g].overlap(region)) continue;
+    	string chr = genes[g].chr;
+    	if (chr.substr(0,3) == "chr") chr.erase(0,3);
+    	fdo << chr;
+    	fdo << "\t" << genes[g].tss-1;
+    	fdo << "\t" << genes[g].tss;
+    	fdo << "\t" << genes[g].gene_id;
+    	fdo << "\tL=" << genes[g].length << ";T=" << genes[g].exons[0].gene_type << ";R=" << genes[g].region << ";N=" << genes[g].exons[0].gene_name;
+    	fdo << "\t" << (genes[g].strand == -1 ? "-" : "+");
+    	fdo << "\t" << ((genes[g].read_count * 1000.0) / (double) genes[g].length) * (1000000.0 / tpm_gene);
+    	fdo << endl;
+    	for (int e = 0 ; e < genes[g].exons.size(); e++){
+    		if (genes[g].exons[e].length < filter.min_exon) continue;
+    		fdoe << chr;
+    		fdoe << "\t" << genes[g].tss-1;
+    		fdoe << "\t" << genes[g].tss;
+    		fdoe << "\t" << genes[g].exons[e].name;
+    		fdoe << "\t" << genes[g].gene_id;
+    		fdoe << "\t" << (genes[g].strand == -1 ? "-" : "+");
+    		fdoe << "\t" << ((genes[g].exons[e].read_count * 1000.0) / (double) genes[g].exons[e].length) * (1000000.0 / tpm_exon);
+    		fdoe << endl;
+    	}
+    }
+}
+
 void quan2_data::printStats(string fout){
 	vrb.title("Printing stats");
     string ext ="";

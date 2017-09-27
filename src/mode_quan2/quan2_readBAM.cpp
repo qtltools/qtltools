@@ -312,9 +312,9 @@ void quan2_data::readBam(string fbam){
                 	continue;
                 }
                 //We are good so far, let's check if we are truly correctly orientated
-                if(A.core.mtid != B.core.tid || (A.core.flag & BAM_FREVERSE) || !(B.core.flag & BAM_FREVERSE) || ( filter.old_wrong_split && B.core.pos <= A.core.pos) || ( !filter.old_wrong_split && B.core.pos < A.core.pos)){
+                if(A.core.tid != B.core.tid || (A.core.flag & BAM_FREVERSE) || !(B.core.flag & BAM_FREVERSE) || ( filter.old_wrong_split && B.core.pos <= A.core.pos) || ( !filter.old_wrong_split && B.core.pos < A.core.pos)){
 #ifdef DEBUG
-                	cerr << "NPPP\t" << B.name << "\tc:" << (A.core.mtid != B.core.mtid) << "\t1s:" << (A.core.flag & BAM_FREVERSE) << "\t2s:" << !(B.core.flag & BAM_FREVERSE) << "\to:" << ( filter.old_wrong_split && B.core.pos <= A.core.pos) << "\tn:" << ( !filter.old_wrong_split && B.core.pos < A.core.pos) << "\t" << A.core.flag << "\t" << B.core.flag << endl;
+                	cerr << "NPPP\t" << B.name << "\tc:" << (A.core.tid != B.core.tid) << "\t1s:" << (A.core.flag & BAM_FREVERSE) << "\t2s:" << !(B.core.flag & BAM_FREVERSE) << "\to:" << ( filter.old_wrong_split && B.core.pos <= A.core.pos) << "\tn:" << ( !filter.old_wrong_split && B.core.pos < A.core.pos) << "\t" << A.core.flag << "\t" << B.core.flag << endl;
 #endif
                 	stats.unpaired++;
                     continue;

@@ -263,6 +263,7 @@ public:
     my_cont_blocks keep_read(bam1_t *b);
     void printBEDcount(string);
     void printBEDrpkm(string);
+    void printBEDtpm(string);
     void printStats(string);
     unsigned long long int fnv1a_hash (string &str){
         unsigned long long int h = 14695981039346656037ull;

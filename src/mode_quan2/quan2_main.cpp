@@ -31,7 +31,8 @@ void quan2_main(vector < string > & argv) {
 
 	boost::program_options::options_description opt_parameters ("\x1B[32mParameters\33[0m");
 	opt_parameters.add_options()
-		("rpkm", "Print RPKM values.")
+		("rpkm", "Output RPKM values.")
+		("tpm", "Output TPM values.")
 		("gene-types", boost::program_options::value< vector < string > > ()->multitoken(), "Gene types to quantify. (Requires gene_type attribute in GTF. It will also use transcript_type if present).");
 
     boost::program_options::options_description opt_filters ("\x1B[32mFilters\33[0m");
@@ -80,7 +81,7 @@ void quan2_main(vector < string > & argv) {
     if (!D.options.count("gtf")) vrb.error("Gene annotation needs to be specified with --gtf [file.gtf]");
     if (!D.options.count("bam")) vrb.error("Sequence data needs to be specified with --bam [file.bam]");
     if (!D.options.count("out-prefix")) vrb.error("Output needs to be specified with --out-prefix [file.out]");
-    if (D.options.count("rpkm") && D.options.count("region") ) vrb.error("Option --region and --rpkm cannot be combined since we won't be parsing the whole BAM file");
+    if ((D.options.count("rpkm") || D.options.count("tpm"))  && D.options.count("region") ) vrb.error("Option --region and --rpkm or --tpm cannot be combined since we won't be parsing the whole BAM file");
 
 
     D.filter.min_mapQ = D.options["filter-mapping-quality"].as < unsigned int > ();
@@ -179,5 +180,6 @@ void quan2_main(vector < string > & argv) {
     D.readBam(D.bam);
     D.printBEDcount(D.options["out-prefix"].as < string > ());
     if (D.options.count("rpkm")) D.printBEDrpkm(D.options["out-prefix"].as < string > ());
+    if (D.options.count("tpm")) D.printBEDtpm(D.options["out-prefix"].as < string > ());
     D.printStats(D.options["out-prefix"].as < string > ());
 }
