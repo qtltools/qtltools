@@ -157,7 +157,11 @@ void quan2_main(vector < string > & argv) {
     }
 
     if(!D.options.count("no-hash")){
-    	string opts_hash = stb.str(QUAN_VERSION) + "#" + D.options["gtf"].as < string > () + "#" + stb.str(D.filter.min_mapQ) + "#" + stb.str(D.filter.max_mismatch_count) + "#" + stb.str(D.filter.max_mismatch_count_total) + "#" +
+    	const char * gtff = D.options["gtf"].as < string > ().c_str();
+        if (FILE *file = fopen(gtff, "r")) fclose(file);
+        else vrb.error("Cannot open GTF file " + D.options["gtf"].as < string > ());
+    	string r_p(realpath(gtff, NULL));
+    	string opts_hash = stb.str(QUAN_VERSION) + "#" + r_p + "#" + stb.str(D.filter.min_mapQ) + "#" + stb.str(D.filter.max_mismatch_count) + "#" + stb.str(D.filter.max_mismatch_count_total) + "#" +
     					   stb.str(D.filter.proper_pair) + "#" + stb.str(D.filter.check_consistency) + "#" + stb.str(D.filter.dup_remove) + "#" + stb.str(D.filter.fail_qc) + "#" + stb.str(D.filter.min_exon) + "#" +
 						   stb.str(D.filter.old_wrong_split) + "#" + gts.str() + "#" + D.region.get();
     	unsigned long long int h = D.fnv1a_hash(opts_hash);
