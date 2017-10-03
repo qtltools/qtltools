@@ -168,7 +168,7 @@ void quan2_main(vector < string > & argv) {
     		XXH64_state_t* const state = XXH64_createState();
     		if (state==NULL) vrb.error("Cannot create XXH64 state! Try not using --xxhash");
 
-    		size_t const bufferSize = 1024 * 1024 * 10;
+    		size_t const bufferSize = 1024 * 64;
     		void * buffer = malloc(bufferSize);
     		if (buffer==NULL) vrb.error("Not enough memmory");
 
