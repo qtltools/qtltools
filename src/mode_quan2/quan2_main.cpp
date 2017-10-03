@@ -26,27 +26,29 @@ void quan2_main(vector < string > & argv) {
     	("gtf", boost::program_options::value< string >(), "Annotation in GTF format")
 		("bam", boost::program_options::value< string >(), "Sequence data in BAM/SAM format.")
 		("sample",boost::program_options::value< string > (), "Sample name. [Optional]")
-		("out-prefix", boost::program_options::value< string >(), "Output file prefix.")
-        ("no-hash", "Don't include a hash signifying the options used in the quantification in the file names.");
+        ("out-prefix", boost::program_options::value< string >(), "Output file prefix.");
+		
 
 	boost::program_options::options_description opt_parameters ("\x1B[32mParameters\33[0m");
 	opt_parameters.add_options()
 		("rpkm", "Output RPKM values.")
 		("tpm", "Output TPM values.")
-		("gene-types", boost::program_options::value< vector < string > > ()->multitoken(), "Gene types to quantify. (Requires gene_type attribute in GTF. It will also use transcript_type if present).");
+		("gene-types", boost::program_options::value< vector < string > > ()->multitoken(), "Gene types to quantify. (Requires gene_type attribute in GTF. It will also use transcript_type if present).")
+        ("xxhash", "Rather than using GTF file name to generate unique hash for the options used, use hash of the GTF file.")
+        ("no-hash", "Don't include a hash signifying the options used in the quantification in the file names.");
 
     boost::program_options::options_description opt_filters ("\x1B[32mFilters\33[0m");
     opt_filters.add_options()
-    	("filter-mapping-quality", boost::program_options::value< unsigned int >()->default_value(10), "Minimal mapping quality for a read to be considered.")
+    	("filter-mapping-quality", boost::program_options::value< unsigned int >()->default_value(10), "Minimum mapping quality for a read to be considered.")
 		("filter-mismatch", boost::program_options::value< double >()->default_value(-1.0,"OFF"), "Maximum mismatches allowed in a read. If between 0 and 1 taken as the fraction of read length. (Requires NM attribute)")
 		("filter-mismatch-total", boost::program_options::value< double >()->default_value(-1.0,"OFF"), "Maximum total mismatches allowed in paired reads. If between 0 and 1 taken as the fraction of combined read length. (Requires NM attribute)")
 		("check-proper-pairing", "If provided only properly paired reads according to the aligner that are in correct orientation will be considered. Otherwise all pairs in correct orientation will be considered.")
         ("check-consistency", "If provided checks the consistency of split reads with annotation, rather than pure overlap of one of the blocks of the split read.")
-        ("no-merge", "If provided overlapping mate pairs will not be merged.")
+        ("no-merge", "If provided overlapping mate pairs will not be merged. Default behaviour is to merge overlapping mate pairs based on the amount of overlap, such that each mate pair counts for less than 1 read.")
 		("legacy-options", "Exactly replicate Dermitzakis lab original quantification script. (DO NOT USE UNLESS YOU HAVE A GOOD REASON). Sets --no-merge as well.")
-		("filter-failed-qc", "Remove fastq reads that fail sequencing QC (as indicated by the sequencer)")
+		("filter-failed-qc", "Remove fastq reads that fail sequencing QC (as indicated by the sequencer).")
 		("filter-min-exon", boost::program_options::value< unsigned int >()->default_value(0), "Minimal exon length to consider. Exons smaller than this will not be printed out in the exon quantifications, but will still count towards gene quantifications.")
-		("filter-remove-duplicates", "Remove duplicate sequencing reads in the process.");
+		("filter-remove-duplicates", "Remove duplicate sequencing reads in the process (as indicated by the alingner.");
 
     boost::program_options::options_description opt_parallel ("\x1B[32mParallelization\33[0m");
     opt_parallel.add_options()
@@ -161,6 +163,34 @@ void quan2_main(vector < string > & argv) {
         if (FILE *file = fopen(gtff, "r")) fclose(file);
         else vrb.error("Cannot open GTF file " + D.options["gtf"].as < string > ());
     	string r_p(realpath(gtff, NULL));
+    	if (D.options.count("xxhash")){
+    		vrb.bullet("Hashing: " + r_p);
+    		XXH64_state_t* const state = XXH64_createState();
+    		if (state==NULL) vrb.error("Cannot create XXH64 state! Try not using --xxhash");
+
+    		size_t const bufferSize = 1024 * 1024 * 10;
+    		void * buffer = malloc(bufferSize);
+    		if (buffer==NULL) vrb.error("Not enough memmory");
+
+    		unsigned long long const seed = 0;   /* or any other value */
+    		XXH_errorcode const resetResult = XXH64_reset(state, seed);
+    		if (resetResult == XXH_ERROR) vrb.error("Cannot reset XXH64 state! Try not using --xxhash");;
+    		ifstream fin(r_p, ifstream::binary);
+    		int readCount;
+    		while(fin.read( (char *) buffer, bufferSize) || (readCount = fin.gcount()) != 0 )  {
+    			unsigned long long length = fin.gcount();
+    			XXH_errorcode const addResult = XXH64_update(state, buffer, length);
+    			if (addResult == XXH_ERROR) vrb.error("Cannot update XXH64 state! Try not using --xxhash");
+
+    		}
+
+    		unsigned long long const hash = XXH64_digest(state);
+    		fin.close();
+    		r_p = stb.str(hash);
+    		vrb.bullet("64-bit xxhash is " + r_p);
+    		free(buffer);
+    		XXH64_freeState(state);
+    	}
     	string opts_hash = stb.str(QUAN_VERSION) + "#" + r_p + "#" + stb.str(D.filter.min_mapQ) + "#" + stb.str(D.filter.max_mismatch_count) + "#" + stb.str(D.filter.max_mismatch_count_total) + "#" +
     					   stb.str(D.filter.proper_pair) + "#" + stb.str(D.filter.check_consistency) + "#" + stb.str(D.filter.dup_remove) + "#" + stb.str(D.filter.fail_qc) + "#" + stb.str(D.filter.min_exon) + "#" +
 						   stb.str(D.filter.old_wrong_split) + "#" + gts.str() + "#" + D.region.get();
