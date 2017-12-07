@@ -24,7 +24,6 @@
 #include "mode_extract/extract_data.h"
 #include "mode_ase/ase_data.h"
 #include "mode_quan/quan_data.h"
-#include "mode_quan2/quan2_data.h"
 #include "mode_union/union_data.h"
 #include "mode_bamstat/bamstat_data.h"
 #include "mode_fdensity/fdensity_data.h"
@@ -49,7 +48,6 @@ void printModes(){
     vrb.print("  rtc-union Find the union of QTLs");
     vrb.print("  extract   Data extraction mode");
     vrb.print("  quan      Quantification mode");
-    vrb.print("  quan2      Quantification mode");
     vrb.print("  ase       Measure allelic imbalance at every het genotype");
     vrb.print("  rep       Replicate QTL associations into independent data set");
     vrb.print("  gwas      GWAS tests");
@@ -117,11 +115,8 @@ int main(int argc, char ** argv) {
     else if (strcmp(argv[1], "rtc-union") == 0) union_main(args);
 
     //5.11. QUANTIFICATION mode
-    else if (strcmp(argv[1], "quan") == 0) quan_main(args);
+    else if (strcmp(argv[1], "quan") == 0) quan2_main(args);
 
-    //5.11. QUANTIFICATION mode
-    else if (strcmp(argv[1], "quan2") == 0) quan2_main(args);
-    
     //5.12. ASE mode
     else if (strcmp(argv[1], "ase") == 0) ase_main(args);
 

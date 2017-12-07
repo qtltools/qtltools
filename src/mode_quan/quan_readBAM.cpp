@@ -5,7 +5,7 @@
  *      Author: halit
  */
 
-#include "quan2_data.h"
+#include "quan_data.h"
 
 
 inline vector < my_gene > quan2_data::getOverlappingGenesQ(my_block & bl){

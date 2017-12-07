@@ -141,10 +141,7 @@ obj/union_%.o: union_%.cpp union_data.h src/common/data.h src/common/filter.h $(
 obj/extract_%.o: extract_%.cpp extract_data.h src/common/data.h src/common/filter.h $(TFILE)
 	$(CXX) -o $@ -c $< $(CXXFLAG) $(IFLAG)
 
-obj/quan_%.o: quan_%.cpp quan_data.h src/common/data.h src/common/filter.h $(TFILE)
-	$(CXX) -o $@ -c $< $(CXXFLAG) $(IFLAG)
-	
-obj/quan2_%.o: quan2_%.cpp quan2_data.h src/common/data.h src/common/filter.h $(TFILE)
+obj/quan_%.o: quan_%.cpp quan_data.h quan_xxhash.h src/common/data.h src/common/filter.h $(TFILE)
 	$(CXX) -o $@ -c $< $(CXXFLAG) $(IFLAG)
 	
 obj/ase_%.o: ase_%.cpp ase_data.h src/common/data.h src/common/filter.h $(TFILE)
@@ -200,9 +197,6 @@ clean-union:
 
 clean-quan:
 	rm -f obj/quan_*.o $(BFILE)
-	
-clean-quan2:
-	rm -f obj/quan2_*.o $(BFILE)
 
 clean-bamstat:
 	rm -f obj/bamstat_*.o $(BFILE)

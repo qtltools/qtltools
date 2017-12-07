@@ -13,7 +13,7 @@
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
-#include "quan2_data.h"
+#include "quan_data.h"
 
 void quan2_data::readGTF(string fgtf){
     string buffer;
