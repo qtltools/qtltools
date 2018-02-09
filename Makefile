@@ -21,7 +21,6 @@ LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lblas -lbz2 -Wl,-Bdynamic -lm -lpthread
 
 #FILE LISTS
 BFILE=bin/QTLtools
-DFILE=bin/QTLtools_dbg
 HFILE=$(shell find src -name *.h)
 TFILE=$(shell find lib -name *.h)
 CFILE=$(shell find src -name *.cpp)
