@@ -28,7 +28,7 @@ void trans_data::runTransPass(string fvcf, string fout) {
 
 	unsigned long n_pos_tests = 0, n_variants = 0, n_curr_tests = 0, n_prev_tests = 0;
 	vector < double > best_hits = vector < double > (phenotype_count, 0);
-	vector < string > best_var = vector < double > (phenotype_count, "");
+	vector < string > best_var = vector < string > (phenotype_count, "");
 	vector < unsigned long > bins_hits = vector < unsigned long > (n_bins, 0);
 
     int mDS = 0, mGT = 0;
