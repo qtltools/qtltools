@@ -21,6 +21,7 @@ LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lblas -lbz2 -Wl,-Bdynamic -lm -lpthread
 
 #FILE LISTS
 BFILE=bin/QTLtools
+DFILE=bin/QTLtools_dbg
 HFILE=$(shell find src -name *.h)
 TFILE=$(shell find lib -name *.h)
 CFILE=$(shell find src -name *.cpp)
@@ -57,11 +58,11 @@ desktop-dbg: LDFLAG=$(CXXFLAG_DBG)
 desktop-dbg: $(BFILE)
 
 #VITAL-IT RELEASE VERSION
-cluster: LIB_FLAGS=-lz -lgsl -lblas -lbz2 -lm -lpthread
-cluster: RMATH_INC=/software/R/3.1.1/include
-cluster: RMATH_LIB=/software/R/3.1.1/lib64
-cluster: HTSLD_INC=/software/UHTS/Analysis/samtools/1.2/include
-cluster: HTSLD_LIB=/software/UHTS/Analysis/samtools/1.2/lib64
+cluster: LIB_FLAGS=-lz -lgsl -lblas -lbz2 -lm -lpthread -lgslcblas -llzma
+cluster: RMATH_INC=/software/R/3.4.2/include
+cluster: RMATH_LIB=/software/R/3.4.2/lib64
+cluster: HTSLD_INC=/software/UHTS/Analysis/samtools/1.4/include
+cluster: HTSLD_LIB=/software/UHTS/Analysis/samtools/1.4/lib64
 cluster: BOOST_INC=/software/include
 cluster: BOOST_LIB=/software/lib64
 cluster: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
@@ -71,9 +72,18 @@ cluster: LDFLAG=$(CXXFLAG_REL)
 cluster: $(BFILE)
 
 #VITAL-IT DEBUG VERSION
-cluster-dbg: cluster
+cluster-dbg: LIB_FLAGS=-lz -lgsl -lblas -lbz2 -lm -lpthread -lgslcblas -llzma
+cluster-dbg: RMATH_INC=/software/R/3.4.2/include
+cluster-dbg: RMATH_LIB=/software/R/3.4.2/lib64
+cluster-dbg: HTSLD_INC=/software/UHTS/Analysis/samtools/1.4/include
+cluster-dbg: HTSLD_LIB=/software/UHTS/Analysis/samtools/1.4/lib64
+cluster-dbg: BOOST_INC=/software/include
+cluster-dbg: BOOST_LIB=/software/lib64
 cluster-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
 cluster-dbg: LDFLAG=$(CXXFLAG_DBG)
+cluster-dbg: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
+cluster-dbg: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
+cluster-dbg: $(BFILE)
 
 #MAC RELEASE VERSION
 mac: RMATH_INC=$(HOME)/Libraries/R-3.2.2/src/include
