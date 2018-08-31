@@ -39,7 +39,7 @@ void cis_main(vector < string > & argv) {
 	boost::program_options::options_description opt_modes ("\x1B[32mAnalysis type\33[0m");
 	opt_modes.add_options()
 		("permute", boost::program_options::value< int >(), "MODE1: PERMUTATION PASS.")
-		("nominal", boost::program_options::value< double >(), "MODE2: NOMINAL PASS.")
+		("nominal", boost::program_options::value< string >(), "MODE2: NOMINAL PASS.")
 		("mapping", boost::program_options::value< string >(), "MODE3: MAPPING PASS.");
 
 	boost::program_options::options_description opt_aggr ("\x1B[32mPhenotype aggregation methods\33[0m");
@@ -104,9 +104,9 @@ void cis_main(vector < string > & argv) {
 		D.mode = CIS_NOMI;
 		string argument = D.options["nominal"].as < string >();
 		if (stb.numeric(argument)) {
-			if (D.options["nominal"].as < double >() <= 0 || D.options["nominal"].as < double >() > 1.0) vrb.error("Significance threshold is outside of the range ]0,1]");
-			else vrb.bullet("TASK: Report all nominal associations with p <= " + stb.str(D.options["nominal"].as < double >()));
 			D.threshold = atof(argument.c_str());
+			if (D.threshold  <= 0 ||  D.threshold> 1.0) vrb.error("Significance threshold is outside of the range ]0,1]");
+			else vrb.bullet("TASK: Report all nominal associations with p <= " + stb.str(D.threshold));
 		} else vrb.bullet("TASK: Report all nominal associations with p below thresholds in [" + argument +"]");
 	}
 	//ONLY MODE3: MAPPING PASS
