@@ -23,8 +23,8 @@ LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lblas -lbz2 -Wl,-Bdynamic -lm -lpthread
 BFILE=bin/QTLtools
 HFILE=$(shell find src -name *.h)
 TFILE=$(shell find lib -name *.h)
-CFILE=$(shell find src -name *.cpp)
-OFILE=$(shell for file in `find src -name *.cpp`; do echo obj/$$(basename $$file .cpp).o; done)
+CFILE=$(shell find src -name *.cpp | LC_ALL=C sort)
+OFILE=$(shell for file in `find src -name *.cpp | LC_ALL=C sort`; do echo obj/$$(basename $$file .cpp).o; done)
 VPATH=$(shell for file in `find src -name *.cpp`; do echo $$(dirname $$file); done)
 
 #DEFAULT VERSION (I.E. UNIGE DESKTOP RELEASE VERSION)
