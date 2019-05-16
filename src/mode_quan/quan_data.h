@@ -16,7 +16,7 @@
 #ifndef SRC_MODE_QUAN2_QUAN2_DATA_H_
 #define SRC_MODE_QUAN2_QUAN2_DATA_H_
 
-#define QUAN_VERSION 1
+#define QUAN_VERSION 1.1
 
 #include "../common/data.h"
 #include "quan_xxhash.h"
@@ -36,9 +36,9 @@ public:
 
 class my_stats{
 public:
-	unsigned long int mapQ,mismatch,unmapped,unpaired,dup,notexon,good,total,exonicint,exonicint_multi,secondary,failqc,merged;
+	unsigned long int mapQ,mismatch,unmapped,unpaired,dup,notexon,good,total,exonicint,exonicint_multi,secondary,failqc,merged,noNM,checkedNM,nonIntNM,multiNM;
     double exonic,exonic_multi;
-    my_stats(){mapQ=0;mismatch=0;unmapped=0;dup=0;unpaired=0;notexon=0;exonic=0.0;total=0;good=0;exonicint=0;secondary=0;failqc=0;exonic_multi=0.0;exonicint_multi=0;merged=0;}
+    my_stats(){mapQ=0;mismatch=0;unmapped=0;dup=0;unpaired=0;notexon=0;exonic=0.0;total=0;good=0;exonicint=0;secondary=0;failqc=0;exonic_multi=0.0;exonicint_multi=0;merged=0;checkedNM=noNM=nonIntNM=multiNM=0;}
 };
 
 
@@ -51,11 +51,12 @@ public:
     vector < vector <my_basic_overlap> > base_count;
     unsigned int read_length;
     unsigned int mmc;
+    bool NMfound;
     FILTER filter;
     bam1_core_t core;
     string name;
     bool merged;
-    my_cont_blocks(){read_length=0;mmc=0;filter=PASS;name="";chr="NA";merged=false;}
+    my_cont_blocks(){read_length=0;mmc=0;filter=PASS;name="";chr="NA";NMfound=merged=false;}
     void merge(my_cont_blocks &B){
         for (int i =0 ; i < starts.size(); i++){
             for (int j =i; j < B.starts.size() && ends[i] >= B.starts[j] ; j++){

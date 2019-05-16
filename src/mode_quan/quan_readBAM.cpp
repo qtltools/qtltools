@@ -89,6 +89,10 @@ my_cont_blocks quan2_data::keep_read(bam1_t *b) {
 	//This is adapted from sam.c in htslib original author Heng Li
 	if (filter.max_mismatch_count >= 0 || filter.max_mismatch_count_total >= 0){
 		unsigned int mc = 0;
+		unsigned int count = 0;
+		bool NMfound = false;
+		bool nonInt = false;
+		stats.checkedNM++;
 		uint8_t *s = bam_get_aux(b);
 		while (s+4 <= b->data + b->l_data) {
 			uint8_t type, key[3];
@@ -96,46 +100,93 @@ my_cont_blocks quan2_data::keep_read(bam1_t *b) {
 			string keys((const char*)key);
 			s += 2; type = *s++;
 			if (type == 'A') {
-				if (keys=="NM") mc = *s;
+				if (keys=="NM"){
+					//mc = *s;
+					//NMfound = true;
+					count++;
+					nonInt = true;
+				}
 				++s;
 			} else if (type == 'C') {
-				if (keys=="NM") mc = *s;
+				if (keys=="NM"){
+					//mc = *s;
+					//NMfound = true;
+					count++;
+					nonInt = true;
+				}
 				++s;
 			} else if (type == 'c') {
-				if (keys=="NM") mc = *(int8_t*)s;
+				if (keys=="NM"){
+					//mc = *(int8_t*)s;
+					//NMfound = true;
+					count++;
+					nonInt = true;
+				}
 				++s;
 			} else if (type == 'S') {
 				if (s+2 <= b->data + b->l_data) {
-					if (keys=="NM") mc = *(uint16_t*)s;
+					if (keys=="NM"){
+						//mc = *(uint16_t*)s;
+						//NMfound = true;
+						count++;
+						nonInt = true;
+					}
 					s += 2;
 				} else break;
 			} else if (type == 's') {
 				if (s+2 <= b->data + b->l_data) {
-					if (keys=="NM") mc = *(int16_t*)s;
+					if (keys=="NM"){
+						//mc = *(int16_t*)s;
+						//NMfound = true;
+						count++;
+						nonInt = true;
+					}
 					s += 2;
 				} else break;
 			} else if (type == 'I') {
 				if (s+4 <= b->data + b->l_data) {
-					if (keys=="NM") mc = *(uint32_t*)s;
+					if (keys=="NM"){
+						mc = *(uint32_t*)s;
+						NMfound = true;
+						count++;
+					}
 					s += 4;
 				} else break;
 			} else if (type == 'i') {
 				if (s+4 <= b->data + b->l_data) {
-					if (keys=="NM") mc = *(int32_t*)s;
+					if (keys=="NM"){
+						mc = *(int32_t*)s;
+						NMfound = true;
+						count++;
+					}
 					s += 4;
 				} else break;
 			} else if (type == 'f') {
 				if (s+4 <= b->data + b->l_data) {
-					if (keys=="NM") mc = *(float*)s;
+					if (keys=="NM"){
+						//mc = *(float*)s;
+						//NMfound = true;
+						count++;
+						nonInt = true;
+					}
 					s += 4;
 				} else break;
 
 			} else if (type == 'd') {
 				if (s+8 <= b->data + b->l_data) {
-					if (keys=="NM") mc = *(double*)s;
+					if (keys=="NM") {
+						//mc = *(double*)s;
+						//NMfound = true;
+						count++;
+						nonInt = true;
+					}
 					s += 8;
 				}else break;
 			} else if (type == 'Z' || type == 'H') {
+				if (keys == "NM"){
+					count++;
+					nonInt = true;
+				}
 				while (s < b->data + b->l_data && *s) s++;
 				if (s >= b->data + b->l_data)
 					break;
@@ -159,6 +210,10 @@ my_cont_blocks quan2_data::keep_read(bam1_t *b) {
 			}
 		}
 		block.mmc = mc;
+		block.NMfound = NMfound;
+		if (!NMfound) stats.noNM++;
+		if (nonInt) stats.nonIntNM++;
+		if (count > 1) stats.multiNM++;
 		//Check the number of mismatches
 		if ((!filter.fraction_mm && mc > filter.max_mismatch_count) || (filter.fraction_mm && (double) mc / (double) (b->core.l_qseq) > filter.max_mismatch_count)){
 			block.filter = MISM;
@@ -585,6 +640,9 @@ void quan2_data::readBam(string fbam){
     }//BAM loop
     vrb.bullet("DONE: " + stb.str(line_count) + " lines read");
     if (read_sink.size() && !region.isSet()) vrb.warning(stb.str(read_sink.size()) + " unmatched mate pairs found");
+    if (stats.checkedNM && stats.noNM) vrb.warning("Checked " + stb.str(stats.checkedNM) + " reads for number of mismatches (NM tag) and " + stb.str(stats.noNM) + " reads did NOT have a proper NM tag. These reads are treated as if they had no mismatches and hence included in the quantifications.");
+    if (stats.checkedNM && stats.nonIntNM) vrb.warning("Checked " + stb.str(stats.checkedNM) + " reads for number of mismatches (NM tag) and " + stb.str(stats.nonIntNM) + " reads did NOT have an integer NM tag.");
+    if (stats.checkedNM && stats.multiNM) vrb.warning("Checked " + stb.str(stats.checkedNM) + " reads for number of mismatches (NM tag) and " + stb.str(stats.multiNM) + " reads had multiple NM tags");
     bam_destroy1(b);
     hts_idx_destroy(idx);
     bam_hdr_destroy(header);
