@@ -99,6 +99,7 @@ my_cont_blocks quan2_data::keep_read(bam1_t *b) {
 			key[0] = s[0]; key[1] = s[1]; key[2] = '\0';
 			string keys((const char*)key);
 			s += 2; type = *s++;
+			//cerr << block.name << " "<< type << " " << key << endl;
 			if (type == 'A') {
 				if (keys=="NM"){
 					//mc = *s;
@@ -109,37 +110,37 @@ my_cont_blocks quan2_data::keep_read(bam1_t *b) {
 				++s;
 			} else if (type == 'C') {
 				if (keys=="NM"){
-					//mc = *s;
-					//NMfound = true;
+					mc = *s;
+					NMfound = true;
 					count++;
-					nonInt = true;
+					//nonInt = true;
 				}
 				++s;
 			} else if (type == 'c') {
 				if (keys=="NM"){
-					//mc = *(int8_t*)s;
-					//NMfound = true;
+					mc = *(int8_t*)s;
+					NMfound = true;
 					count++;
-					nonInt = true;
+					//nonInt = true;
 				}
 				++s;
 			} else if (type == 'S') {
 				if (s+2 <= b->data + b->l_data) {
 					if (keys=="NM"){
-						//mc = *(uint16_t*)s;
-						//NMfound = true;
+						mc = *(uint16_t*)s;
+						NMfound = true;
 						count++;
-						nonInt = true;
+						//nonInt = true;
 					}
 					s += 2;
 				} else break;
 			} else if (type == 's') {
 				if (s+2 <= b->data + b->l_data) {
 					if (keys=="NM"){
-						//mc = *(int16_t*)s;
-						//NMfound = true;
+						mc = *(int16_t*)s;
+						NMfound = true;
 						count++;
-						nonInt = true;
+						//nonInt = true;
 					}
 					s += 2;
 				} else break;
@@ -192,6 +193,10 @@ my_cont_blocks quan2_data::keep_read(bam1_t *b) {
 					break;
 				++s;
 			} else if (type == 'B') {
+				if (keys == "NM"){
+					count++;
+					nonInt = true;
+				}
 				uint8_t sub_type = *(s++);
 				int32_t n;
 				memcpy(&n, s, 4);
