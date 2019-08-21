@@ -376,7 +376,7 @@ void quan2_data::readBam(string fbam){
 #ifdef DEBUG
                 	cerr << "NPPP\t" << B.name << "\tc:" << (A.core.tid != B.core.tid) << "\t1s:" << (A.core.flag & BAM_FREVERSE) << "\t2s:" << !(B.core.flag & BAM_FREVERSE) << "\to:" << ( filter.old_wrong_split && B.core.pos <= A.core.pos) << "\tn:" << ( !filter.old_wrong_split && B.core.pos < A.core.pos) << "\t" << A.core.flag << "\t" << B.core.flag << endl;
 #endif
-                	stats.unpaired++;
+                	stats.unpaired+=2;
                     continue;
                 }
                 //Passed all filters, good on the reads
