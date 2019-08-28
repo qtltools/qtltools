@@ -208,7 +208,7 @@ void quan2_main(vector < string > & argv) {
 
     D.processBasicOptions();
     D.bam = D.options["bam"].as < string  > ();
-    if (D.options.count("sample")) D.sample = D.options["bam"].as < string  > ();
+    if (D.options.count("sample")) D.sample = D.options["sample"].as < string  > ();
     else D.sample = D.bam;
     D.readGTF(D.options["gtf"].as < string > ());
     D.readBam(D.bam);
