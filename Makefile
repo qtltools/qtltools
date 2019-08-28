@@ -27,8 +27,19 @@ CFILE=$(shell find src -name *.cpp)
 OFILE=$(shell for file in `find src -name *.cpp`; do echo obj/$$(basename $$file .cpp).o; done)
 VPATH=$(shell for file in `find src -name *.cpp`; do echo $$(dirname $$file); done)
 
-#DEFAULT VERSION (I.E. UNIGE DESKTOP RELEASE VERSION)
-all: desktop
+#DEFAULT VERSION (SET UP THE VARIABLES IN THE BEGINING OF THE MAKEFILE)
+all: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
+all: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
+all: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
+all: LDFLAG=$(CXXFLAG_REL)
+all: $(BFILE)
+
+#DEFAULT DEBUG VERSION (SET UP THE VARIABLES IN THE BEGINING OF THE MAKEFILE)
+all-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
+all-dbg: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
+all-dbg: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
+all-dbg: LDFLAG=$(CXXFLAG_DBG)
+all-dbg: $(BFILE)
 
 #UNIGE DESKTOP RELEASE VERSION
 desktop: RMATH_INC=$(HOME)/Tools/R-3.2.2/src/include
