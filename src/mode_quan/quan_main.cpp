@@ -72,6 +72,7 @@ void quan2_main(vector < string > & argv) {
     // 3. PRINT HELP/HEADER
     //---------------------
     vrb.ctitle("QUANTIFY GENES AND EXONS FROM BAM FILES");
+    vrb.warning("OUTPUT IS NOT COMPATABLE WITH QUANTIFICATIONS GENERATED BEFORE VERSION 1.2\n");
     if (D.options.count("help")) {
         cout << D.option_descriptions << endl;
         exit(EXIT_SUCCESS);
