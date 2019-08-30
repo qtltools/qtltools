@@ -73,7 +73,7 @@ int main(int argc, char ** argv) {
 	vrb.bullet("Webpage : https://qtltools.github.io/qtltools/");
 	vrb.bullet("Version : " + string(QTLTOOLS_VERSION));
 	vrb.bullet("Date    : " + running_timer.date());
-	if (!match_mode) vrb.bullet("Citation: A complete tool set for molecular QTL discovery and analysis, https://doi.org/10.1101/068635");
+	if (!match_mode) vrb.bullet("Citation: A complete tool set for molecular QTL discovery and analysis, https://doi.org/10.1038/ncomms15452");
 	else vrb.bullet("Citation: MBV; a method to solve sample mislabeling and detect technical bias in large combined genotype and sequencing assay data sets");
 
 	//4. Switch mode
