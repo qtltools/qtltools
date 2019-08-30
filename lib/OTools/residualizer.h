@@ -77,7 +77,7 @@ public:
 		for (set < unsigned int >::iterator itNM = i_nonmissing.begin(); itNM != i_nonmissing.end() ; ++itNM) {
 			float value;
 			std::istringstream in(covariate[*itNM]);
-			if (!(in >> value)) {
+			if (!(in >> value) || in.rdbuf()->in_avail() != 0) {
 				factors.insert(covariate[*itNM]);
 				isAlphabetic = true;
 			} else isNumeric = true;
@@ -88,12 +88,12 @@ public:
 		vector < vector < float > > additional_hcov;
 		if (factors.size() == 0) {
 			additional_hcov = vector < vector < float > > (1, vector < float > (n_samples, 0.0));
-			for (int i = 0 ; i < covariate.size() ; i++) additional_hcov[0][i] = std::stof(covariate[i]);
+			for (int i = 0 ; i < covariate.size() ; i++) if (i_nonmissing.count(i)) additional_hcov[0][i] = std::stof(covariate[i]);
 		} else if (factors.size() > 1) {
 			factors.erase(factors.begin());
 			for (set < string > ::iterator itF = factors.begin(); itF != factors.end() ; itF++) {
 				additional_hcov.push_back(vector < float > (n_samples, 0.0));
-				for (int i = 0 ; i < n_samples ; i++) additional_hcov.back()[i] = (covariate[i] == (*itF));
+				for (int i = 0 ; i < n_samples ; i++) if (i_nonmissing.count(i)) additional_hcov.back()[i] = (covariate[i] == (*itF));
 			}
 		} else return COV_DROP;
 

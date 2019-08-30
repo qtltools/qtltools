@@ -48,7 +48,7 @@ void quan2_main(vector < string > & argv) {
 		("legacy-options", "Exactly replicate Dermitzakis lab original quantification script. (DO NOT USE UNLESS YOU HAVE A GOOD REASON). Sets --no-merge as well.")
 		("filter-failed-qc", "Remove fastq reads that fail sequencing QC (as indicated by the sequencer).")
 		("filter-min-exon", boost::program_options::value< unsigned int >()->default_value(0), "Minimal exon length to consider. Exons smaller than this will not be printed out in the exon quantifications, but will still count towards gene quantifications.")
-		("filter-remove-duplicates", "Remove duplicate sequencing reads in the process (as indicated by the alingner.");
+		("filter-remove-duplicates", "Remove duplicate sequencing reads in the process (as indicated by the aligner.");
 
     boost::program_options::options_description opt_parallel ("\x1B[32mParallelization\33[0m");
     opt_parallel.add_options()
