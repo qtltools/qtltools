@@ -190,8 +190,8 @@ void quan2_data::printStats(string fout){
 	fdo << "total_reads\t" << stats.total << endl;
 	fdo << "total_secondary_alingments\t" << stats.secondary << endl;
 	fdo << "total_unmapped\t" << stats.unmapped << endl;
-	fdo << "total_duplicate\t" << stats.dup << endl;
 	fdo << "total_failqc\t" << stats.failqc << endl;
+	fdo << "total_duplicate\t" << stats.dup << endl;
 	fdo << "total_mapQ_less_than_" << filter.min_mapQ << "\t" << stats.mapQ << endl;
 	fdo << "total_notpaired\t" << stats.unpaired << endl;
 	fdo << "total_mismatches_greater_than_" << filter.max_mismatch_count << "_" << filter.max_mismatch_count_total << "\t" << stats.mismatch << endl;
