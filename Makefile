@@ -12,8 +12,8 @@ HTSLD_LIB=
 CXX=g++ -std=c++0x
 
 #COMPILER FLAGS
-CXXFLAG_REL=-O2
-CXXFLAG_DBG=-g -DDEBUG
+CXXFLAG_REL=-O3
+CXXFLAG_DBG=-g
 CXXFLAG_WRN=-Wall -Wextra -Wno-sign-compare -Wno-unused-local-typedefs -Wno-deprecated -Wno-unused-parameter
 
 #BASE LIBRARIES
