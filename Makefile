@@ -17,7 +17,7 @@ CXXFLAG_DBG=-g
 CXXFLAG_WRN=-Wall -Wextra -Wno-sign-compare -Wno-unused-local-typedefs -Wno-deprecated -Wno-unused-parameter
 
 #BASE LIBRARIES
-LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lblas -lbz2 -Wl,-Bdynamic -lm -lpthread 
+LIB_FLAGS=-lz -lgsl -lblas -lbz2 -llzma -lgslcblas -lm -lpthread
 
 #FILE LISTS
 BFILE=bin/QTLtools
@@ -40,6 +40,14 @@ all-dbg: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
 all-dbg: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
 all-dbg: LDFLAG=$(CXXFLAG_DBG)
 all-dbg: $(BFILE)
+
+#DEFAULT VERSION (SET UP THE VARIABLES IN THE BEGINING OF THE MAKEFILE)
+all-static: LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lblas -lbz2 -llzma -lgslcblas -Wl,-Bdynamic -lm -lpthread 
+all-static: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
+all-static: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
+all-static: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
+all-static: LDFLAG=$(CXXFLAG_REL)
+all-static: $(BFILE)
 
 #UNIGE DESKTOP RELEASE VERSION
 desktop: RMATH_INC=$(HOME)/Tools/R-3.2.2/src/include
