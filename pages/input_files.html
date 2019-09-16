@@ -74,7 +74,7 @@
 	<div class="item"  id="item2">
 		<h1>Phenotype data [BED]</h1>
 		<p>
-		Phenotype data are specified using an extended UCSC <b>BED</b> format. It is a standard BED file with some additional columns.
+		Phenotype data are specified using an extended UCSC <b>BED</b> format. It is a standard BED file with some additional columns. The missing values should be encoded as NA.
 		Hereafter a general example of 4 molecular phenotypes for 4 samples.  
 		</p>
 		
@@ -107,8 +107,11 @@
 
 		<note>
 		THIS FILE FORMAT EXTENDS THE FASTQTL FILE FORMAT BY ADDING 2 COLUMNS! THIS MEANS THAT QTLTOOLS CANNOT WORK WITH FASTQTL BED FILES!
-		To make a quick and dirty conversion, you can use this command:
 		</note>
+		
+		<p>
+			To make a quick and dirty conversion, you can use this command:
+		</p>
 
 		<code>
 		zcat myFastQTLphenotypes.bed.gz | awk '{ $4=$4" . +"; print $0 }' | tr " " "\t" | bgzip -c > myQTLtoolsPhenotypes.bed.gz
@@ -151,7 +154,7 @@
 	<div class="item"  id="item2">
 		<h1>Covariate data [TXT]</h1>
 		<p>
-		The <b>COV</b> file contains the covariate data in simple <b>TXT</b> format. 
+		The <b>COV</b> file contains the covariate data in simple <b>TXT</b> format. The missing values should be encoded as NA. 
 		Hereafter an example of 4 covariates for 4 samples.  
 		</p>
 		
@@ -180,7 +183,7 @@
 		</p>
 	</div>
 	
-	<div class="log">Monday 11th July 2016</div>
+	<div class="log">Monday 2nd September 2019</div>
 </div>
 </body>
 </html>
