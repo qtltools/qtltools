@@ -49,7 +49,7 @@ public:
 		float n;
 		std::istringstream in(str);
 		if (!(in >> n)) return false;
-		return true;
+		return in.rdbuf()->in_avail() == 0;
 	}
 
 	template < class T >

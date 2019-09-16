@@ -104,9 +104,9 @@ void cis_main(vector < string > & argv) {
 		D.mode = CIS_NOMI;
 		string argument = D.options["nominal"].as < string >();
 		if (stb.numeric(argument)) {
-			if (D.options["nominal"].as < double >() <= 0 || D.options["nominal"].as < double >() > 1.0) vrb.error("Significance threshold is outside of the range ]0,1]");
-			else vrb.bullet("TASK: Report all nominal associations with p <= " + stb.str(D.options["nominal"].as < double >()));
 			D.threshold = atof(argument.c_str());
+			if (D.threshold  <= 0 ||  D.threshold> 1.0) vrb.error("Significance threshold is outside of the range ]0,1]");
+			else vrb.bullet("TASK: Report all nominal associations with p <= " + stb.str(D.threshold));
 		} else vrb.bullet("TASK: Report all nominal associations with p below thresholds in [" + argument +"]");
 	}
 	//ONLY MODE3: MAPPING PASS

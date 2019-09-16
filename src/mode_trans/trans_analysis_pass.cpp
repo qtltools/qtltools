@@ -28,6 +28,7 @@ void trans_data::runTransPass(string fvcf, string fout) {
 
 	unsigned long n_pos_tests = 0, n_variants = 0, n_curr_tests = 0, n_prev_tests = 0;
 	vector < double > best_hits = vector < double > (phenotype_count, 0);
+	vector < string > best_var = vector < string > (phenotype_count, "");
 	vector < unsigned long > bins_hits = vector < unsigned long > (n_bins, 0);
 
     int mDS = 0, mGT = 0;
@@ -75,7 +76,10 @@ void trans_data::runTransPass(string fvcf, string fout) {
 							unsigned int idx_bin = (unsigned int) floor(acorr * step_bins);
 							bins_hits[idx_bin] ++;
 						}
-						if (acorr > best_hits[p]) best_hits[p] = acorr;
+						if (acorr > best_hits[p]) {
+							best_hits[p] = acorr;
+							best_var[p] = vid;
+						}
 
 						n_curr_tests ++;
 
@@ -111,7 +115,7 @@ void trans_data::runTransPass(string fvcf, string fout) {
 	for (int p = 0 ; p < phenotype_count ; p ++) {
 		double npval = getNominalPvalue(best_hits[p], sample_count - 2);
 		double apval = getAdjustedPvalue(npval);
-		fdbest << phenotype_id[p] << " " << apval << " " << npval << endl;
+		fdbest << phenotype_id[p] << " " << apval << " " << npval << " " << best_var[p] << endl;
 	}
 	fdbest.close();
 }

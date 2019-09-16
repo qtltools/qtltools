@@ -12,12 +12,12 @@ HTSLD_LIB=
 CXX=g++ -std=c++0x
 
 #COMPILER FLAGS
-CXXFLAG_REL=-O2
+CXXFLAG_REL=-O3
 CXXFLAG_DBG=-g
 CXXFLAG_WRN=-Wall -Wextra -Wno-sign-compare -Wno-unused-local-typedefs -Wno-deprecated -Wno-unused-parameter
 
 #BASE LIBRARIES
-LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lblas -lbz2 -Wl,-Bdynamic -lm -lpthread 
+LIB_FLAGS=-lz -lgsl -lblas -lbz2 -llzma -lgslcblas -lm -lpthread
 
 #FILE LISTS
 BFILE=bin/QTLtools
@@ -27,8 +27,27 @@ CFILE=$(shell find src -name *.cpp)
 OFILE=$(shell for file in `find src -name *.cpp`; do echo obj/$$(basename $$file .cpp).o; done)
 VPATH=$(shell for file in `find src -name *.cpp`; do echo $$(dirname $$file); done)
 
-#DEFAULT VERSION (I.E. UNIGE DESKTOP RELEASE VERSION)
-all: desktop
+#DEFAULT VERSION (SET UP THE VARIABLES IN THE BEGINING OF THE MAKEFILE)
+all: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
+all: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
+all: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
+all: LDFLAG=$(CXXFLAG_REL)
+all: $(BFILE)
+
+#DEFAULT DEBUG VERSION (SET UP THE VARIABLES IN THE BEGINING OF THE MAKEFILE)
+all-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
+all-dbg: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
+all-dbg: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
+all-dbg: LDFLAG=$(CXXFLAG_DBG)
+all-dbg: $(BFILE)
+
+#DEFAULT VERSION (SET UP THE VARIABLES IN THE BEGINING OF THE MAKEFILE)
+all-static: LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lblas -lbz2 -llzma -lgslcblas -Wl,-Bdynamic -lm -lpthread 
+all-static: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
+all-static: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
+all-static: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
+all-static: LDFLAG=$(CXXFLAG_REL)
+all-static: $(BFILE)
 
 #UNIGE DESKTOP RELEASE VERSION
 desktop: RMATH_INC=$(HOME)/Tools/R-3.2.2/src/include
@@ -44,16 +63,24 @@ desktop: LDFLAG=$(CXXFLAG_REL)
 desktop: $(BFILE)
 
 #UNIGE DESKTOP DEBUG VERSION
-desktop-dbg: desktop
+desktop-dbg: RMATH_INC=$(HOME)/Tools/R-3.2.2/src/include
+desktop-dbg: RMATH_LIB=$(HOME)/Tools/R-3.2.2/src/nmath/standalone
+desktop-dbg: HTSLD_INC=$(HOME)/Tools/htslib-1.3
+desktop-dbg: HTSLD_LIB=$(HOME)/Tools/htslib-1.3
+desktop-dbg: BOOST_INC=/usr/include
+desktop-dbg: BOOST_LIB=/usr/lib/x86_64-linux-gnu
 desktop-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
+desktop-dbg: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
+desktop-dbg: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
 desktop-dbg: LDFLAG=$(CXXFLAG_DBG)
+desktop-dbg: $(BFILE)
 
 #VITAL-IT RELEASE VERSION
-cluster: LIB_FLAGS=-lz -lgsl -lblas -lbz2 -lm -lpthread
-cluster: RMATH_INC=/software/R/3.1.1/include
-cluster: RMATH_LIB=/software/R/3.1.1/lib64
-cluster: HTSLD_INC=/software/UHTS/Analysis/samtools/1.2/include
-cluster: HTSLD_LIB=/software/UHTS/Analysis/samtools/1.2/lib64
+cluster: LIB_FLAGS=-lz -lgsl -lblas -lbz2 -lm -lpthread -lgslcblas -llzma
+cluster: RMATH_INC=/software/R/3.4.2/include
+cluster: RMATH_LIB=/software/R/3.4.2/lib64
+cluster: HTSLD_INC=/software/UHTS/Analysis/samtools/1.4/include
+cluster: HTSLD_LIB=/software/UHTS/Analysis/samtools/1.4/lib64
 cluster: BOOST_INC=/software/include
 cluster: BOOST_LIB=/software/lib64
 cluster: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
@@ -63,9 +90,18 @@ cluster: LDFLAG=$(CXXFLAG_REL)
 cluster: $(BFILE)
 
 #VITAL-IT DEBUG VERSION
-cluster-dbg: cluster
+cluster-dbg: LIB_FLAGS=-lz -lgsl -lblas -lbz2 -lm -lpthread -lgslcblas -llzma
+cluster-dbg: RMATH_INC=/software/R/3.4.2/include
+cluster-dbg: RMATH_LIB=/software/R/3.4.2/lib64
+cluster-dbg: HTSLD_INC=/software/UHTS/Analysis/samtools/1.4/include
+cluster-dbg: HTSLD_LIB=/software/UHTS/Analysis/samtools/1.4/lib64
+cluster-dbg: BOOST_INC=/software/include
+cluster-dbg: BOOST_LIB=/software/lib64
 cluster-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
 cluster-dbg: LDFLAG=$(CXXFLAG_DBG)
+cluster-dbg: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
+cluster-dbg: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
+cluster-dbg: $(BFILE)
 
 #MAC RELEASE VERSION
 mac: RMATH_INC=$(HOME)/Libraries/R-3.2.2/src/include
@@ -133,7 +169,7 @@ obj/union_%.o: union_%.cpp union_data.h src/common/data.h src/common/filter.h $(
 obj/extract_%.o: extract_%.cpp extract_data.h src/common/data.h src/common/filter.h $(TFILE)
 	$(CXX) -o $@ -c $< $(CXXFLAG) $(IFLAG)
 
-obj/quan_%.o: quan_%.cpp quan_data.h src/common/data.h src/common/filter.h $(TFILE)
+obj/quan_%.o: quan_%.cpp quan_data.h quan_xxhash.h src/common/data.h src/common/filter.h $(TFILE)
 	$(CXX) -o $@ -c $< $(CXXFLAG) $(IFLAG)
 	
 obj/ase_%.o: ase_%.cpp ase_data.h src/common/data.h src/common/filter.h $(TFILE)

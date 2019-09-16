@@ -73,7 +73,7 @@ int main(int argc, char ** argv) {
 	vrb.bullet("Webpage : https://qtltools.github.io/qtltools/");
 	vrb.bullet("Version : " + string(QTLTOOLS_VERSION));
 	vrb.bullet("Date    : " + running_timer.date());
-	if (!match_mode) vrb.bullet("Citation: A complete tool set for molecular QTL discovery and analysis, https://doi.org/10.1101/068635");
+	if (!match_mode) vrb.bullet("Citation: A complete tool set for molecular QTL discovery and analysis, https://doi.org/10.1038/ncomms15452");
 	else vrb.bullet("Citation: MBV; a method to solve sample mislabeling and detect technical bias in large combined genotype and sequencing assay data sets");
 
 	//4. Switch mode
@@ -115,8 +115,8 @@ int main(int argc, char ** argv) {
     else if (strcmp(argv[1], "rtc-union") == 0) union_main(args);
 
     //5.11. QUANTIFICATION mode
-    else if (strcmp(argv[1], "quan") == 0) quan_main(args);
-    
+    else if (strcmp(argv[1], "quan") == 0) quan2_main(args);
+
     //5.12. ASE mode
     else if (strcmp(argv[1], "ase") == 0) ase_main(args);
 

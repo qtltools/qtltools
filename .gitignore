@@ -1,3 +1,4 @@
 *.o
 .cproject
 .project
+/test_set/
