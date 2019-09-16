@@ -183,6 +183,15 @@
 		</p>
 	</div>
 	
+		<div class="item"  id="item2">
+		<h1>Include/Exclude file formats</h1>
+		<p>
+			The various --{include,exclude}-{sites,samples,phenotypes,covatiates} options require a simple text file which lists the IDs of the desired type, one ID per line. The include options will result in running the analyses only in this subset of IDs, whereas exclude options will remove these IDs from the analyses. The IDs for --{include,exclude}-sites refer to the 3rd column in VCF/BCF files, --{include,exclude}-covariates refer to the 1st column in COV files, --{include,exclude}-phenotyps refer to the 4th column in BED files and when --grp-best option is used to the 5th column.  
+		</p>
+		<p> The --include-positions and --exclude-positions options require a text file which lists the chromosomes and positions (separated by a space) of genotypes to be excluded or included. One position per line.</p>
+
+	</div>
+	
 	<div class="log">Monday 2nd September 2019</div>
 </div>
 </body>
