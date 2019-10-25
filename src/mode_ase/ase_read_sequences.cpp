@@ -19,14 +19,385 @@ typedef struct {     			// auxiliary data structure
 	samFile * fp;				// the file handle
 	bam_hdr_t * hdr;			// the file header
 	hts_itr_t * iter;			// NULL if a region not specified
+	int mq;
 } aux_t;
 
-static int read_bam(void *data, bam1_t *b) {
+static int ase_read_bam(void *data, bam1_t *b) {
 	aux_t * aux = (aux_t*) data;
 	return (aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b));
 }
 
-void ase_data::readSequences(string fbam, string fvcf) {
+static int mplp_func(void *data, bam1_t *b){
+	aux_t * aux = (aux_t*) data;
+	int ret, skip = 0;
+	do{
+		ret =  (aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b));
+		if (ret < 0) break;
+		if (b->core.tid < 0 || (b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL | BAM_FDUP))) {/*cerr << "FAIL" << endl*/; skip = 1; continue;}
+		skip = 0;
+		if (b->core.qual < aux->mq) {/*cerr << "MAPQ" << endl*/; skip = 1;}
+		else if ((b->core.flag&BAM_FPAIRED) && !(b->core.flag&BAM_FPROPER_PAIR)) {/*cerr << "PAIR" << endl*/; skip = 1;}
+
+	}while(skip);
+	return ret;
+}
+
+static inline void pileup_seq(const bam_pileup1_t * p){
+	if(p->is_head){
+		cerr << "^";
+		cerr << (char) (p->b->core.qual > 93? 126 : p->b->core.qual + 33);
+	}
+	if(!p->is_del){
+		char c = p->qpos < p->b->core.l_qseq ? seq_nt16_str[bam_seqi(bam_get_seq(p->b), p->qpos)] : 'N';
+		if (c == '=') c = bam_is_rev(p->b)? ',' : '.';
+        else c = bam_is_rev(p->b)? tolower(c) : toupper(c);
+		cerr << c;
+	}else cerr << (char) (p->is_refskip ? (bam_is_rev(p->b)? '<' : '>') : '*');
+	if (p->indel > 0) {
+        cerr << '+' << p->indel; 
+        for (int j = 1; j <= p->indel; ++j) {
+            int c = seq_nt16_str[bam_seqi(bam_get_seq(p->b), p->qpos + j)];
+            cerr << (char) (bam_is_rev(p->b)? tolower(c) : toupper(c));
+        }
+    } else if (p->indel < 0) {
+        cerr << p->indel;
+        for (int j = 1; j <= -p->indel; ++j) {
+            int c = 'N';
+            cerr << (char) (bam_is_rev(p->b)? tolower(c) : toupper(c));
+        }
+    }
+    if (p->is_tail) cerr << '$';
+}
+
+void ase_data::parseBamMpileup(void * d){
+	int n = 1;
+	aux_t **data;
+	data = (aux_t**) calloc(n, sizeof(aux_t*));
+	data[0] = (aux_t *) d;
+	const bam_pileup1_t **plp;
+	plp = (const bam_pileup1_t **)calloc(n, sizeof(bam_pileup1_t*));
+	int tid, pos, *n_plp;
+	n_plp = (int*) calloc(n, sizeof(int));
+	bam_mplp_t iter;
+	iter = bam_mplp_init(n, ase_read_bam, (void**)data);
+	bam_mplp_set_maxcnt(iter, max_depth);
+
+	int beg,end,ret;
+	if (data[0]->iter == NULL){
+		beg = INT_MIN;
+		end = INT_MAX;
+	}else{
+		beg = data[0]->iter->beg;
+		end = data[0]->iter->end;
+	}
+	unsigned long linecount = 0;
+	while ( (ret=bam_mplp_auto(iter, &tid, &pos, n_plp, plp)) > 0) {
+		if (pos < beg || pos > end) continue;
+		linecount++;
+		if(linecount % 50000000 == 0) vrb.bullet("Processed " + stb.str(linecount) + " positions");
+		string chr = data[0]->hdr->target_name[tid];
+		ase_site temp(chr,pos);
+		auto av_it = all_variants.find(temp);
+		if (av_it != all_variants.end()){
+			//unsigned int m_fai = 0, m_dup = 0, m_suc = 0, m_skip = 0;
+			//unsigned int b_del = 0, b_ref = 0, b_alt = 0, b_dis = 0, b_qua = 0;
+			//unsigned int m_sec = 0, m_umap = 0, m_fqc = 0, m_npp = 0, m_mapq = 0,m_mum = 0 , m_mio = 0;
+			unsigned int b_ref = 0, b_alt = 0, b_dis = 0;
+			mapping_stats ms;
+			//STEP1: Parse sequencing reads
+			if (n_plp[0] >= max_depth) vrb.warning(av_it->sid + " depth " + stb.str(n_plp[0]) + " is >= max-depth potential data loss!");
+			for (int iread = 0 ; iread < n_plp[0] ; iread ++) {
+				bool failed_qc = false;
+				const bam_pileup1_t * p = plp[0] + iread;
+				
+				if (p->b->core.tid < 0 || (p->b->core.flag & BAM_FUNMAP)) {ms.unmapped++; failed_qc = true;}
+				else if (p->b->core.flag & BAM_FSECONDARY) {ms.secondary++; failed_qc = true;}
+				else if (p->b->core.flag & BAM_FQCFAIL) {ms.fail_qc++; if(!keep_failqc) failed_qc = true;}
+				else if ((int)p->b->core.qual < param_min_mapQ) {ms.fail_mapping++; failed_qc = true;}
+				else if (p->b->core.flag & BAM_FPAIRED) {
+					if (p->b->core.flag & BAM_FMUNMAP) {ms.mate_unmapped++; if(!keep_orphan) failed_qc = true;}
+					else if (!(p->b->core.flag & BAM_FPROPER_PAIR)) {ms.not_pp++; if(check_proper_pair) failed_qc = true;}
+					//else if ((p->b->core.flag & BAM_FREVERSE) == (p->b->core.flag & BAM_FMREVERSE)) {ms.orientation++; failed_qc = true;}
+				}
+
+
+
+				/*if (p->b->core.tid < 0 || (p->b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL))) failed_qc = true;
+				else if ((int)p->b->core.qual < param_min_mapQ) failed_qc = true;
+				else if (p->b->core.flag & BAM_FPAIRED) {
+					if (!(p->b->core.flag & BAM_FPROPER_PAIR)) failed_qc = true;
+					//else if (p->b->core.flag & BAM_FMUNMAP) failed_qc = true;
+					//else if ((p->b->core.flag & BAM_FREVERSE) == (p->b->core.flag & BAM_FMREVERSE)) failed_qc = true;
+				}*/
+
+				if (!failed_qc){
+					if (p->b->core.flag & BAM_FDUP){
+						ms.duplicate++;
+						if(param_dup_rd) continue;
+					}
+					if (p->indel != 0 && !(p->is_del || p->is_refskip)){
+						ms.indel++;
+						if(param_rm_indel) continue;
+					}
+					if (p->is_del || p->is_refskip) {
+						ms.skipped++;
+						continue;
+					}
+					if ((p->qpos < p->b->core.l_qseq ? bam_get_qual(p->b)[p->qpos] : 0) < param_min_baseQ) {
+						ms.fail_baseq++;
+						continue;
+					}
+					char base = ase_getBase(bam_seqi(bam_get_seq(p->b), p->qpos));
+					bool isRef = (base == av_it->ref);
+					bool isAlt = (base == av_it->alt);
+					if (isRef) b_ref++;
+					if (isAlt) b_alt++;
+					if (!isRef && !isAlt) b_dis++;
+				}
+
+
+				/*if (!failed_qc){
+					if (p->b->core.flag & BAM_FDUP) ms.duplicate ++;
+					else if (p->indel != 0 && !(p->is_del || p->is_refskip)) ms.indel++;
+					if (!param_dup_rd || !(p->b->core.flag & BAM_FDUP)) {
+						if (p->is_del || p->is_refskip) ms.skipped++;
+						else if (!param_rm_indel || p->indel == 0){
+							if ((p->qpos < p->b->core.l_qseq ? bam_get_qual(p->b)[p->qpos] : 0) < param_min_baseQ) ms.fail_baseq++;
+							else {
+								char base = ase_getBase(bam_seqi(bam_get_seq(p->b), p->qpos));
+								bool isRef = (base == av_it->ref);
+								bool isAlt = (base == av_it->alt);
+								if (isRef) b_ref++;
+								if (isAlt) b_alt++;
+								if (!isRef && !isAlt) b_dis++;
+							}
+						}
+					}
+				}*/
+			}
+			//cerr << m_fai << " " << m_dup << " " << b_del << " " << b_qua << " " << m_suc << endl;
+			ase_site current = *av_it;
+			current.setCounts(b_ref,b_alt,b_dis, ms);
+			passing_variants.push_back(current);
+		}
+	}
+	bam_mplp_destroy(iter);
+}
+
+void ase_data::parseBam(void * d){
+	aux_t * data = (aux_t *) d;
+	//Pile up reads
+	const bam_pileup1_t * v_plp;
+	int n_plp = 0, tid, pos;
+	bam_plp_t s_plp = bam_plp_init(ase_read_bam, (void*)data);
+	bam_plp_set_maxcnt(s_plp, max_depth);
+
+	int beg,end;
+	if (data->iter == NULL){
+		beg = INT_MIN;
+		end = INT_MAX;
+	}else{
+		beg = data->iter->beg;
+		end = data->iter->end;
+	}
+
+	unsigned long linecount = 0;
+	while((v_plp = bam_plp_auto(s_plp, &tid, &pos, &n_plp)) != 0){
+		if (pos < beg || pos > end) continue;
+		linecount++;
+		if(linecount % 50000000 == 0) vrb.bullet("Processed " + stb.str(linecount) + " positions");
+		string chr = data->hdr->target_name[tid];
+		ase_site temp(chr,pos);
+		auto av_it = all_variants.find(temp);
+		if (av_it != all_variants.end()){
+			unsigned int b_ref = 0, b_alt = 0, b_dis = 0;
+			mapping_stats ms;
+
+			//STEP1: Parse sequencing reads
+			for (int iread = 0 ; iread < n_plp ; iread ++) {
+				bool failed_qc = false;
+				const bam_pileup1_t * p = v_plp + iread;
+
+				if (p->b->core.tid < 0 || (p->b->core.flag & BAM_FUNMAP)) {ms.unmapped++; failed_qc = true;}
+				else if (p->b->core.flag & BAM_FSECONDARY) {ms.secondary++; failed_qc = true;}
+				else if (p->b->core.flag & BAM_FQCFAIL) {ms.fail_qc++; if(!keep_failqc) failed_qc = true;}
+				else if ((int)p->b->core.qual < param_min_mapQ) {ms.fail_mapping++; failed_qc = true;}
+				else if (p->b->core.flag & BAM_FPAIRED) {
+					if (p->b->core.flag & BAM_FMUNMAP) {ms.mate_unmapped++; if(!keep_orphan) failed_qc = true;}
+					else if (!(p->b->core.flag & BAM_FPROPER_PAIR)) {ms.not_pp++; if(check_proper_pair) failed_qc = true;}
+					//else if ((p->b->core.flag & BAM_FREVERSE) == (p->b->core.flag & BAM_FMREVERSE)) {ms.orientation++; failed_qc = true;}
+				}
+
+				if (!failed_qc){
+					if (p->b->core.flag & BAM_FDUP){
+						ms.duplicate++;
+						if(param_dup_rd) continue;
+					}
+					if (p->indel != 0 && !(p->is_del || p->is_refskip)){
+						ms.indel++;
+						if(param_rm_indel) continue;
+					}
+					if (p->is_del || p->is_refskip) {
+						ms.skipped++;
+						continue;
+					}
+					if ((p->qpos < p->b->core.l_qseq ? bam_get_qual(p->b)[p->qpos] : 0) < param_min_baseQ) {
+						ms.fail_baseq++;
+						continue;
+					}
+					char base = ase_getBase(bam_seqi(bam_get_seq(p->b), p->qpos));
+					bool isRef = (base == av_it->ref);
+					bool isAlt = (base == av_it->alt);
+					if (isRef) b_ref++;
+					if (isAlt) b_alt++;
+					if (!isRef && !isAlt) b_dis++;
+				}
+			}
+			ase_site current = *av_it;
+			current.setCounts(b_ref,b_alt,b_dis,ms);
+			passing_variants.push_back(current);
+		}
+	}
+	bam_plp_reset(s_plp);
+	bam_plp_destroy(s_plp);
+}
+
+void ase_data::readSequences(string fbam) {
+	timer current_timer;
+	aux_t * data = (aux_t *) malloc (sizeof(aux_t));
+	data->iter = NULL;
+
+	vrb.title("Opening BAM file [" + fbam + "]");
+
+	//BAM OPEN
+	data->fp = sam_open(fbam.c_str(), "r");
+    if (data->fp == 0) vrb.error("Cannot open BAM file!");
+    data->hdr = sam_hdr_read(data->fp);
+    if (data->hdr == 0) vrb.error("Cannot parse BAM header!");
+    hts_idx_t *idx = sam_index_load(data->fp, fbam.c_str());
+    if (idx == NULL) vrb.error("Cannot load BAM index!");
+	data->mq = param_min_mapQ;
+
+    if (my_regions.size()){
+    	for (int reg = 0; reg < my_regions.size(); reg++){
+    		data->iter = sam_itr_querys(idx, data->hdr, my_regions[reg].get().c_str()); // set the iterator
+    		if (data->iter == NULL) vrb.error("Problem jumping to region [" + my_regions[reg].get() + "]");
+    		else vrb.bullet("Scanning region [" + my_regions[reg].get() + "] " + stb.str(reg+1) + " / " + stb.str(my_regions.size()));
+    		parseBamMpileup((void *) data);
+    	}
+    }else parseBamMpileup((void *) data);
+
+	vrb.bullet(stb.str(passing_variants.size()) + " variant found");
+
+    bam_hdr_destroy(data->hdr);
+    hts_idx_destroy(idx);
+    if (data->fp) sam_close(data->fp);
+    hts_itr_destroy(data->iter);
+    free(data);
+	vrb.bullet("Time taken: " + stb.str(current_timer.abs_time()) + " seconds");
+}
+
+void ase_data::calculateRefToAltBias(string olog){
+	output_file fdo;
+	vrb.title("Calculating reference allele mapping bias");
+	if (olog != ""){
+		vrb.bullet("Writing failed variants to [" + olog + "]");
+		fdo.append(olog);
+		if (fdo.fail()) vrb.error("Cannot open file [" + olog +"]");
+	}
+	vector < unsigned int > all_total_counts;
+	map < string , vector <unsigned int> > alleles_total_counts;
+	vector < ase_site * > filtered_variants;
+	unsigned int filtered_cov = 0 , filtered_bas = 0;
+	for (int i = 0 ; i < passing_variants.size(); i++){
+		if (passing_variants[i].total_count < param_min_cov_for_ref_alt) { filtered_cov++; if(olog!="") fdo<<"BIAS_COV " << passing_variants[i].sid << endl; continue;}
+		if (param_both_alleles_seen_bias && (passing_variants[i].alt_count == 0 || passing_variants[i].ref_count == 0 )) {filtered_bas++; if(olog!="") fdo<<"BIAS_BOTH_ALLELES " << passing_variants[i].sid << endl; continue;}
+		filtered_variants.push_back(&passing_variants[i]);
+		if (alleles_total_counts.count(passing_variants[i].alleles)) alleles_total_counts[passing_variants[i].alleles].push_back(passing_variants[i].total_count);
+		else alleles_total_counts[passing_variants[i].alleles] = vector <unsigned int> (1, passing_variants[i].total_count);
+		all_total_counts.push_back(passing_variants[i].total_count);
+	}
+
+	if (filtered_cov) vrb.bullet(stb.str(filtered_cov) + " sites with coverage less than " + stb.str(param_min_cov_for_ref_alt));
+	if (filtered_bas) vrb.bullet(stb.str(filtered_bas) + " sites where only one allele was observed");
+
+	bool calculate_all = false;
+	vector <string> add;
+	for (auto it = alleles_total_counts.begin(); it != alleles_total_counts.end(); it++){
+		if (it->second.size() < param_min_sites_for_ref_alt) {
+			calculate_all = true;
+			add.push_back(it->first);
+			vrb.bullet("Bias for " + it->first + " will be calculated from all sites since " + stb.str(it->second.size()) + " is too low");
+		}
+		else{
+			sort(alleles_total_counts[it->first].begin(), alleles_total_counts[it->first].end());
+			unsigned int max_index = alleles_total_counts[it->first].size() * param_sample;
+			unsigned int max = alleles_total_counts[it->first][max_index];
+			unsigned int refc = 0, altc = 0;
+			for (int i = 0; i < filtered_variants.size(); i++){
+				if (filtered_variants[i]->alleles != it->first) continue;
+				if (filtered_variants[i]->total_count <= max){
+					refc += filtered_variants[i]->ref_count;
+					altc += filtered_variants[i]->alt_count;
+				}else{
+					double ratio = (double) filtered_variants[i]->ref_count / (double) filtered_variants[i]->total_count;
+					for (int r = 0; r < max; r++){
+						if (rng.getDouble() <= ratio) refc++;
+						else altc++;
+					}
+				}
+			}
+			ref_to_alt_bias[it->first] = (double) refc / ((double) altc + (double) refc);
+			vrb.bullet("Bias for " + it->first + " from " + stb.str(it->second.size()) + " sites is " + stb.str(ref_to_alt_bias[it->first]));
+		}
+	}
+	if (calculate_all){
+		sort(all_total_counts.begin(),all_total_counts.end());
+		unsigned int max_index = all_total_counts.size() * param_sample;
+		unsigned int max = all_total_counts[max_index];
+		unsigned int refc = 0, altc = 0;
+		for (int i = 0; i < filtered_variants.size(); i++){
+			if (filtered_variants[i]->total_count <= max){
+				refc += filtered_variants[i]->ref_count;
+				altc += filtered_variants[i]->alt_count;
+			}else{
+				double ratio = (double) filtered_variants[i]->ref_count / (double) filtered_variants[i]->total_count;
+				for (int r = 0; r < max; r++){
+					if (rng.getDouble() <= ratio) refc++;
+					else altc++;
+				}
+			}
+		}
+		double all_bias = (double) refc / ((double) altc + (double) refc);
+		vrb.bullet("Bias from all sites is " + stb.str(all_bias));
+		for (int e = 0; e < add.size(); e++) ref_to_alt_bias[add[e]] = all_bias;
+	}
+}
+
+void ase_data::calculateASE(string fout , string olog){
+	vrb.title("Calculating ASE");
+	output_file fdoo(fout);
+	if (fdoo.fail()) vrb.error("Cannot open file [" + fout +"]");
+	output_file fdo;
+	if (olog != ""){
+		vrb.bullet("Writing failed variants to [" + olog + "]");
+		fdo.append(olog);
+		if (fdo.fail()) vrb.error("Cannot open file [" + olog +"]");
+	}
+	fdoo <<"CHR\tPOS\tID\tREF\tALT\tALLELES\tREF_COUNT\tNONREF_COUNT\tTOTAL_COUNT\tMAR\tOTHER_COUNT\tREF_BIAS\tWEIGHTED_REF_COUNT\tWEIGHTED_NONREF_COUNT\tPVAL\tUNMAPPED\tSECONDARY\tFAILQC\tFAIL_MAPQ\tNOT_PROPER_PAIR\tMATE_UNMAPPED\tWRONG_ORIENTATION\tDUPLICATE\tINDEL\tSKIPPED\tFAIL_BASEQ"<<endl;
+	for (int i = 0; i < passing_variants.size(); i++){
+		if (passing_variants[i].total_count >= param_min_cov){
+			if (param_both_alleles_seen && (passing_variants[i].alt_count == 0 || passing_variants[i].ref_count == 0 )){if(olog!="") fdo<<"ASE_BOTH_ALLELES " << passing_variants[i].sid << endl; continue;};
+			if (ref_to_alt_bias[passing_variants[i].alleles] >= 0 && ref_to_alt_bias[passing_variants[i].alleles] <= 1) passing_variants[i].calculatePval(ref_to_alt_bias[passing_variants[i].alleles]);
+			else vrb.error("Reference allele mapping bias is incorrect [" + stb.str(ref_to_alt_bias[passing_variants[i].alleles]) + "]");
+			fdoo << passing_variants[i] << endl;
+		}else if(olog!="") fdo<<"ASE_COV " << passing_variants[i].sid << endl;
+	}
+
+}
+
+
+/*void ase_data::readSequences(string fbam, string fvcf) {
 	aux_t * data = (aux_t *) malloc (sizeof(aux_t));
 
 	vrb.title("Opening BAM file [" + fbam + "] and writing VCF file [" + fvcf + "]");
@@ -97,7 +468,7 @@ void ase_data::readSequences(string fbam, string fvcf) {
 		//Pile up reads
 		const bam_pileup1_t * v_plp;
 		int n_plp = 0, tid, pos, i_site = 0;
-		bam_plp_t s_plp = bam_plp_init(read_bam, (void*)data);
+		bam_plp_t s_plp = bam_plp_init(ase_read_bam, (void*)data);
 		while (((v_plp = bam_plp_auto(s_plp, &tid, &pos, &n_plp)) != 0) && i_site < variants[reg].size()) {
 		    int chr = bam_name2id(data->hdr, variants[reg][i_site].chr.c_str());
 			if (pos < beg || pos >= end) continue;
@@ -177,4 +548,4 @@ void ase_data::readSequences(string fbam, string fvcf) {
     bcf_destroy1(bcf_rec);
     hts_close(bcf_fd);
     bcf_hdr_destroy(bcf_hdr);
-}
+}*/
