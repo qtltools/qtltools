@@ -33,16 +33,16 @@ static int mplp_func(void *data, bam1_t *b){
 	do{
 		ret =  (aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b));
 		if (ret < 0) break;
-		if (b->core.tid < 0 || (b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL | BAM_FDUP))) {/*cerr << "FAIL" << endl*/; skip = 1; continue;}
+		if (b->core.tid < 0 || (b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL | BAM_FDUP))) { skip = 1; continue;}
 		skip = 0;
-		if (b->core.qual < aux->mq) {/*cerr << "MAPQ" << endl*/; skip = 1;}
-		else if ((b->core.flag&BAM_FPAIRED) && !(b->core.flag&BAM_FPROPER_PAIR)) {/*cerr << "PAIR" << endl*/; skip = 1;}
+		if (b->core.qual < aux->mq)  {skip = 1;}
+		else if ((b->core.flag&BAM_FPAIRED) && !(b->core.flag&BAM_FPROPER_PAIR)) { skip = 1;}
 
 	}while(skip);
 	return ret;
 }
 
-static inline void pileup_seq(const bam_pileup1_t * p){
+/*static inline void pileup_seq(const bam_pileup1_t * p){
 	if(p->is_head){
 		cerr << "^";
 		cerr << (char) (p->b->core.qual > 93? 126 : p->b->core.qual + 33);
@@ -79,7 +79,7 @@ void ase_data::parseBamMpileup(void * d){
 	int tid, pos, *n_plp;
 	n_plp = (int*) calloc(n, sizeof(int));
 	bam_mplp_t iter;
-	iter = bam_mplp_init(n, ase_read_bam, (void**)data);
+	iter = legacy_options ? bam_mplp_init(n, mplp_func, (void**)data) : bam_mplp_init(n, ase_read_bam, (void**)data);
 	bam_mplp_set_maxcnt(iter, max_depth);
 
 	int beg,end,ret;
@@ -99,13 +99,10 @@ void ase_data::parseBamMpileup(void * d){
 		ase_site temp(chr,pos);
 		auto av_it = all_variants.find(temp);
 		if (av_it != all_variants.end()){
-			//unsigned int m_fai = 0, m_dup = 0, m_suc = 0, m_skip = 0;
-			//unsigned int b_del = 0, b_ref = 0, b_alt = 0, b_dis = 0, b_qua = 0;
-			//unsigned int m_sec = 0, m_umap = 0, m_fqc = 0, m_npp = 0, m_mapq = 0,m_mum = 0 , m_mio = 0;
 			unsigned int b_ref = 0, b_alt = 0, b_dis = 0;
 			mapping_stats ms;
 			//STEP1: Parse sequencing reads
-			if (n_plp[0] >= max_depth) vrb.warning(av_it->sid + " depth " + stb.str(n_plp[0]) + " is >= max-depth potential data loss!");
+			if (n_plp[0] >= max_depth * 0.95) vrb.warning(av_it->sid + " depth " + stb.str(n_plp[0]) + " is >= 95% max-depth, potential data loss!");
 			for (int iread = 0 ; iread < n_plp[0] ; iread ++) {
 				bool failed_qc = false;
 				const bam_pileup1_t * p = plp[0] + iread;
@@ -116,19 +113,17 @@ void ase_data::parseBamMpileup(void * d){
 				else if ((int)p->b->core.qual < param_min_mapQ) {ms.fail_mapping++; failed_qc = true;}
 				else if (p->b->core.flag & BAM_FPAIRED) {
 					if (p->b->core.flag & BAM_FMUNMAP) {ms.mate_unmapped++; if(!keep_orphan) failed_qc = true;}
+					else if (
+								(p->b->core.tid != p->b->core.mtid) ||  //must be on the same chr
+								(!(p->b->core.flag & BAM_FREAD1) && !(p->b->core.flag & BAM_FREAD2)) || //no read orientation info
+ 								((p->b->core.flag & BAM_FREAD1) && (p->b->core.flag & BAM_FREVERSE)) || //read 1 must be on the +ve strand
+								((p->b->core.flag & BAM_FREAD2) && !(p->b->core.flag & BAM_FREVERSE)) || //read 2 must be on the -ve strand
+								(p->b->core.flag & BAM_FREVERSE) == (p->b->core.flag & BAM_FMREVERSE) || // read 1 and 2 cannot be on the same strand
+								((p->b->core.flag & BAM_FREAD1) && (p->b->core.pos > p->b->core.mpos)) || //read 1 cannot start after read 2
+								((p->b->core.flag & BAM_FREAD2) && (p->b->core.pos < p->b->core.mpos)) //read 2 cannot start before read 1
+							) { ms.orientation++; if(check_orientation) failed_qc = true;}
 					else if (!(p->b->core.flag & BAM_FPROPER_PAIR)) {ms.not_pp++; if(check_proper_pair) failed_qc = true;}
-					//else if ((p->b->core.flag & BAM_FREVERSE) == (p->b->core.flag & BAM_FMREVERSE)) {ms.orientation++; failed_qc = true;}
 				}
-
-
-
-				/*if (p->b->core.tid < 0 || (p->b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL))) failed_qc = true;
-				else if ((int)p->b->core.qual < param_min_mapQ) failed_qc = true;
-				else if (p->b->core.flag & BAM_FPAIRED) {
-					if (!(p->b->core.flag & BAM_FPROPER_PAIR)) failed_qc = true;
-					//else if (p->b->core.flag & BAM_FMUNMAP) failed_qc = true;
-					//else if ((p->b->core.flag & BAM_FREVERSE) == (p->b->core.flag & BAM_FMREVERSE)) failed_qc = true;
-				}*/
 
 				if (!failed_qc){
 					if (p->b->core.flag & BAM_FDUP){
@@ -154,26 +149,6 @@ void ase_data::parseBamMpileup(void * d){
 					if (isAlt) b_alt++;
 					if (!isRef && !isAlt) b_dis++;
 				}
-
-
-				/*if (!failed_qc){
-					if (p->b->core.flag & BAM_FDUP) ms.duplicate ++;
-					else if (p->indel != 0 && !(p->is_del || p->is_refskip)) ms.indel++;
-					if (!param_dup_rd || !(p->b->core.flag & BAM_FDUP)) {
-						if (p->is_del || p->is_refskip) ms.skipped++;
-						else if (!param_rm_indel || p->indel == 0){
-							if ((p->qpos < p->b->core.l_qseq ? bam_get_qual(p->b)[p->qpos] : 0) < param_min_baseQ) ms.fail_baseq++;
-							else {
-								char base = ase_getBase(bam_seqi(bam_get_seq(p->b), p->qpos));
-								bool isRef = (base == av_it->ref);
-								bool isAlt = (base == av_it->alt);
-								if (isRef) b_ref++;
-								if (isAlt) b_alt++;
-								if (!isRef && !isAlt) b_dis++;
-							}
-						}
-					}
-				}*/
 			}
 			//cerr << m_fai << " " << m_dup << " " << b_del << " " << b_qua << " " << m_suc << endl;
 			ase_site current = *av_it;
@@ -182,14 +157,14 @@ void ase_data::parseBamMpileup(void * d){
 		}
 	}
 	bam_mplp_destroy(iter);
-}
+}*/
 
 void ase_data::parseBam(void * d){
 	aux_t * data = (aux_t *) d;
 	//Pile up reads
 	const bam_pileup1_t * v_plp;
 	int n_plp = 0, tid, pos;
-	bam_plp_t s_plp = bam_plp_init(ase_read_bam, (void*)data);
+	bam_plp_t s_plp = legacy_options ? bam_plp_init(mplp_func, (void*)data) : bam_plp_init(ase_read_bam, (void*)data);
 	bam_plp_set_maxcnt(s_plp, max_depth);
 
 	int beg,end;
@@ -214,6 +189,7 @@ void ase_data::parseBam(void * d){
 			mapping_stats ms;
 
 			//STEP1: Parse sequencing reads
+			if (n_plp >= max_depth * 0.95) vrb.warning(av_it->sid + " depth " + stb.str(n_plp) + " is >= 95% max-depth, potential data loss!");
 			for (int iread = 0 ; iread < n_plp ; iread ++) {
 				bool failed_qc = false;
 				const bam_pileup1_t * p = v_plp + iread;
@@ -224,27 +200,23 @@ void ase_data::parseBam(void * d){
 				else if ((int)p->b->core.qual < param_min_mapQ) {ms.fail_mapping++; failed_qc = true;}
 				else if (p->b->core.flag & BAM_FPAIRED) {
 					if (p->b->core.flag & BAM_FMUNMAP) {ms.mate_unmapped++; if(!keep_orphan) failed_qc = true;}
+					else if (
+								(p->b->core.tid != p->b->core.mtid) ||  //must be on the same chr
+								(!(p->b->core.flag & BAM_FREAD1) && !(p->b->core.flag & BAM_FREAD2)) || //no read orientation info
+ 								((p->b->core.flag & BAM_FREAD1) && (p->b->core.flag & BAM_FREVERSE)) || //read 1 must be on the +ve strand
+								((p->b->core.flag & BAM_FREAD2) && !(p->b->core.flag & BAM_FREVERSE)) || //read 2 must be on the -ve strand
+								(p->b->core.flag & BAM_FREVERSE) == (p->b->core.flag & BAM_FMREVERSE) || // read 1 and 2 cannot be on the same strand
+								((p->b->core.flag & BAM_FREAD1) && (p->b->core.pos > p->b->core.mpos)) || //read 1 cannot start after read 2
+								((p->b->core.flag & BAM_FREAD2) && (p->b->core.pos < p->b->core.mpos)) //read 2 cannot start before read 1
+							) { ms.orientation++; if(check_orientation) failed_qc = true;}
 					else if (!(p->b->core.flag & BAM_FPROPER_PAIR)) {ms.not_pp++; if(check_proper_pair) failed_qc = true;}
-					//else if ((p->b->core.flag & BAM_FREVERSE) == (p->b->core.flag & BAM_FMREVERSE)) {ms.orientation++; failed_qc = true;}
-				}
+				}else if (p->b->core.flag & BAM_FDUP) {ms.duplicate++; if(param_dup_rd) failed_qc = true;}
+				else if (p->indel != 0 && !(p->is_del || p->is_refskip)) {ms.indel++; if(param_rm_indel) failed_qc = true;}
+				else if (p->is_del || p->is_refskip) {ms.skipped++; failed_qc = true;}
+				else if ((p->qpos < p->b->core.l_qseq ? bam_get_qual(p->b)[p->qpos] : 0) < param_min_baseQ) {ms.fail_baseq++; failed_qc = true;}
+
 
 				if (!failed_qc){
-					if (p->b->core.flag & BAM_FDUP){
-						ms.duplicate++;
-						if(param_dup_rd) continue;
-					}
-					if (p->indel != 0 && !(p->is_del || p->is_refskip)){
-						ms.indel++;
-						if(param_rm_indel) continue;
-					}
-					if (p->is_del || p->is_refskip) {
-						ms.skipped++;
-						continue;
-					}
-					if ((p->qpos < p->b->core.l_qseq ? bam_get_qual(p->b)[p->qpos] : 0) < param_min_baseQ) {
-						ms.fail_baseq++;
-						continue;
-					}
 					char base = ase_getBase(bam_seqi(bam_get_seq(p->b), p->qpos));
 					bool isRef = (base == av_it->ref);
 					bool isAlt = (base == av_it->alt);
@@ -283,9 +255,9 @@ void ase_data::readSequences(string fbam) {
     		data->iter = sam_itr_querys(idx, data->hdr, my_regions[reg].get().c_str()); // set the iterator
     		if (data->iter == NULL) vrb.error("Problem jumping to region [" + my_regions[reg].get() + "]");
     		else vrb.bullet("Scanning region [" + my_regions[reg].get() + "] " + stb.str(reg+1) + " / " + stb.str(my_regions.size()));
-    		parseBamMpileup((void *) data);
+    		parseBam((void *) data);
     	}
-    }else parseBamMpileup((void *) data);
+    }else parseBam((void *) data);
 
 	vrb.bullet(stb.str(passing_variants.size()) + " variant found");
 
@@ -331,15 +303,16 @@ void ase_data::calculateRefToAltBias(string olog){
 		}
 		else{
 			sort(alleles_total_counts[it->first].begin(), alleles_total_counts[it->first].end());
-			unsigned int max_index = alleles_total_counts[it->first].size() * param_sample;
+			unsigned int max_index = alleles_total_counts[it->first].size() * param_sample - 1;
 			unsigned int max = alleles_total_counts[it->first][max_index];
-			unsigned int refc = 0, altc = 0;
+			unsigned int refc = 0, altc = 0, sc = 0;
 			for (int i = 0; i < filtered_variants.size(); i++){
 				if (filtered_variants[i]->alleles != it->first) continue;
 				if (filtered_variants[i]->total_count <= max){
 					refc += filtered_variants[i]->ref_count;
 					altc += filtered_variants[i]->alt_count;
 				}else{
+					sc++;
 					double ratio = (double) filtered_variants[i]->ref_count / (double) filtered_variants[i]->total_count;
 					for (int r = 0; r < max; r++){
 						if (rng.getDouble() <= ratio) refc++;
@@ -349,18 +322,20 @@ void ase_data::calculateRefToAltBias(string olog){
 			}
 			ref_to_alt_bias[it->first] = (double) refc / ((double) altc + (double) refc);
 			vrb.bullet("Bias for " + it->first + " from " + stb.str(it->second.size()) + " sites is " + stb.str(ref_to_alt_bias[it->first]));
+			if (sc) vrb.bullet("Subsampled " + stb.str(sc) + " sites to " + stb.str(max));
 		}
 	}
 	if (calculate_all){
 		sort(all_total_counts.begin(),all_total_counts.end());
-		unsigned int max_index = all_total_counts.size() * param_sample;
+		unsigned int max_index = all_total_counts.size() * param_sample - 1;
 		unsigned int max = all_total_counts[max_index];
-		unsigned int refc = 0, altc = 0;
+		unsigned int refc = 0, altc = 0, sc = 0;
 		for (int i = 0; i < filtered_variants.size(); i++){
 			if (filtered_variants[i]->total_count <= max){
 				refc += filtered_variants[i]->ref_count;
 				altc += filtered_variants[i]->alt_count;
 			}else{
+				sc++;
 				double ratio = (double) filtered_variants[i]->ref_count / (double) filtered_variants[i]->total_count;
 				for (int r = 0; r < max; r++){
 					if (rng.getDouble() <= ratio) refc++;
@@ -371,6 +346,7 @@ void ase_data::calculateRefToAltBias(string olog){
 		double all_bias = (double) refc / ((double) altc + (double) refc);
 		vrb.bullet("Bias from all sites is " + stb.str(all_bias));
 		for (int e = 0; e < add.size(); e++) ref_to_alt_bias[add[e]] = all_bias;
+		if (sc) vrb.bullet("Subsampled " + stb.str(sc) + " sites to " + stb.str(max));
 	}
 }
 

@@ -288,7 +288,7 @@ public :
 	float param_min_pval;
 	float param_sample;
 	bool param_dup_rd,param_both_alleles_seen,param_both_alleles_seen_bias,fix_chr,param_rm_indel;
-	bool keep_orphan,check_proper_pair,keep_failqc;
+	bool keep_orphan,check_proper_pair,keep_failqc,legacy_options,auto_flip,check_orientation;
 	string param_imputation_score_label,param_genotype_likelihood_label;
 
 	//DATA
@@ -302,9 +302,11 @@ public :
 	vector < ase_basic_block> blacklisted_regions;
 	set <string> add_chr,remove_chr;
 	set <string> bam_chrs;
+	map <string, string> genome;
 
 	//CONSTRUCTOR/DESTRUCTOR
 	ase_data() {
+		//these defaults get overwritten in ase_main.cpp
 		param_min_mapQ = 10;
 		param_min_baseQ = 13;
 		param_min_pval = 1.0;
@@ -327,6 +329,9 @@ public :
 		keep_orphan = false;
 		check_proper_pair = false;
 		keep_failqc = false;
+		legacy_options = false;
+		auto_flip = false;
+		check_orientation = false;
 	}
 
 	~ase_data() {
@@ -345,6 +350,8 @@ public :
 	void parseBamMpileup(void *);
 	void readBlacklist(string);
 	void compareChrs(string, string);
+	void readGenome(string);
+	char complement(string &);
 
 
 };

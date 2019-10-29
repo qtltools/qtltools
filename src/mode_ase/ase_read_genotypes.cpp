@@ -14,6 +14,15 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
 #include "ase_data.h"
+
+char ase_data::complement(string &in){
+	if (in == "A") return 'T';
+	if (in == "T") return 'A';
+	if (in == "G") return 'C';
+	if (in == "C") return 'G';
+	vrb.error("Unknown base " + in);
+}
+
 void ase_data::compareChrs(string vcf, string bam){
 
 	vrb.title("Getting chromosomes from BAM [" + bam + "]");
@@ -138,6 +147,10 @@ void ase_data::readGenotypes2(string filename, string str_regions ,string olog) 
 	int n_excludedG_miss = 0;
 	int n_excludedG_blkl = 0;
 	int n_excludedG_dupl = 0;
+	int n_excludedG_nir = 0;
+	int n_excludedG_wr = 0;
+	int n_fixed_flipped = 0;
+	int n_fixed_swapped = 0;
 
 	vrb.title("Reading VCF [" + filename + "]");
 	if (olog != ""){
@@ -213,6 +226,33 @@ void ase_data::readGenotypes2(string filename, string str_regions ,string olog) 
 					} else if (ref == "N" || alt == "N" || ref == "" || alt == "" || ref == "." || alt == ".") {
 						n_excludedG_snpN++;
 						if (olog != "") fdo << "VCF_MISSING_REF_ALT " << sid << endl;
+					} else if (genome.size() && (genome.count(curr_chr) == 0 ||  pos >= genome[curr_chr].size())) {
+						n_excludedG_nir++;
+						if (olog != "") fdo << "VCF_NOT_IN_FASTA " << sid << endl;
+					} else if (genome.size() && ref[0] != genome[curr_chr][pos]) {
+						if (auto_flip){
+							if (alt[0] == genome[curr_chr][pos]){
+								string tsr = ref;
+								ref = alt;
+								alt = tsr;
+								//vrb.warning( curr_chr + ":" + stb.str(pos)+ ":" + alt + ref + ":" + sid + " was swapped to " + ref + alt);
+								n_fixed_swapped++;
+								if (olog != "") fdo << "VCF_SWAPPED " << sid << " " << alt + ref << " " << ref+alt << endl;
+							}else if(complement(ref) == genome[curr_chr][pos]){
+								string ola = ref + alt;
+								ref[0] = complement(ref);
+								alt[0] = complement(alt);
+								n_fixed_flipped++;
+								//vrb.warning( curr_chr + ":" + stb.str(pos)+ ":" + ola + ":" + sid + " was flipped to " + ref + alt);
+								if (olog != "") fdo << "VCF_FLIPPED " << sid << " " << ola << " " << ref+alt <<  endl;
+							}else{
+								n_excludedG_wr++;
+								if (olog != "") fdo << "VCF_WRONG_REF " << sid << endl;
+							}
+						}else{
+							n_excludedG_wr++;
+							if (olog != "") fdo << "VCF_WRONG_REF " << sid << endl;
+						}
 					} else if (niq > 0 && iq_arr[0] < param_min_iq) {
 						n_excludedG_impq ++;
 						if (olog != "") fdo << "VCF_BAD_IMPUTATION " << sid << endl;
@@ -248,14 +288,18 @@ void ase_data::readGenotypes2(string filename, string str_regions ,string olog) 
 				}
 			}
 		}
-		if (linecount % 1000000 == 0) vrb.bullet(stb.str(linecount) + " lines read, " + stb.str(n_includedG) + " heterozygous genotypes included, " + stb.str(n_excludedG_user + n_excludedG_blkl + n_excludedG_mult + n_excludedG_snpv + n_excludedG_snpN + n_excludedG_impq + n_excludedG_impp + n_excludedG_void + n_excludedG_miss + n_excludedG_homo + n_excludedG_dupl) + " genotypes excluded");
+		if (linecount % 1000000 == 0) vrb.bullet(stb.str(linecount) + " lines read, " + stb.str(n_includedG) + " heterozygous genotypes included, " + stb.str(n_excludedG_user + n_excludedG_blkl + n_excludedG_mult + n_excludedG_snpv + n_excludedG_snpN + n_excludedG_impq + n_excludedG_impp + n_excludedG_void + n_excludedG_miss + n_excludedG_homo + n_excludedG_dupl + n_excludedG_nir + n_excludedG_wr) + " genotypes excluded");
 	}
 	vrb.bullet(stb.str(n_includedG) + " heterozygous genotypes included");
+	if (n_excludedG_mult > 0) vrb.bullet(stb.str(n_excludedG_mult) + " multi-allelic variants excluded");
 	if (n_excludedG_user > 0) vrb.bullet(stb.str(n_excludedG_user) + " variants excluded by user");
 	if (n_excludedG_blkl > 0) vrb.bullet(stb.str(n_excludedG_blkl) + " variants in blacklisted regions excluded");
-	if (n_excludedG_mult > 0) vrb.bullet(stb.str(n_excludedG_mult) + " multi-allelic variants excluded");
 	if (n_excludedG_snpv > 0) vrb.bullet(stb.str(n_excludedG_snpv) + " indels excluded");
 	if (n_excludedG_snpN > 0) vrb.bullet(stb.str(n_excludedG_snpN) + " variants with missing ref/alt excluded");
+	if (n_excludedG_nir  > 0) vrb.bullet(stb.str(n_excludedG_nir)  + " variants missing from FASTA excluded");
+	if (n_fixed_swapped  > 0) vrb.bullet(stb.str(n_fixed_swapped)  + " variants where ref/alt was swapped");
+	if (n_fixed_flipped  > 0) vrb.bullet(stb.str(n_fixed_flipped)  + " variants where ref/alt was flipped to the +ve strand");
+	if (n_excludedG_wr   > 0) vrb.bullet(stb.str(n_excludedG_wr)   + " variants with ref mismatches excluded");
 	if (n_excludedG_impq > 0) vrb.bullet(stb.str(n_excludedG_impq) + " badly imputed variants excluded");
 	if (n_excludedG_impp > 0) vrb.bullet(stb.str(n_excludedG_impp) + " low probability genotypes excluded");
 	if (n_excludedG_void > 0) vrb.bullet(stb.str(n_excludedG_void) + " variants without GT field excluded");
@@ -263,6 +307,9 @@ void ase_data::readGenotypes2(string filename, string str_regions ,string olog) 
 	if (n_excludedG_homo > 0) vrb.bullet(stb.str(n_excludedG_homo) + " homozygous genotypes excluded");
 	if (n_excludedG_dupl > 0) vrb.bullet(stb.str(n_excludedG_dupl) + " duplicate variants excluded");
 	if (all_variants.size() == 0) vrb.leave("Cannot find usable variants in target region!");
+
+	if (n_excludedG_dupl || n_fixed_swapped || n_fixed_flipped || n_excludedG_wr || n_excludedG_nir) vrb.warning("There are " + stb.str(n_excludedG_dupl + n_fixed_swapped + n_fixed_flipped + n_excludedG_wr + n_excludedG_nir)+ " problematic genotypes in the VCF file. Please look at the excluded genotypes!");
+
 	free(gt_arr);
 	bcf_sr_destroy(sr);
 
