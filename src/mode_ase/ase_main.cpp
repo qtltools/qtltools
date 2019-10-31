@@ -31,7 +31,8 @@ void ase_main(vector < string > & argv) {
 		("reg,r", boost::program_options::value< string >()->default_value(""), "Genomic region(s) to be processed.")
 		("blacklist,B", boost::program_options::value< string >(), "BED file for blacklisted regions.")
 		("fix-chr,F", "Attempt to match chromosome names to the BAM file")
-		("auto-flip,x", "Attempt to fix reference allele mistaches. Requires a fasta file for the reference sequence.")
+		("auto-flip,x", "Attempt to fix reference allele mismatches. Requires a fasta file for the reference sequence.")
+		("print-stats,P", "Print out stats for the filtered reads for ASE sites.")
 		("group-by,g", boost::program_options::value< unsigned int >()->default_value(0,"OFF"), "Group variants separated by this much into batches. This allows you not to stream the whole BAM file and may improve running time.")
 		("max-depth,d", boost::program_options::value< int >()->default_value(16000,"16000"), "Pileup max-depth.")
 		("filtered,f", boost::program_options::value< string >()->default_value(""), "File to output filtered variants.")
@@ -39,26 +40,26 @@ void ase_main(vector < string > & argv) {
 
 	boost::program_options::options_description opt_parameters ("\x1B[32mFilters\33[0m");
 	opt_parameters.add_options()
-		("filter-mapping-quality,q", boost::program_options::value< unsigned int >()->default_value(10), "Minimum phred mapping quality for a read to be considered.")
-		("filter-base-quality,Q", boost::program_options::value< unsigned int >()->default_value(13), "Minimum phred quality for a base to be considered.")
+		("filter-mapping-quality,q", boost::program_options::value< unsigned int >(), "Minimum phred mapping quality for a read to be considered.")
+		("filter-base-quality,Q", boost::program_options::value< unsigned int >()->default_value(10), "Minimum phred quality for a base to be considered.")
 		("filter-binomial-pvalue,p", boost::program_options::value< double >()->default_value(1.0, "1.0"), "Binomial p-value threshold for ASE in output.")
 		("filter-coverage,c", boost::program_options::value< unsigned int >()->default_value(16), "Minimum coverage for a genotype to be considered.")
 		("filter-coverage-bias,C", boost::program_options::value< unsigned int >()->default_value(10), "Minimum coverage for a genotype to be considered.")
-		("filter-min-sites-bias,s", boost::program_options::value< unsigned int >()->default_value(100), "Minimum number of sites to calculate a REF bias from for a specific REF/ALT pair. The REF bias for pairs with less than this many sites will be calculated from all sites.")
+		("filter-min-sites-bias,s", boost::program_options::value< unsigned int >()->default_value(200), "Minimum number of sites to calculate a REF bias from for a specific REF/ALT pair. The REF bias for pairs with less than this many sites will be calculated from all sites.")
 		("filter-imputation-score-info-id,I", boost::program_options::value< string >()->default_value("INFO", "INFO"), "The INFO ID of the imputation score in the VCF.")
 		("filter-genotype-likelihood-id,L", boost::program_options::value< string >()->default_value("GL", "GL"), "The FORMAT ID of the genotype likelihoods for RR/RA/AA  in the VCF.")
 		("filter-imputation-qual,w", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum imputation information score for a variant to be considered.")
 		("filter-imputation-prob,z", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum posterior probability for a genotype to be considered.")
-		("filter-sample,S", boost::program_options::value< double >()->default_value(1.0, "1.0"), "Randomly subsample sites that are greater than this percentile of all the sites in REF bias calculations.")
+		("filter-sample,S", boost::program_options::value< double >()->default_value(0.75, "0.75"), "Randomly subsample sites that are greater than this percentile of all the sites in REF bias calculations.")
 		("filter-both-alleles-seen,a", "Require both alleles to be observed in RNA-seq reads for a site for ASE calculations.")
 		("keep-homozygotes-for-bias,A", "DON'T require both alleles to be observed in RNA-seq reads for a site for REF mapping bias calculations. (NOT RECOMMENDED)")
 		("filter-indel-reads,D", "Remove reads that contain indels.")
 		("keep-failed-qc,e", "Keep fastq reads that fail sequencing QC (as indicated by the sequencer).")
 		("keep-orphan-reads,O", "Keep paired end reads where one of mates is unmapped.")
-		("check-proper-pairing,y", "If provided only properly paired reads according to the aligner.")
-		("check-orientation,X", "If provided only mate pairs where both mates are on the same chromosome, first mate is on the +ve strand and the second is on the -ve strand, and the second mate does not start before the first mate will be considered.")
+		("check-proper-pairing,y", "If provided only properly paired reads according to the aligner will be considered.")
+		("ignore-orientation,X", "If NOT provided only mate pairs where both mates are on the same chromosome, first mate is on the +ve strand and the second is on the -ve strand, and the second mate does not start before the first mate will be considered.")
 		("filter-remove-duplicates,u", "Remove duplicate sequencing reads in the process.")
-		("legacy-options,j", "Replicate legacy options used. (DO NOT USE).");
+		("legacy-options,J", "Replicate legacy options used. (DO NOT USE).");
 
 	D.option_descriptions.add(opt_files).add(opt_parameters);
 
@@ -90,6 +91,7 @@ void ase_main(vector < string > & argv) {
 	if (!D.options.count("bam")) vrb.error("Sequence data needs to be specified with --bam [file.bam]");
 	if (!D.options.count("ind")) vrb.error("Sample ID needs to be specified with --ind [sample_id]");
 	if (!D.options.count("out")) vrb.error("Output needs to be specified with --out [file.out]");
+	if (!D.options.count("filter-mapping-quality")) vrb.error("Mapping quality threshold should be set to uniquely mapping reads with --filter-mapping-quality [quality]");
 
 	//TO DO CHECK PARAMETER VALUES
 	D.max_depth = D.options["max-depth"].as < int > ();
@@ -98,8 +100,6 @@ void ase_main(vector < string > & argv) {
 		vrb.warning("Setting pileup max-depth to INT_MAX!");
 	}
 	if (D.max_depth > 1000000) vrb.warning("Pileup max-depth is above 1M. Potential memory hog!");
-
-	if (D.options["filter-mapping-quality"].defaulted()) vrb.warning("You used the default mapping quality threshold. Usually this should be adjusted for the aligner used, is this intentional?");
 
 	if (D.options.count("fasta") == 0 && D.options.count("auto-flip")) vrb.warning("Ignoring --auto-flip since no --fasta is provided!");
 
@@ -120,10 +120,11 @@ void ase_main(vector < string > & argv) {
 	D.keep_failqc = D.options.count("keep-failed-qc");
 	D.keep_orphan = D.options.count("keep-orphan-reads");
 	D.check_proper_pair = D.options.count("check-proper-pairing");
-	D.check_orientation = D.options.count("check-orientation");
+	D.check_orientation = (D.options.count("ignore-orientation") == 0);
 	D.param_dup_rd = D.options.count("filter-remove-duplicates");
 	D.fix_chr = D.options.count("fix-chr");
 	D.auto_flip = D.options.count("auto-flip");
+	D.print_stats = D.options.count("print-stats");
 	D.region_length = D.options["group-by"].as < unsigned int > ();
 
 	if(D.options.count("legacy-options")){
@@ -146,7 +147,6 @@ void ase_main(vector < string > & argv) {
 		D.check_orientation = false;
 	}
 
-
 	vrb.bullet("Mapping quality >= " + stb.str(D.param_min_mapQ));
 	vrb.bullet("Base quality >= " + stb.str(D.param_min_baseQ));
 	vrb.bullet("Coverage ASE >= " + stb.str(D.param_min_cov));
@@ -160,6 +160,7 @@ void ase_main(vector < string > & argv) {
 	vrb.bullet("Remove indel reads = " + stb.str(D.param_rm_indel));
 	vrb.bullet("Keep failed qc reads = " + stb.str(D.keep_failqc));
 	vrb.bullet("Keep orphan reads = " + stb.str(D.keep_orphan));
+	vrb.bullet("Check orientation = " + stb.str(D.check_orientation));
 	vrb.bullet("Check proper pairing = " + stb.str(D.check_proper_pair));
 	vrb.bullet("Subsample above this percentile for REF bias = " + stb.str(D.param_sample));
 	vrb.bullet("Max depth for pileup = " + stb.str(D.max_depth));

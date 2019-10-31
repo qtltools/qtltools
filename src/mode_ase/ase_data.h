@@ -27,9 +27,9 @@ public:
 		unmapped = secondary = fail_qc = skipped = not_pp = mate_unmapped = orientation = 0;
 	}
 	friend ostream& operator<<(ostream& out, mapping_stats& g){
-		out << g.unmapped << "\t" << g.secondary << "\t" << g.fail_qc << "\t" << g.fail_mapping << "\t" << g.not_pp << "\t"
-		<< g.mate_unmapped << "\t" << g.orientation << "\t" << g.duplicate << "\t" << g.indel << "\t"
-		<< g.skipped << "\t" << g.fail_baseq;       
+		out << g.unmapped << "\t" << g.secondary << "\t" << g.fail_mapping  << "\t" << g.skipped << "\t" << g.fail_baseq  << "\t"
+		<< g.fail_qc  << "\t" << g.duplicate << "\t" << g.indel << "\t" << g.mate_unmapped << "\t"
+		<< g.orientation  << "\t" << g.not_pp;
 		return out;
 	}
 };
@@ -43,6 +43,8 @@ public:
 	string chr, sid;
 	char ref, alt;
 	mapping_stats stats;
+	set <string> alleles_seen;
+	string concern;
 
 	ase_site(string _chr,unsigned int _pos){
 		chr = _chr;
@@ -57,6 +59,7 @@ public:
 		pval = 1.0;
 		ref_allele_mapping_bias = 0.5;
 		mar = 0.0 / 0.0;
+		concern = "";
 	}
 
 	ase_site (string _chr, string _sid, unsigned int _pos, string _ref, string _alt) {
@@ -72,17 +75,25 @@ public:
 		pval = 1.0;
 		ref_allele_mapping_bias = 0.5;
 		mar = 0.0 / 0.0;
+		concern = "";
 	}
 
 
-	void setCounts(const unsigned int r, const unsigned a, const unsigned o, const mapping_stats _stats = mapping_stats()){
+	void setCounts(const unsigned int r, const unsigned a, const unsigned o, const set <string> &as ,  const mapping_stats _stats = mapping_stats()){
 		ref_count = r;
 		alt_count = a;
 		other_count = o;
 		total_count = r + a;
 		mar = (double) (r < a ? r : a) / (double) total_count;
 		stats = _stats;
-		if (other_count && ref_count == 0 && alt_count == 0) vrb.warning("No ref or alt allele for " + this->getName());
+		alleles_seen = as;
+		if (other_count && ref_count == 0 && alt_count == 0) {vrb.warning("No ref or alt allele for " + this->getName() + " in " + stb.str(other_count) + " sites"); concern += "NRAO,";}
+		else{
+			if (other_count > alt_count) {vrb.warning("More discordant alleles than alt alleles for " + this->getName() + " " + stb.str(other_count) + " > " + stb.str(alt_count)); concern += "MDTA,";}
+			if (other_count > ref_count) {vrb.warning("More discordant alleles than ref alleles for " + this->getName() + " " + stb.str(other_count) + " > " + stb.str(ref_count)); concern += "MDTR,";}
+		}
+		if (!ref_count || !alt_count) {concern += "NBAS,";}
+		else if (mar < 0.02) {concern += "LMAR,";}
 	}
 
 	void calculatePval(double rab = 0.5){
@@ -121,9 +132,15 @@ public:
 	}
 
     friend ostream& operator<<(ostream& out, ase_site& g){
-        out << g.chr << "\t" << g.pos + 1 << "\t" << g.sid << "\t" << g.ref << "\t" << g.alt << "\t" << g.alleles << "\t" << g.ref_count
-            << "\t" << g.alt_count << "\t" << g.total_count << "\t" << g.mar << "\t" << g.other_count << "\t" << g.ref_allele_mapping_bias
-			<< "\t" << g.weighted_ref_count << "\t" << g.weighted_alt_count << "\t" << g.pval << "\t" << g.stats;
+        out << g.sid  << "\t" << g.chr << "\t" << g.pos + 1 << "\t" << g.alleles << "\t" << (g.ref_count && g.alt_count) << "\t" << g.mar  << "\t" << g.ref_count
+            << "\t" << g.alt_count << "\t" << g.total_count << "\t" << g.weighted_ref_count << "\t" << g.weighted_alt_count << "\t" << g.weighted_ref_count - g.weighted_alt_count << "\t";
+        if (g.alleles_seen.size()){
+        	ostringstream stream;
+        	copy(g.alleles_seen.begin(), g.alleles_seen.end(), ostream_iterator<string>(stream, ":"));
+        	out << stream.str().substr(0,stream.str().size() - 1);
+        }else out << "NA";
+
+		out << "\t" << g.ref << "\t" << g.alt << "\t" << g.other_count << "\t" << g.ref_allele_mapping_bias << "\t" << g.pval << "\t" << (g.concern == "" ? "PASS" : g.concern.substr(0,g.concern.size()-1));
         return out;
     }
 
@@ -288,7 +305,7 @@ public :
 	float param_min_pval;
 	float param_sample;
 	bool param_dup_rd,param_both_alleles_seen,param_both_alleles_seen_bias,fix_chr,param_rm_indel;
-	bool keep_orphan,check_proper_pair,keep_failqc,legacy_options,auto_flip,check_orientation;
+	bool keep_orphan,check_proper_pair,keep_failqc,legacy_options,auto_flip,check_orientation,print_stats;
 	string param_imputation_score_label,param_genotype_likelihood_label;
 
 	//DATA
@@ -332,6 +349,7 @@ public :
 		legacy_options = false;
 		auto_flip = false;
 		check_orientation = false;
+		print_stats = false;
 	}
 
 	~ase_data() {
