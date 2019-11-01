@@ -295,7 +295,7 @@ void ase_data::calculateASE(string fout , string olog){
 		fdo.append(olog);
 		if (fdo.fail()) vrb.error("Cannot open file [" + olog +"]");
 	}
-	fdoo <<"INDIVIDUAL\tRSID\tCHR\tPOS\tALLELES\tBOTH_ALLELES_SEEN\tMIN_ALLELE_RATIO\tREF_COUNT\tNONREF_COUNT\tTOTAL_COUNT\tWEIGHTED_REF_COUNT\tWEIGHTED_NONREF_COUNT\tWRC_MINUS_WNC\tALLELES_SEEN\tREF_ALLELE\tALT_ALLELE\tOTHER_COUNT\tREF_RATIO\tPVALUE\tCONCERN";
+	fdoo <<"INDIVIDUAL\tRSID\tCHR\tPOS\tALLELES\tBOTH_ALLELES_SEEN\tMIN_ALLELE_RATIO\tREF_COUNT\tNONREF_COUNT\tTOTAL_COUNT\tWEIGHTED_REF_COUNT\tWEIGHTED_NONREF_COUNT\tWRC_MINUS_WNC\tALLELES_SEEN\tREF_ALLELE\tALT_ALLELE\tOTHER_COUNT\tREF_RATIO\tPVALUE\tCONCERN\tEXON_INFO";
 	if (print_stats) fdoo <<"\tUNMAPPED\tSECONDARY\tFAIL_MAPQ\tSKIPPED\tFAIL_BASEQ\tFAILQC\tDUPLICATE\tINDEL\tMATE_UNMAPPED\tWRONG_ORIENTATION\tNOT_PROPER_PAIR";
 	fdoo <<endl;
 	for (int i = 0; i < passing_variants.size(); i++){
@@ -303,6 +303,7 @@ void ase_data::calculateASE(string fout , string olog){
 			if (param_both_alleles_seen && (passing_variants[i].alt_count == 0 || passing_variants[i].ref_count == 0 )){if(olog!="") fdo<<"ASE_BOTH_ALLELES " << passing_variants[i].sid << endl; continue;};
 			if (ref_to_alt_bias[passing_variants[i].alleles] >= 0 && ref_to_alt_bias[passing_variants[i].alleles] <= 1) passing_variants[i].calculatePval(ref_to_alt_bias[passing_variants[i].alleles]);
 			else vrb.error("Reference allele mapping bias is incorrect [" + stb.str(ref_to_alt_bias[passing_variants[i].alleles]) + "]");
+			assignGenesToAseSite(passing_variants[i]);
 			fdoo << sample_id[0] << "\t" << passing_variants[i];
 			if (print_stats) fdoo << "\t" << passing_variants[i].stats;
 			fdoo << endl;

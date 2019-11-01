@@ -30,6 +30,7 @@ void ase_main(vector < string > & argv) {
 		("ind,i", boost::program_options::value< string >(), "Sample to be processed.")
 		("reg,r", boost::program_options::value< string >()->default_value(""), "Genomic region(s) to be processed.")
 		("blacklist,B", boost::program_options::value< string >(), "BED file for blacklisted regions.")
+		("gtf,E", boost::program_options::value< string >(), "Annotation in GTF format")
 		("fix-chr,F", "Attempt to match chromosome names to the BAM file")
 		("auto-flip,x", "Attempt to fix reference allele mismatches. Requires a fasta file for the reference sequence.")
 		("print-stats,P", "Print out stats for the filtered reads for ASE sites.")
@@ -180,6 +181,7 @@ void ase_main(vector < string > & argv) {
 	if (D.fix_chr) D.compareChrs(D.options["vcf"].as < string > (), D.options["bam"].as < string > ());
 	if (D.options.count("blacklist")) D.readBlacklist(D.options["blacklist"].as < string > ());
 	if (D.options.count("fasta")) D.readGenome(D.options["fasta"].as < string > ());
+	if (D.options.count("gtf")) D.readGTF(D.options["gtf"].as < string > ());
 	D.readGenotypes2(D.options["vcf"].as < string > (), D.options["reg"].as < string > (), D.options["filtered"].as < string > ());
 	if (D.region_length) D.getRegions();
 	D.readSequences(D.options["bam"].as < string > ());

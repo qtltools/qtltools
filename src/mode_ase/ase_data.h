@@ -44,7 +44,7 @@ public:
 	char ref, alt;
 	mapping_stats stats;
 	set <string> alleles_seen;
-	string concern;
+	string concern,genes;
 
 	ase_site(string _chr,unsigned int _pos){
 		chr = _chr;
@@ -60,6 +60,7 @@ public:
 		ref_allele_mapping_bias = 0.5;
 		mar = 0.0 / 0.0;
 		concern = "";
+		genes = "NA";
 	}
 
 	ase_site (string _chr, string _sid, unsigned int _pos, string _ref, string _alt) {
@@ -76,6 +77,7 @@ public:
 		ref_allele_mapping_bias = 0.5;
 		mar = 0.0 / 0.0;
 		concern = "";
+		genes = "NA";
 	}
 
 
@@ -140,7 +142,7 @@ public:
         	out << stream.str().substr(0,stream.str().size() - 1);
         }else out << "NA";
 
-		out << "\t" << g.ref << "\t" << g.alt << "\t" << g.other_count << "\t" << g.ref_allele_mapping_bias << "\t" << g.pval << "\t" << (g.concern == "" ? "PASS" : g.concern.substr(0,g.concern.size()-1));
+		out << "\t" << g.ref << "\t" << g.alt << "\t" << g.other_count << "\t" << g.ref_allele_mapping_bias << "\t" << g.pval << "\t" << (g.concern == "" ? "PASS" : g.concern.substr(0,g.concern.size()-1)) << "\t" << g.genes;
         return out;
     }
 
@@ -290,6 +292,41 @@ public:
 	}
 };
 
+class ase_exon{
+public:
+	string id;
+	unsigned int start,end;
+	ase_exon(){start=0;end=0;id="NA";}
+	ase_exon(unsigned int s, unsigned int e){
+		start = s;
+		end = e;
+		id = "NA";
+	}
+
+	ase_exon(string gid, string tid, string gn, unsigned int s, unsigned int e){
+		start = s;
+		end = e;
+		id = gid + ":" + tid + ":" + stb.str(start) + "_" + stb.str(end) + ":" + gn;
+	}
+
+
+	bool contains(unsigned int p){
+		return p <= end && p >= start;
+	}
+
+	bool operator < (const ase_exon &b) const {
+		if (start < b.start) return true;
+		if (start > b.start) return false;
+		if (end < b.end) return true;
+		else return false;
+	}
+
+	bool null(){
+		return start == 0 && end == 0;
+	}
+};
+
+
 class ase_data : public data {
 public :
 	//PARAMETERS
@@ -307,6 +344,7 @@ public :
 	bool param_dup_rd,param_both_alleles_seen,param_both_alleles_seen_bias,fix_chr,param_rm_indel;
 	bool keep_orphan,check_proper_pair,keep_failqc,legacy_options,auto_flip,check_orientation,print_stats;
 	string param_imputation_score_label,param_genotype_likelihood_label;
+	static const int binsize = 10000;
 
 	//DATA
 	vector < string > regions;
@@ -320,6 +358,7 @@ public :
 	set <string> add_chr,remove_chr;
 	set <string> bam_chrs;
 	map <string, string> genome;
+	map < string , map < unsigned int , vector < ase_exon > > > annotation;
 
 	//CONSTRUCTOR/DESTRUCTOR
 	ase_data() {
@@ -370,6 +409,8 @@ public :
 	void compareChrs(string, string);
 	void readGenome(string);
 	char complement(string &);
+	void readGTF(string );
+	void assignGenesToAseSite(ase_site &);
 
 
 };
