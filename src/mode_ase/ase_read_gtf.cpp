@@ -33,20 +33,18 @@ void ase_data::readGTF(string fgtf){
         if (str.size() % 2 ) vrb.error("Unmatched attributes: " + buffer);
         if (str[2] != "exon") continue;
         string chr = str[0];
-		if (fix_chr){
-			if(bam_chrs.count(chr) == 0){
-				if(chr.size() > 3 && chr.substr(0,3) == "chr" && bam_chrs.count(chr.substr(3))){
-					found_c++;
-					chr = chr.substr(3);
-				}else if (bam_chrs.count("chr" + chr)){
-					found_c++;
-					chr = "chr" + chr;
-				}else{
-					missed_c++;
-				}
-			}else{
+		if(bam_chrs.count(chr) == 0){
+			if(fix_chr && chr.size() > 3 && chr.substr(0,3) == "chr" && bam_chrs.count(chr.substr(3))){
 				found_c++;
+				chr = chr.substr(3);
+			}else if (fix_chr && bam_chrs.count("chr" + chr)){
+				found_c++;
+				chr = "chr" + chr;
+			}else{
+				missed_c++;
 			}
+		}else{
+			found_c++;
 		}
         unsigned int start = atoi(str[3].c_str());
         unsigned int end = atoi(str[4].c_str());
@@ -71,7 +69,7 @@ void ase_data::readGTF(string fgtf){
 
     }
 
-	if(fix_chr && found_c == 0) vrb.error("No chromosomes match between GTF and BAM");
+	if(found_c == 0) vrb.error("No chromosomes match between GTF and BAM. Try --fix-chr!");
 	if(missed_c) vrb.warning(stb.str(missed_c) + " chromosomes are missing from the BAM file");
 }
 

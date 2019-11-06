@@ -33,20 +33,18 @@ void ase_data::readGenome(string fin) {
 				vrb.print("    - " + chr + " " + stb.str(genome[pchr].size()) + " bp read.");
 			}
 			chr = buffer;
-			if (fix_chr){
-				if(bam_chrs.count(chr) == 0){
-					if(chr.size() > 3 && chr.substr(0,3) == "chr" && bam_chrs.count(chr.substr(3))){
-						found_c++;
-						chr = chr.substr(3);
-					}else if (bam_chrs.count("chr" + chr)){
-						found_c++;
-						chr = "chr" + chr;
-					}else{
-						missed_c++;
-					}
-				}else{
+			if(bam_chrs.count(chr) == 0){
+				if(fix_chr && chr.size() > 3 && chr.substr(0,3) == "chr" && bam_chrs.count(chr.substr(3))){
 					found_c++;
+					chr = chr.substr(3);
+				}else if (fix_chr && bam_chrs.count("chr" + chr)){
+					found_c++;
+					chr = "chr" + chr;
+				}else{
+					missed_c++;
 				}
+			}else{
+				found_c++;
 			}
 		}else{
 			if(chr == MISSING_CHR) vrb.error("Chromosome name missing for a sequence");
@@ -58,7 +56,7 @@ void ase_data::readGenome(string fin) {
 
 	vrb.print("    - " + chr + " "+ stb.str(genome[chr].size()) + " bp read.");
 
-	if(fix_chr && found_c == 0) vrb.error("No chromosomes match between FASTA and BAM");
+	if(found_c == 0) vrb.error("No chromosomes match between FASTA and BAM. Try --fix-chr!");
 	if(missed_c) vrb.warning(stb.str(missed_c) + " chromosomes are missing from the BAM file");
 }
 

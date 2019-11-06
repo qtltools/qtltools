@@ -89,13 +89,16 @@ public:
 		mar = (double) (r < a ? r : a) / (double) total_count;
 		stats = _stats;
 		alleles_seen = as;
-		if (other_count && ref_count == 0 && alt_count == 0) {vrb.warning("No ref or alt allele for " + this->getName() + " in " + stb.str(other_count) + " sites"); concern += "NRAO,";}
+		if (other_count && ref_count == 0 && alt_count == 0) {vrb.warning("No ref or alt allele for " + this->getName() + " in " + stb.str(other_count) + " sites"); concern += "NRA,";}
 		else{
 			if (other_count > alt_count) {vrb.warning("More discordant alleles than alt alleles for " + this->getName() + " " + stb.str(other_count) + " > " + stb.str(alt_count)); concern += "MDTA,";}
 			if (other_count > ref_count) {vrb.warning("More discordant alleles than ref alleles for " + this->getName() + " " + stb.str(other_count) + " > " + stb.str(ref_count)); concern += "MDTR,";}
+			if (other_count) concern += "DA,";
 		}
-		if (!ref_count || !alt_count) {concern += "NBAS,";}
+
+		if (!ref_count || !alt_count) {concern += "BANS,";}
 		else if (mar < 0.02) {concern += "LMAR,";}
+
 	}
 
 	void calculatePval(double rab = 0.5){
@@ -142,7 +145,7 @@ public:
         	out << stream.str().substr(0,stream.str().size() - 1);
         }else out << "NA";
 
-		out << "\t" << g.ref << "\t" << g.alt << "\t" << g.other_count << "\t" << g.ref_allele_mapping_bias << "\t" << g.pval << "\t" << (g.concern == "" ? "PASS" : g.concern.substr(0,g.concern.size()-1)) << "\t" << g.genes;
+		out << "\t" << g.ref << "\t" << g.alt << "\t" << g.other_count  << "\t" << g.ref_allele_mapping_bias << "\t" << g.pval << "\t" << (g.concern == "" ? "PASS" : g.concern.substr(0,g.concern.size()-1)) << "\t" << g.genes;
         return out;
     }
 
@@ -259,70 +262,33 @@ public:
 };
 
 
-class my_region{
+class ase_region: public ase_basic_block{
 public:
-	string chr;
-	unsigned int start,end,count;
-	my_region(){
-		chr = "";
-		start = end = count = 0;
+	unsigned int count;
+	ase_region() : ase_basic_block(){
+		count = 0;
 	}
-	my_region(string c, unsigned int s){
-		chr = c;
-		start = s;
-		end = s;
+	ase_region(string c, unsigned int s) : ase_basic_block(c,s,s){
 		count = 1;
 	}
-	my_region(string c, unsigned int s, unsigned int e){
-		chr = c;
-		start = s;
-		end = e;
+	ase_region(string c, unsigned int s, unsigned int e) : ase_basic_block(c,s,e){
 		count = 1;
 	}
-
-	my_region(genomic_region &in){
-		chr = in.chr;
-		start = in.start;
-		end = in.end;
+	ase_region(genomic_region &in) : ase_basic_block(in.chr,in.start,in.end){
 		count = 1;
-	}
-
-	string get(){
-		return chr + ":" + stb.str(start) + "-" + stb.str(end);
 	}
 };
 
-class ase_exon{
+class ase_exon: public ase_basic_block{
 public:
 	string id;
-	unsigned int start,end;
-	ase_exon(){start=0;end=0;id="NA";}
-	ase_exon(unsigned int s, unsigned int e){
-		start = s;
-		end = e;
+	ase_exon() : ase_basic_block(){id="NA";}
+	ase_exon(unsigned int s, unsigned int e) : ase_basic_block("NA",s,e){
 		id = "NA";
 	}
 
-	ase_exon(string gid, string tid, string gn, unsigned int s, unsigned int e){
-		start = s;
-		end = e;
+	ase_exon(string gid, string tid, string gn, unsigned int s, unsigned int e) : ase_basic_block("NA",s,e){
 		id = gid + ":" + tid + ":" + stb.str(start) + "_" + stb.str(end) + ":" + gn;
-	}
-
-
-	bool contains(unsigned int p){
-		return p <= end && p >= start;
-	}
-
-	bool operator < (const ase_exon &b) const {
-		if (start < b.start) return true;
-		if (start > b.start) return false;
-		if (end < b.end) return true;
-		else return false;
-	}
-
-	bool null(){
-		return start == 0 && end == 0;
 	}
 };
 
@@ -342,13 +308,15 @@ public :
 	float param_min_pval;
 	float param_sample;
 	bool param_dup_rd,param_both_alleles_seen,param_both_alleles_seen_bias,fix_chr,param_rm_indel;
-	bool keep_orphan,check_proper_pair,keep_failqc,legacy_options,auto_flip,check_orientation,print_stats;
+	bool keep_orphan,check_proper_pair,keep_failqc,legacy_options,auto_flip,check_orientation,print_stats,illumina13;
 	string param_imputation_score_label,param_genotype_likelihood_label;
 	static const int binsize = 10000;
 
+	genomic_region vcf_region,bam_region;
+
 	//DATA
 	vector < string > regions;
-	vector < my_region > my_regions;
+	vector < ase_region > my_regions;
 	vector < vector < ase_site > > variants;
 	set < ase_site >  all_variants;
 	vector < ase_site >  passing_variants;
@@ -356,7 +324,7 @@ public :
 	vector <string> all_allele_combinations;
 	vector < ase_basic_block> blacklisted_regions;
 	set <string> add_chr,remove_chr;
-	set <string> bam_chrs;
+	set <string> bam_chrs,vcf_chrs;
 	map <string, string> genome;
 	map < string , map < unsigned int , vector < ase_exon > > > annotation;
 
@@ -389,6 +357,7 @@ public :
 		auto_flip = false;
 		check_orientation = false;
 		print_stats = false;
+		illumina13 = false;
 	}
 
 	~ase_data() {
@@ -397,16 +366,14 @@ public :
 	}
 
 	//
-	void readGenotypes(string, string);
-	void readGenotypes2(string v, string r, string l = "");
+	void readGenotypes2(string v, string l = "");
 	void readSequences(string);
 	void calculateRefToAltBias(string l = "");
 	void calculateASE(string o , string l = "");
 	void getRegions();
 	void parseBam(void *);
-	void parseBamMpileup(void *);
 	void readBlacklist(string);
-	void compareChrs(string, string);
+	void compareChrs(string, string,string);
 	void readGenome(string);
 	char complement(string &);
 	void readGTF(string );
@@ -428,21 +395,5 @@ inline char ase_getBase (int code) {
 	return -1;
 }
 
-inline double ase_binomialTest(int x, int n, float p) {
-	int y = 0;
-	if (p == 0) return (x == 0);
-	if (p == 1) return (x == n);
-	double relErr = 1 + 1e-07;
-	double d = dbinom(x, n, p, 0);
-	double m = n * p;
-	if (x == m) return 1.0;
-	if (x < m) {
-		for (int i = (int)ceil (m); i <= n ; i++) y += (dbinom(i, n, p, 0) <= d * relErr);
-		return pbinom(x, n, p, 1, 0) + pbinom(n - y, n, p, 0, 0);
-	} else {
-		for (int i = 0 ; i <= (int)floor(m) ; i++) y += (dbinom(i, n, p, 0) <= d * relErr);
-		return pbinom(y - 1, n, p, 1, 0) + pbinom(x - 1, n, p, 0, 0);
-	}
-}
 
 #endif
