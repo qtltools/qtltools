@@ -66,7 +66,7 @@ void ase_data::readGenome(string fin) {
 	}
 
 	if(found_c == 0) vrb.error("No chromosomes match between FASTA and BAM. Try --fix-chr!");
-	if(missed_c) vrb.warning(stb.str(missed_c) + " chromosomes are missing from the BAM file");
+	if(missed_c) vrb.warning(stb.str(missed_c) + " FASTA chromosomes are missing from the BAM file. Found " + stb.str(found_c) + " chromosomes.");
 }
 
 

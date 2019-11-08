@@ -66,7 +66,7 @@ void ase_data::compareChrs(string vcf, string bam, string str_regions){
 	bcf_sr_destroy(sr);
 
 	if(found_c == 0) vrb.error("No chromosomes match between VCF and BAM. Try --fix-chr!");
-	if(missed_c) vrb.warning(stb.str(missed_c) + " chromosomes are missing from the BAM file");
+	if(missed_c) vrb.warning(stb.str(missed_c) + " VCF chromosomes are missing from the BAM file. Found " + stb.str(found_c) + " chromosomes.");
 
 	if (str_regions.size() > 0) {
 		if (!vcf_region.parse(str_regions)) vrb.error("Unable to parse region: " + str_regions);
