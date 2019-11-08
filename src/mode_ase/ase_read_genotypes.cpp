@@ -15,140 +15,8 @@
 
 #include "ase_data.h"
 
-char ase_data::complement(string &in){
-	if (in == "A") return 'T';
-	if (in == "T") return 'A';
-	if (in == "G") return 'C';
-	if (in == "C") return 'G';
-	vrb.warning("Unknown base " + in);
-	return 'N';
-}
 
-void ase_data::compareChrs(string vcf, string bam, string str_regions){
-
-	vrb.title("Getting chromosomes from BAM [" + bam + "]");
-	samFile * fd = sam_open(bam.c_str(), "r");
-	if (fd == 0) vrb.error("Failed to open file");
-    bam_hdr_t * header = sam_hdr_read(fd);
-    if (header == 0) vrb.error("Failed to read header");
-    hts_idx_t *idx = sam_index_load(fd, bam.c_str());
-    if (idx == NULL) vrb.error("Failed to load index");
-
-    for (int i = 0; i < header->n_targets; i++){
-    	bam_chrs.insert(string(header->target_name[i]));
-    }
-    if (header->n_targets == 0) vrb.error("No chromosomes in BAM header");
-
-    hts_idx_destroy(idx);
-    bam_hdr_destroy(header);
-
-	vrb.title("Getting chromosomes from VCF [" + vcf + "]");
-	bcf_srs_t * sr =  bcf_sr_init();
-	if(!(bcf_sr_add_reader (sr, vcf.c_str()))) {
-		switch (sr->errnum) {
-		case not_bgzf: vrb.error("Not compressed with bgzip");
-		case idx_load_failed: vrb.error("Impossible to load index file");
-		case file_type_error: vrb.error("Unrecognized file format");
-		default: vrb.error("Unknown error when opening");
-		}
-	}
-
-	int found_c = 0 , missed_c = 0;
-	if (sr->readers[0].header->n[BCF_DT_CTG] == 0) vrb.error("No chromosomes in VCF header");
-	for (int  i = 0; i < sr->readers[0].header->n[BCF_DT_CTG]; i++ ){
-		string chr(sr->readers[0].header->id[BCF_DT_CTG][i].key);
-		vcf_chrs.insert(chr);
-		if (bam_chrs.count(chr) == 0){
-			if(fix_chr && chr.size() > 3 && chr.substr(0,3) == "chr" && bam_chrs.count(chr.substr(3))){
-				found_c++;
-				remove_chr.insert(chr);
-				vrb.bullet("Removing chr from VCF chromosome [" + chr + "] to match the BAM file");
-			}else if (fix_chr && bam_chrs.count("chr" + chr)){
-				found_c++;
-				add_chr.insert(chr);
-				vrb.bullet("Adding chr to VCF chromosome [" + chr + "] to match the BAM file");
-			}else{
-				missed_c++;
-			}
-		}else found_c++;
-	}
-	bcf_sr_destroy(sr);
-
-	if(found_c == 0) vrb.error("No chromosomes match between VCF and BAM. Try --fix-chr!");
-	if(missed_c) vrb.warning(stb.str(missed_c) + " chromosomes are missing from the BAM file");
-
-	if (str_regions.size() > 0) {
-		if (!vcf_region.parse(str_regions)) vrb.error("Unable to parse region: " + str_regions);
-		if (vcf_chrs.count(vcf_region.chr) == 0){
-			if(fix_chr && vcf_region.chr.size() > 3 && vcf_region.chr.substr(0,3) == "chr" && vcf_chrs.count(vcf_region.chr.substr(3))){
-				vcf_region.chr = vcf_region.chr.substr(3);
-				vrb.warning("Changing region [" + str_regions + "] to [" + vcf_region.get() + "] to match the VCF chromosomes!");
-			}else if (fix_chr && vcf_chrs.count("chr" + vcf_region.chr)){
-				vcf_region.chr = "chr" + vcf_region.chr;
-				vrb.warning("Changing region [" + str_regions + "] to [" + vcf_region.get() + "] to match the VCF chromosomes!");
-			}else{
-				vrb.error("Chromosome " + vcf_region.chr + " is not in the VCF!");
-			}
-		}
-
-		if (region_length == 0){
-			bam_region.parse(str_regions);
-			if (add_chr.count(bam_region.chr)) bam_region.chr = "chr" + bam_region.chr;
-			if (remove_chr.count(bam_region.chr)) bam_region.chr = bam_region.chr.substr(3);
-			my_regions.push_back(ase_region(bam_region));
-			vrb.bullet("Setting BAM region to [" + my_regions.back().get_string() + "]");
-		}
-	}
-}
-
-void ase_data::readBlacklist(string fgtf) {
-	string buffer;
-	vector < string > str;
-	vector < ase_basic_block> input;
-	vrb.title("Reading blacklist in [" + fgtf + "]");
-	input_file fd (fgtf);
-	if (fd.fail()) vrb.error("Cannot open file!");
-	int linecount = 0;
-	int found_c = 0 , missed_c = 0;
-	while(getline(fd, buffer)) {
-		linecount++;
-		if (linecount % 500000 == 0) vrb.bullet(stb.str(linecount) + " lines read");
-		if (buffer.size() == 0 || buffer[0] == '#') continue;
-		stb.split(buffer, str);
-		if (str.size() < 3) vrb.error("Incorrect number of columns: " + stb.str(str.size()));
-        string chr = str[0];
-		if(bam_chrs.count(chr) == 0){
-			if(fix_chr && chr.size() > 3 && chr.substr(0,3) == "chr" && bam_chrs.count(chr.substr(3))){
-				found_c++;
-				chr = chr.substr(3);
-			}else if (fix_chr && bam_chrs.count("chr" + chr)){
-				found_c++;
-				chr = "chr" + chr;
-			}else{
-				missed_c++;
-			}
-		}else found_c++;
-        unsigned int start = atoi(str[1].c_str());
-        unsigned int end = atoi(str[2].c_str());
-        input.push_back(ase_basic_block(chr,start+1,end));
-	}
-	if(found_c == 0) vrb.error("No chromosomes match between BED and BAM. Try --fix-chr!");
-	if(missed_c) vrb.warning(stb.str(missed_c) + " chromosomes are missing from the BAM file");
-	blacklisted_regions.clear();
-	sort(input.begin(),input.end());
-	ase_basic_block prev = input[0];
-	for (int i = 1 ; i < input.size(); i++){
-		if (prev.overlap(input[i])) {
-			prev = prev.merge_nocheck(input[i]);
-		}else {
-			blacklisted_regions.push_back(prev);
-			prev = input[i];
-		}
-	}
-	blacklisted_regions.push_back(prev);
-}
-
-void ase_data::readGenotypes2(string filename ,string olog) {
+void ase_data::readGenotypes(string filename ,string olog) {
 
 	timer current_timer;
 	output_file fdo;
@@ -216,6 +84,7 @@ void ase_data::readGenotypes2(string filename ,string olog) {
 		line =  bcf_sr_get_line(sr, 0);
 		bcf_unpack(line, BCF_UN_STR);
 		string sid = string(line->d.id);
+
 		//filter multiallelic
 		if (line->n_allele > 2) {n_excludedG_mult ++; if (olog != "") fdo << "VCF_MULTI_ALLELIC " << sid << endl; continue;}
 		//filter user provided
@@ -289,6 +158,12 @@ void ase_data::readGenotypes2(string filename ,string olog) {
 			n_excludedG_dupl++;
 			if (olog != "") fdo << "VCF_DUPLICATE " << sid << endl;
 		}else{
+			if (ases.sid == "." || ases.sid == ""){
+				if (fix_id){
+					ases.sid = ases.chr + "_" + stb.str(ases.pos + 1) + "_" + ases.ref + ases.alt;
+					vrb.warning("Missing id was changed to " + ases.sid);
+				}else vrb.warning("Missing id for " + ases.getName());
+			}
 			all_variants.insert(ases);
 			n_includedG ++;
 		}
@@ -321,22 +196,5 @@ void ase_data::readGenotypes2(string filename ,string olog) {
 	vrb.bullet("Time taken: " + stb.str(current_timer.abs_time()) + " seconds");
 }
 
-void ase_data::getRegions(){
-
-	vrb.title("Calculating regions");
-
-	unsigned int pp = 0;
-	for (auto it = all_variants.begin(); it != all_variants.end(); it++){
-		unsigned int one_based = it->pos+1;
-		if (my_regions.size()==0 || my_regions.back().chr != it->chr || one_based - my_regions.back().start + 1 > region_length ){
-			ase_region newr(it->chr, one_based);
-			if (my_regions.size()) my_regions.back().end = pp;
-			my_regions.push_back(newr);
-		}else my_regions.back().count++;
-		pp = one_based;
-	}
-	my_regions.back().end = pp;
-	//for (int i = 0 ; i < my_regions.size(); i++) cerr << my_regions[i].get() << " " << my_regions[i].count << endl;
-}
 
 

@@ -26,17 +26,20 @@ void ase_main(vector < string > & argv) {
 	opt_files.add_options()
 		("vcf,v", boost::program_options::value< string >(), "Genotypes in VCF/BCF format.")
 		("bam,b", boost::program_options::value< string >(), "Sequence data in BAM/SAM format.")
-		("fasta,G", boost::program_options::value< string >(), "Genome sequence in FASTA format.")
+		("fasta,f", boost::program_options::value< string >(), "Genome sequence in FASTA format.")
 		("ind,i", boost::program_options::value< string >(), "Sample to be processed.")
 		("reg,r", boost::program_options::value< string >()->default_value(""), "Genomic region(s) to be processed.")
 		("blacklist,B", boost::program_options::value< string >(), "BED file for blacklisted regions.")
-		("gtf,E", boost::program_options::value< string >(), "Annotation in GTF format")
+		("merge-on-the-fly,t", "Merges the blacklisted regions on the fly. This can reduce memory usage if there are many overlapping regions in the blacklist.")
+		("gtf,g", boost::program_options::value< string >(), "Annotation in GTF format")
 		("fix-chr,F", "Attempt to match chromosome names to the BAM file")
+		("fix-id,R", "Convert missing VCF variant IDs to chr_pos_refalt")
 		("auto-flip,x", "Attempt to fix reference allele mismatches. Requires a fasta file for the reference sequence.")
 		("print-stats,P", "Print out stats for the filtered reads for ASE sites.")
-		("group-by,g", boost::program_options::value< unsigned int >()->default_value(0,"OFF"), "Group variants separated by this much into batches. This allows you not to stream the whole BAM file and may improve running time.")
+		("illumina13,j", "Base quality is in the Illumina-1.3+ encoding")
+		("group-by,G", boost::program_options::value< unsigned int >()->default_value(0,"OFF"), "Group variants separated by this much into batches. This allows you not to stream the whole BAM file and may improve running time.")
 		("max-depth,d", boost::program_options::value< int >()->default_value(16000,"16000"), "Pileup max-depth.")
-		("filtered,f", boost::program_options::value< string >()->default_value(""), "File to output filtered variants.")
+		("filtered,l", boost::program_options::value< string >()->default_value(""), "File to output filtered variants.")
 		("out,o", boost::program_options::value< string >(), "Output file.");
 
 	boost::program_options::options_description opt_parameters ("\x1B[32mFilters\33[0m");
@@ -49,8 +52,8 @@ void ase_main(vector < string > & argv) {
 		("filter-min-sites-bias,s", boost::program_options::value< unsigned int >()->default_value(200), "Minimum number of sites to calculate a REF bias from for a specific REF/ALT pair. The REF bias for pairs with less than this many sites will be calculated from all sites.")
 		("filter-imputation-score-info-id,I", boost::program_options::value< string >()->default_value("INFO", "INFO"), "The INFO ID of the imputation score in the VCF.")
 		("filter-genotype-likelihood-id,L", boost::program_options::value< string >()->default_value("GL", "GL"), "The FORMAT ID of the genotype likelihoods for RR/RA/AA  in the VCF.")
-		("filter-imputation-qual,w", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum imputation information score for a variant to be considered.")
-		("filter-imputation-prob,z", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum posterior probability for a genotype to be considered.")
+		("filter-imputation-qual,W", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum imputation information score for a variant to be considered.")
+		("filter-imputation-prob,V", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum posterior probability for a genotype to be considered.")
 		("filter-sample,S", boost::program_options::value< double >()->default_value(0.75, "0.75"), "Randomly subsample sites that are greater than this percentile of all the sites in REF bias calculations.")
 		("filter-both-alleles-seen,a", "Require both alleles to be observed in RNA-seq reads for a site for ASE calculations.")
 		("keep-homozygotes-for-bias,A", "DON'T require both alleles to be observed in RNA-seq reads for a site for REF mapping bias calculations. (NOT RECOMMENDED)")
@@ -124,8 +127,11 @@ void ase_main(vector < string > & argv) {
 	D.check_orientation = (D.options.count("ignore-orientation") == 0);
 	D.param_dup_rd = D.options.count("filter-remove-duplicates");
 	D.fix_chr = D.options.count("fix-chr");
+	D.fix_id = D.options.count("fix-id");
 	D.auto_flip = D.options.count("auto-flip");
 	D.print_stats = D.options.count("print-stats");
+	D.illumina13 = D.options.count("illumina13");
+	D.on_the_fly = D.options.count("merge-on-the-fly");
 	D.region_length = D.options["group-by"].as < unsigned int > ();
 
 	if(D.options.count("legacy-options")){
@@ -182,7 +188,7 @@ void ase_main(vector < string > & argv) {
 	if (D.options.count("blacklist")) D.readBlacklist(D.options["blacklist"].as < string > ());
 	if (D.options.count("fasta")) D.readGenome(D.options["fasta"].as < string > ());
 	if (D.options.count("gtf")) D.readGTF(D.options["gtf"].as < string > ());
-	D.readGenotypes2(D.options["vcf"].as < string > (), D.options["filtered"].as < string > ());
+	D.readGenotypes(D.options["vcf"].as < string > (), D.options["filtered"].as < string > ());
 	if (D.region_length) D.getRegions();
 	D.readSequences(D.options["bam"].as < string > ());
 	D.calculateRefToAltBias(D.options["filtered"].as < string > ());

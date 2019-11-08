@@ -186,6 +186,10 @@ public:
 		return (chr == c && e >= start && s <= end);
 	}
 
+	bool contiguous(ase_basic_block &b){
+		return (overlap(b) || end + 1 == b.start || b.end + 1 == start);
+	}
+
 	vector < ase_basic_block > subtract(ase_basic_block &b){
 		if (overlap(b)){
 			if (start >= b.start && end <= b.end) return vector <ase_basic_block>(0);
@@ -307,8 +311,8 @@ public :
 	float param_min_iq;
 	float param_min_pval;
 	float param_sample;
-	bool param_dup_rd,param_both_alleles_seen,param_both_alleles_seen_bias,fix_chr,param_rm_indel;
-	bool keep_orphan,check_proper_pair,keep_failqc,legacy_options,auto_flip,check_orientation,print_stats,illumina13;
+	bool param_dup_rd,param_both_alleles_seen,param_both_alleles_seen_bias,fix_chr,param_rm_indel,fix_id;
+	bool keep_orphan,check_proper_pair,keep_failqc,legacy_options,auto_flip,check_orientation,print_stats,illumina13,on_the_fly;
 	string param_imputation_score_label,param_genotype_likelihood_label;
 	static const int binsize = 10000;
 
@@ -358,6 +362,8 @@ public :
 		check_orientation = false;
 		print_stats = false;
 		illumina13 = false;
+		fix_id = false;
+		on_the_fly = false;
 	}
 
 	~ase_data() {
@@ -366,34 +372,39 @@ public :
 	}
 
 	//
-	void readGenotypes2(string v, string l = "");
+	void readGenotypes(string v, string l = "");
 	void readSequences(string);
+	void readGTF(string );
+	void readBlacklist(string);
+	void readGenome(string);
 	void calculateRefToAltBias(string l = "");
 	void calculateASE(string o , string l = "");
 	void getRegions();
 	void parseBam(void *);
-	void readBlacklist(string);
 	void compareChrs(string, string,string);
-	void readGenome(string);
-	char complement(string &);
-	void readGTF(string );
 	void assignGenesToAseSite(ase_site &);
-
-
+	inline char complement(string &in){
+		if (in == "A") return 'T';
+		if (in == "T") return 'A';
+		if (in == "G") return 'C';
+		if (in == "C") return 'G';
+		return 'N';
+	}
+	inline char getBase(int code) {
+		switch (code) {
+		case 1: return 'A';
+		case 2: return 'C';
+		case 4: return 'G';
+		case 8: return 'T';
+		case 15: return 'N';
+		}
+		return -1;
+	}
 };
 
 void ase_main(vector < string > & );
 
-inline char ase_getBase (int code) {
-	switch (code) {
-	case 1: return 'A';
-	case 2: return 'C';
-	case 4: return 'G';
-	case 8: return 'T';
-	case 15: return 'N';
-	}
-	return -1;
-}
+
 
 
 #endif

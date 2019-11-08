@@ -46,6 +46,7 @@ void ase_data::readGTF(string fgtf){
 		}else{
 			found_c++;
 		}
+		if (bam_region.isSet() && bam_region.chr != chr) continue;
         unsigned int start = atoi(str[3].c_str());
         unsigned int end = atoi(str[4].c_str());
         string strand = str[6];
@@ -71,21 +72,4 @@ void ase_data::readGTF(string fgtf){
 
 	if(found_c == 0) vrb.error("No chromosomes match between GTF and BAM. Try --fix-chr!");
 	if(missed_c) vrb.warning(stb.str(missed_c) + " chromosomes are missing from the BAM file");
-}
-
-void ase_data::assignGenesToAseSite(ase_site &in){
-	if (annotation.size() && annotation.count(in.chr)){
-		unsigned int pos1based = in.pos + 1;
-		unsigned int b = pos1based / binsize;
-		if (annotation[in.chr].count(b)){
-			string anno = "";
-			for (int i =0 ; i < annotation[in.chr][b].size(); i++){
-				if (annotation[in.chr][b][i].contains(pos1based)){
-					if (anno != "") anno += ";";
-					anno += annotation[in.chr][b][i].id;
-				}
-			}
-			if (anno != "") in.genes = anno;
-		}
-	}
 }

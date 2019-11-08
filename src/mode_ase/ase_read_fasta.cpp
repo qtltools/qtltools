@@ -15,6 +15,7 @@
 
 #include "ase_data.h"
 const string MISSING_CHR = "___NA___";
+const unsigned long BUFFER_SIZE = 250000000;
 
 void ase_data::readGenome(string fin) {
 	string buffer;
@@ -28,11 +29,14 @@ void ase_data::readGenome(string fin) {
 		if (buffer[0] == '>'){
 			buffer.erase(0,1);
 			if(buffer == MISSING_CHR) vrb.error("Chromosome name cannot be " + MISSING_CHR);
-			string pchr = chr;
-			if (pchr != MISSING_CHR) {
-				vrb.print("    - " + chr + " " + stb.str(genome[pchr].size()) + " bp read.");
+			if (chr != MISSING_CHR) {
+				if (!bam_region.isSet() || bam_region.chr == chr ) {
+					vrb.print("    - " + chr + " " + stb.str(genome[chr].size()) + " bp read.");
+					genome[chr].shrink_to_fit();
+				}
 			}
 			chr = buffer;
+			if (bam_region.isSet() && genome.size()) break;
 			if(bam_chrs.count(chr) == 0){
 				if(fix_chr && chr.size() > 3 && chr.substr(0,3) == "chr" && bam_chrs.count(chr.substr(3))){
 					found_c++;
@@ -46,15 +50,20 @@ void ase_data::readGenome(string fin) {
 			}else{
 				found_c++;
 			}
+			if (!bam_region.isSet() || bam_region.chr == chr ) genome[chr].reserve(BUFFER_SIZE);
 		}else{
 			if(chr == MISSING_CHR) vrb.error("Chromosome name missing for a sequence");
+			if (bam_region.isSet()  && bam_region.chr != chr ) continue;
 			transform(buffer.begin(), buffer.end(),buffer.begin(), ::toupper);
 			//copy(buffer.begin(), buffer.end(), back_inserter(genome[chr]));
 			genome[chr] += buffer;
 		}
 	}
 
-	vrb.print("    - " + chr + " "+ stb.str(genome[chr].size()) + " bp read.");
+	if (!bam_region.isSet() || bam_region.chr == chr ) {
+		vrb.print("    - " + chr + " "+ stb.str(genome[chr].size()) + " bp read.");
+		genome[chr].shrink_to_fit();
+	}
 
 	if(found_c == 0) vrb.error("No chromosomes match between FASTA and BAM. Try --fix-chr!");
 	if(missed_c) vrb.warning(stb.str(missed_c) + " chromosomes are missing from the BAM file");
