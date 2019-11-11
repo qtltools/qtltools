@@ -38,7 +38,7 @@ void ase_data::calculateRefToAltBias(string olog){
 	}
 
 	if (filtered_cov) vrb.bullet(stb.str(filtered_cov) + " sites with coverage less than " + stb.str(param_min_cov_for_ref_alt));
-	if (filtered_bas) vrb.bullet(stb.str(filtered_bas) + " sites where only one allele was observed");
+	if (filtered_bas) vrb.bullet(stb.str(filtered_bas) + " sites where both alleles were not observed");
 
 	bool calculate_all = false;
 	vector <string> add;

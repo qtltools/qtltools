@@ -37,32 +37,32 @@ void ase_main(vector < string > & argv) {
 		("auto-flip,x", "Attempt to fix reference allele mismatches. Requires a fasta file for the reference sequence.")
 		("print-stats,P", "Print out stats for the filtered reads for ASE sites.")
 		("illumina13,j", "Base quality is in the Illumina-1.3+ encoding")
-		("group-by,G", boost::program_options::value< unsigned int >()->default_value(0,"OFF"), "Group variants separated by this much into batches. This allows you not to stream the whole BAM file and may improve running time.")
-		("max-depth,d", boost::program_options::value< int >()->default_value(16000,"16000"), "Pileup max-depth.")
+		("group-by,G", boost::program_options::value< int >()->default_value(0,"OFF"), "Group variants separated by this much into batches. This allows you not to stream the whole BAM file and may improve running time.")
+		("max-depth,d", boost::program_options::value< int >()->default_value(16000,"16000"), "Pileup max-depth. Set to 0 if you want maximum but this will be slower.")
 		("filtered,l", boost::program_options::value< string >()->default_value(""), "File to output filtered variants.")
 		("out,o", boost::program_options::value< string >(), "Output file.");
 
 	boost::program_options::options_description opt_parameters ("\x1B[32mFilters\33[0m");
 	opt_parameters.add_options()
-		("filter-mapping-quality,q", boost::program_options::value< unsigned int >(), "Minimum phred mapping quality for a read to be considered.")
-		("filter-base-quality,Q", boost::program_options::value< unsigned int >()->default_value(10), "Minimum phred quality for a base to be considered.")
-		("filter-binomial-pvalue,p", boost::program_options::value< double >()->default_value(1.0, "1.0"), "Binomial p-value threshold for ASE in output.")
-		("filter-coverage,c", boost::program_options::value< unsigned int >()->default_value(16), "Minimum coverage for a genotype to be considered.")
-		("filter-coverage-bias,C", boost::program_options::value< unsigned int >()->default_value(10), "Minimum coverage for a genotype to be considered.")
-		("filter-min-sites-bias,s", boost::program_options::value< unsigned int >()->default_value(200), "Minimum number of sites to calculate a REF bias from for a specific REF/ALT pair. The REF bias for pairs with less than this many sites will be calculated from all sites.")
-		("filter-imputation-score-info-id,I", boost::program_options::value< string >()->default_value("INFO", "INFO"), "The INFO ID of the imputation score in the VCF.")
-		("filter-genotype-likelihood-id,L", boost::program_options::value< string >()->default_value("GL", "GL"), "The FORMAT ID of the genotype likelihoods for RR/RA/AA  in the VCF.")
-		("filter-imputation-qual,W", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum imputation information score for a variant to be considered.")
-		("filter-imputation-prob,V", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum posterior probability for a genotype to be considered.")
-		("filter-sample,S", boost::program_options::value< double >()->default_value(0.75, "0.75"), "Randomly subsample sites that are greater than this percentile of all the sites in REF bias calculations.")
-		("filter-both-alleles-seen,a", "Require both alleles to be observed in RNA-seq reads for a site for ASE calculations.")
+		("mapq,q", boost::program_options::value< int >(), "Minimum mapping quality for a read to be considered.")
+		("baseq,Q", boost::program_options::value< int >()->default_value(10), "Minimum phred quality for a base to be considered.")
+		("pvalue,p", boost::program_options::value< double >()->default_value(1.0, "1.0"), "Binomial p-value threshold for ASE in output.")
+		("cov,c", boost::program_options::value< int >()->default_value(16), "Minimum coverage for a genotype to be considered.")
+		("cov-bias,C", boost::program_options::value< int >()->default_value(10), "Minimum coverage for a genotype to be considered in REF bias.")
+		("sites,s", boost::program_options::value< int >()->default_value(200), "Minimum number of sites to calculate a REF bias from for a specific REF/ALT pair. The REF bias for pairs with less than this many sites will be calculated from all sites.")
+		("imp-qual-id,I", boost::program_options::value< string >()->default_value("INFO", "INFO"), "The INFO ID of the imputation score in the VCF.")
+		("geno-prob-id,L", boost::program_options::value< string >()->default_value("GL", "GL"), "The FORMAT ID of the genotype likelihoods for RR/RA/AA  in the VCF.")
+		("imp-qual,W", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum imputation score for a variant to be considered.")
+		("geno-prob,V", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum posterior probability for a genotype to be considered.")
+		("subsample,S", boost::program_options::value< double >()->default_value(0.75, "0.75"), "Randomly subsample sites that have greater coverage than this percentile of all the sites in REF bias calculations. Set to 1 to turn off. (NOT RECOMMENED)")
+		("both-alleles-seen,a", "Require both alleles to be observed in RNA-seq reads for a site for ASE calculations.")
 		("keep-homozygotes-for-bias,A", "DON'T require both alleles to be observed in RNA-seq reads for a site for REF mapping bias calculations. (NOT RECOMMENDED)")
 		("filter-indel-reads,D", "Remove reads that contain indels.")
 		("keep-failed-qc,e", "Keep fastq reads that fail sequencing QC (as indicated by the sequencer).")
 		("keep-orphan-reads,O", "Keep paired end reads where one of mates is unmapped.")
 		("check-proper-pairing,y", "If provided only properly paired reads according to the aligner will be considered.")
 		("ignore-orientation,X", "If NOT provided only mate pairs where both mates are on the same chromosome, first mate is on the +ve strand and the second is on the -ve strand, and the second mate does not start before the first mate will be considered.")
-		("filter-remove-duplicates,u", "Remove duplicate sequencing reads in the process.")
+		("filter-duplicates,u", "Remove duplicate sequencing reads in the process. (NOT RECOMMENED)")
 		("legacy-options,J", "Replicate legacy options used. (DO NOT USE).");
 
 	D.option_descriptions.add(opt_files).add(opt_parameters);
@@ -95,10 +95,11 @@ void ase_main(vector < string > & argv) {
 	if (!D.options.count("bam")) vrb.error("Sequence data needs to be specified with --bam [file.bam]");
 	if (!D.options.count("ind")) vrb.error("Sample ID needs to be specified with --ind [sample_id]");
 	if (!D.options.count("out")) vrb.error("Output needs to be specified with --out [file.out]");
-	if (!D.options.count("filter-mapping-quality")) vrb.error("Mapping quality threshold should be set to uniquely mapping reads with --filter-mapping-quality [quality]");
+	if (!D.options.count("mapq")) vrb.error("Mapping quality threshold should be set to uniquely mapping reads with --mapq [quality]");
 
-	//TO DO CHECK PARAMETER VALUES
+	//CHECK PARAMETER VALUES
 	D.max_depth = D.options["max-depth"].as < int > ();
+	if (D.max_depth < 0) vrb.error("--max-depth cannot be less than 0!");
 	if(D.max_depth == 0) {
 		D.max_depth = INT_MAX;
 		vrb.warning("Setting pileup max-depth to INT_MAX!");
@@ -106,38 +107,53 @@ void ase_main(vector < string > & argv) {
 	if (D.max_depth > 1000000) vrb.warning("Pileup max-depth is above 1M. Potential memory hog!");
 
 	if (D.options.count("fasta") == 0 && D.options.count("auto-flip")) vrb.warning("Ignoring --auto-flip since no --fasta is provided!");
-
-	D.param_min_mapQ = D.options["filter-mapping-quality"].as < unsigned int > ();
-	D.param_min_baseQ = D.options["filter-base-quality"].as < unsigned int > ();
-	D.param_min_pval = D.options["filter-binomial-pvalue"].as < double > ();
-	D.param_min_cov = D.options["filter-coverage"].as < unsigned int > ();
-	D.param_min_cov_for_ref_alt = D.options["filter-coverage-bias"].as < unsigned int > ();
-	D.param_min_sites_for_ref_alt = D.options["filter-min-sites-bias"].as < unsigned int > ();
-	D.param_imputation_score_label = D.options["filter-imputation-score-info-id"].as <string> ();
-	D.param_genotype_likelihood_label = D.options["filter-genotype-likelihood-id"].as <string> ();
-	D.param_min_gp = D.options["filter-imputation-prob"].as < double > ();
-	D.param_min_iq = D.options["filter-imputation-qual"].as < double > ();
-	D.param_sample = D.options["filter-sample"].as < double > ();
-	D.param_both_alleles_seen = D.options.count("filter-both-alleles-seen");
+	int ot = D.options["mapq"].as < int > ();
+	if (ot < 0) vrb.error("--mapq cannot be negative!");
+	D.param_min_mapQ = ot;
+	ot =  D.options["baseq"].as < int > ();
+	if (ot < 0) vrb.error("--baseq cannot be negative!");
+	D.param_min_baseQ = ot;
+	D.param_min_pval = D.options["pvalue"].as < double > ();
+	if (D.param_min_pval < 0.0 || D.param_min_pval > 1.0) vrb.error("--pvalue must be between 0 and 1!");
+	ot = D.options["cov"].as < int > ();
+	if (ot < 0) vrb.error("--cov cannot be negative!");
+	D.param_min_cov = ot;
+	ot =  D.options["cov-bias"].as < int > ();
+	if (ot < 0) vrb.error("--cov-bias cannot be negative!");
+	D.param_min_cov_for_ref_alt = ot;
+	ot = D.options["sites"].as < int > ();
+	if (ot < 0) vrb.error("--sites cannot be negative!");
+	D.param_min_sites_for_ref_alt = ot;
+	D.param_imputation_score_label = D.options["imp-qual-id"].as <string> ();
+	D.param_genotype_likelihood_label = D.options["geno-prob-id"].as <string> ();
+	D.param_min_gp = D.options["geno-prob"].as < double > ();
+	if (D.param_min_gp < 0.0 || D.param_min_gp > 1.0) vrb.error("--geno-prob must be between 0 and 1!");
+	D.param_min_iq = D.options["imp-qual"].as < double > ();
+	if (D.param_min_iq < 0.0) vrb.error("--imp-qual cannot be negative!");
+	D.param_sample = D.options["subsample"].as < double > ();
+	if (D.param_sample < 0.0 || D.param_sample > 1.0) vrb.error("--subsample must be between 0 and 1!");
+	D.param_both_alleles_seen = D.options.count("both-alleles-seen");
 	D.param_both_alleles_seen_bias = (D.options.count("keep-homozygotes-for-bias") == 0);
 	D.param_rm_indel = D.options.count("filter-indel-reads");
 	D.keep_failqc = D.options.count("keep-failed-qc");
 	D.keep_orphan = D.options.count("keep-orphan-reads");
 	D.check_proper_pair = D.options.count("check-proper-pairing");
 	D.check_orientation = (D.options.count("ignore-orientation") == 0);
-	D.param_dup_rd = D.options.count("filter-remove-duplicates");
+	D.param_dup_rd = D.options.count("filter-duplicates");
 	D.fix_chr = D.options.count("fix-chr");
 	D.fix_id = D.options.count("fix-id");
 	D.auto_flip = D.options.count("auto-flip");
 	D.print_stats = D.options.count("print-stats");
 	D.illumina13 = D.options.count("illumina13");
 	D.on_the_fly = D.options.count("merge-on-the-fly");
-	D.region_length = D.options["group-by"].as < unsigned int > ();
+	ot = D.options["group-by"].as < int > ();
+	if (ot < 0) vrb.error("--group-by cannot be negative!");
+	D.region_length = ot;
 
 	if(D.options.count("legacy-options")){
-		if (D.param_min_baseQ != 13) vrb.warning("--filter-base-quality is overwritten!");
+		if (D.param_min_baseQ != 13) vrb.warning("--baseq is overwritten!");
 		if (D.max_depth != 8000) vrb.warning("--max-depth is overwritten!");
-		if (!D.param_dup_rd) vrb.warning("--filter-remove-duplicates is overwritten!");
+		if (!D.param_dup_rd) vrb.warning("--filter-duplicates is overwritten!");
 		if (!D.check_proper_pair) vrb.warning("--check-proper-pairing is overwritten!");
 		if (D.keep_orphan) vrb.warning("--keep-orphan-reads is overwritten!");
 		if (D.keep_failqc) vrb.warning("--keep-failqc is overwritten!");

@@ -134,19 +134,23 @@ void ase_data::readGenotypes(string filename ,string olog) {
 				continue;
 			}
 		}
-		niq = bcf_get_info_float(sr->readers[0].header, line, param_imputation_score_label.c_str(), &iq_arr, &niq_arr);		//imputation score
 		//filter imputation score
-		if (niq > 0 && iq_arr[0] < param_min_iq) {n_excludedG_impq ++; if (olog != "") fdo << "VCF_BAD_IMPUTATION " << sid << endl; continue;}
+		if (param_min_iq > 0.0){
+			niq = bcf_get_info_float(sr->readers[0].header, line, param_imputation_score_label.c_str(), &iq_arr, &niq_arr);		//imputation score
+			if (niq > 0 && iq_arr[0] < param_min_iq) {n_excludedG_impq ++; if (olog != "") fdo << "VCF_BAD_IMPUTATION " << sid << endl; continue;}
+		}
 		ngt = bcf_get_genotypes(sr->readers[0].header, line, &gt_arr, &ngt_arr); //genotypes
-		ngp = bcf_get_format_float(sr->readers[0].header, line,param_genotype_likelihood_label.c_str(), &gp_arr, &ngp_arr); //genotype likelihoods
 		//filter variants without the GT field
 		if (ngt != n_samples_in_file * 2){n_excludedG_void ++; if (olog != "") fdo << "VCF_MISSING_GT " << sid << endl; continue;}
 		//filter missing genotypes
 		if (gt_arr[2*index_sample+0] == bcf_gt_missing || gt_arr[2*index_sample+1] == bcf_gt_missing) {n_excludedG_miss ++; if (olog != "") fdo << "VCF_MISSING_GENOTYPE " << sid << endl; continue;}
-		//filter bad genotype quality
-		if (ngp == 3 * n_samples_in_file && gp_arr[3*index_sample+0] != bcf_float_missing && gp_arr[3*index_sample+1] != bcf_float_missing && gp_arr[3*index_sample+2] != bcf_float_missing && gp_arr[3*index_sample+0] < param_min_gp && gp_arr[3*index_sample+1] < param_min_gp && gp_arr[3*index_sample+2] < param_min_gp) {n_excludedG_impp ++; if (olog != "") fdo << "VCF_BAD_GENOTYPE " << sid << endl; continue;}
 		//filter homozygous
 		if (bcf_gt_allele(gt_arr[2*index_sample+0]) == bcf_gt_allele(gt_arr[2*index_sample+1])) {n_excludedG_homo ++; if (olog != "") fdo << "VCF_HOMOZYGOUS " << sid << endl; continue;}
+		//filter bad genotype quality
+		if (param_min_gp > 0.0){
+			ngp = bcf_get_format_float(sr->readers[0].header, line,param_genotype_likelihood_label.c_str(), &gp_arr, &ngp_arr); //genotype likelihoods
+			if (ngp == 3 * n_samples_in_file && gp_arr[3*index_sample+0] != bcf_float_missing && gp_arr[3*index_sample+1] != bcf_float_missing && gp_arr[3*index_sample+2] != bcf_float_missing && gp_arr[3*index_sample+0] < param_min_gp && gp_arr[3*index_sample+1] < param_min_gp && gp_arr[3*index_sample+2] < param_min_gp) {n_excludedG_impp ++; if (olog != "") fdo << "VCF_BAD_GENOTYPE " << sid << endl; continue;}
+		}
 		ase_site ases(curr_chr, sid, pos, ref, alt);
 		if(af) ases.concern += "RM,";
 		auto cit = all_variants.find(ases);
@@ -183,15 +187,17 @@ void ase_data::readGenotypes(string filename ,string olog) {
 	if (n_fixed_flipped  > 0) vrb.bullet(stb.str(n_fixed_flipped)  + " variants where ref/alt was flipped to the +ve strand");
 	if (n_excludedG_wr   > 0) vrb.bullet(stb.str(n_excludedG_wr)   + " variants with ref mismatches excluded");
 	if (n_excludedG_impq > 0) vrb.bullet(stb.str(n_excludedG_impq) + " badly imputed variants excluded");
-	if (n_excludedG_impp > 0) vrb.bullet(stb.str(n_excludedG_impp) + " low probability genotypes excluded");
 	if (n_excludedG_void > 0) vrb.bullet(stb.str(n_excludedG_void) + " variants without GT field excluded");
 	if (n_excludedG_miss > 0) vrb.bullet(stb.str(n_excludedG_miss) + " missing genotypes excluded");
 	if (n_excludedG_homo > 0) vrb.bullet(stb.str(n_excludedG_homo) + " homozygous genotypes excluded");
+	if (n_excludedG_impp > 0) vrb.bullet(stb.str(n_excludedG_impp) + " low probability genotypes excluded");
 	if (n_excludedG_dupl > 0) vrb.bullet(stb.str(n_excludedG_dupl) + " duplicate variants excluded");
 	if (all_variants.size() == 0) vrb.leave("Cannot find usable variants in target region!");
 
 	if (n_excludedG_dupl || n_fixed_swapped || n_fixed_flipped || n_excludedG_wr || n_excludedG_nir) vrb.warning("There are " + stb.str(n_excludedG_dupl + n_fixed_swapped + n_fixed_flipped + n_excludedG_wr + n_excludedG_nir)+ " problematic genotypes in the VCF file. Please look at the excluded genotypes!");
 	if (blacklisted_regions.size() && !n_excludedG_blkl) vrb.warning("No variants fall into the blacklisted regions!");
+	if (param_min_iq > 0.0 && !n_excludedG_impq) vrb.warning("Filtering for imputation quality but no variants with < " + stb.str(param_min_iq) + " with INFO ID [" + param_imputation_score_label + "]!");
+	if (param_min_gp > 0.0 && !n_excludedG_impp) vrb.warning("Filtering for genotype probability but no genotypes with < " + stb.str(param_min_gp) + " with FORMAT ID [" + param_genotype_likelihood_label + "]!");
 
 	free(gt_arr);
 	bcf_sr_destroy(sr);
