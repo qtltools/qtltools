@@ -76,10 +76,9 @@ void ase_data::readGenotypes(string filename ,string olog) {
 	float * gp_arr = NULL, * iq_arr = NULL;
 	bcf1_t * line;
 
-	unsigned int linecount = 0;
+	unsigned int linecount = 0, update_interval = 1000000, next_update = 1000000;
 	while(bcf_sr_next_line (sr)) {
 		linecount++;
-		if (linecount % 1000000 == 0) vrb.bullet(stb.str(linecount) + " lines read");
 		bool af = false;
 		line =  bcf_sr_get_line(sr, 0);
 		bcf_unpack(line, BCF_UN_STR);
@@ -87,14 +86,14 @@ void ase_data::readGenotypes(string filename ,string olog) {
 
 		//filter multiallelic
 		if (line->n_allele > 2) {n_excludedG_mult ++; if (olog != "") fdo << "VCF_MULTI_ALLELIC " << sid << endl; continue;}
-		//filter user provided
-		if (!filter_genotype.check(sid)) { n_excludedG_user ++; if (olog != "") fdo << "VCF_USER " << sid << endl; continue;}
+		unsigned int pos = line->pos;	//position 0-based
 		string curr_chr = bcf_hdr_id2name(sr->readers[0].header, line->rid);				//chr
+		//filter user provided
+		if (!filter_genotype.check(sid) || !filter_position.check(curr_chr + "_" + stb.str(pos+1))) { n_excludedG_user ++; if (olog != "") fdo << "VCF_USER " << sid << endl; continue;}
 		if(fix_chr){
 			if (add_chr.count(curr_chr)) curr_chr = "chr" + curr_chr;
 			if (remove_chr.count(curr_chr)) curr_chr = curr_chr.substr(3);
 		}
-		unsigned int pos = line->pos;	//position 0-based
 		//filter blacklisted regions
 		if(ase_basic_block(curr_chr,pos+1,pos+1).find_this_in_bool(blacklisted_regions)){n_excludedG_blkl++; if (olog != "") fdo << "VCF_BLACKLIST " << sid << endl; continue;}
 		string ref = string(line->d.allele[0]);												//ref
@@ -167,8 +166,12 @@ void ase_data::readGenotypes(string filename ,string olog) {
 			all_variants.insert(ases);
 			n_includedG ++;
 		}
+		if (linecount >= next_update){
+			vrb.bullet(stb.str(linecount) + " lines read, " + stb.str(n_includedG) + " heterozygous genotypes included, " + stb.str(n_excludedG_user + n_excludedG_blkl + n_excludedG_mult + n_excludedG_snpv + n_excludedG_snpN + n_excludedG_impq + n_excludedG_impp + n_excludedG_void + n_excludedG_miss + n_excludedG_homo + n_excludedG_dupl + n_excludedG_nir + n_excludedG_wr) + " genotypes excluded. Current chromosome [" + curr_chr + "]. " + stb.str((double) linecount / (double) current_timer.abs_time()) + " per second.");
+			next_update = linecount + update_interval;
+		}
 	}
-
+	vrb.bullet(stb.str(linecount) + " lines read, " + stb.str((double) linecount / (double) current_timer.abs_time()) + " per second.");
 	vrb.bullet(stb.str(n_includedG) + " heterozygous genotypes included");
 	if (n_excludedG_mult > 0) vrb.bullet(stb.str(n_excludedG_mult) + " multi-allelic variants excluded");
 	if (n_excludedG_user > 0) vrb.bullet(stb.str(n_excludedG_user) + " variants excluded by user");

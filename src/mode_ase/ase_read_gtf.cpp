@@ -22,7 +22,7 @@ void ase_data::readGTF(string fgtf){
     vrb.title("Reading exons in [" + fgtf + "]");
     input_file fd (fgtf);
     if (fd.fail()) vrb.error("Cannot open file!");
-    int linecount = 0;
+    long int linecount = 0, exoncount = 0;
     set <string> found_c,missed_c;
     while(getline(fd, buffer)) {
         linecount++;
@@ -67,9 +67,10 @@ void ase_data::readGTF(string fgtf){
     		annotation[chr][sb].push_back(ase_exon(gene_id,trans_id,gene_name,start,end));
     		sb++;
     	}
-
+    	exoncount++;
     }
 
 	if(found_c.size() == 0) vrb.error("No chromosomes match between GTF and BAM. Try --fix-chr!");
 	if(missed_c.size()) vrb.warning(stb.str(missed_c.size()) + " GTF chromosomes are missing from the BAM file. Found " + stb.str(found_c.size()) + " chromosomes.");
+	vrb.bullet(stb.str(exoncount) + " exons read.");
 }

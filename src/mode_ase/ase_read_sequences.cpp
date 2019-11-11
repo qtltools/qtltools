@@ -87,15 +87,18 @@ void ase_data::parseBam(void * d){
 		beg = data->iter->beg;
 		end = data->iter->end;
 	}
-
+	unsigned long linecount = 0;
 	string prevchr = "";
+	timer local;
 	while((v_plp = bam_plp_auto(s_plp, &tid, &pos, &n_plp)) != 0){
+		linecount++;
 		if (pos < beg || pos > end) continue;
 		string chr = data->hdr->target_name[tid];
-		if (region_length == 0 && chr != prevchr){
+		if (region_length == 0 && !bam_region.isSet( )&& chr != prevchr){
 			vrb.bullet("Processing chromosome [" + chr + "]");
 			prevchr = chr;
 		}
+		if (linecount % 50000000 == 0) vrb.bullet(stb.str(linecount) + " positions read, " + stb.str((double) linecount / (double) local.abs_time()) + " per second.");
 		ase_site temp(chr,pos);
 		auto av_it = all_variants.find(temp);
 		if (av_it != all_variants.end()){
@@ -151,6 +154,7 @@ void ase_data::parseBam(void * d){
 	}
 	bam_plp_reset(s_plp);
 	bam_plp_destroy(s_plp);
+	vrb.bullet(stb.str(linecount) + " positions read, " + stb.str((double) linecount / (double) local.abs_time()) + " per second.");
 }
 
 void ase_data::readSequences(string fbam) {
