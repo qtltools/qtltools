@@ -52,7 +52,7 @@ void ase_main(vector < string > & argv) {
 		("cov-bias,C", boost::program_options::value< int >()->default_value(10), "Minimum coverage for a genotype to be considered in REF bias.")
 		("sites,s", boost::program_options::value< int >()->default_value(200), "Minimum number of sites to calculate a REF bias from for a specific REF/ALT pair. The REF bias for pairs with less than this many sites will be calculated from all sites.")
 		("imp-qual-id,I", boost::program_options::value< string >()->default_value("INFO", "INFO"), "The INFO ID of the imputation score in the VCF.")
-		("geno-prob-id,L", boost::program_options::value< string >()->default_value("GL", "GL"), "The FORMAT ID of the genotype likelihoods for RR/RA/AA  in the VCF.")
+		("geno-prob-id,L", boost::program_options::value< string >()->default_value("GP", "GP"), "The FORMAT ID of the genotype posterior probabilities for RR/RA/AA  in the VCF.")
 		("imp-qual,W", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum imputation score for a variant to be considered.")
 		("geno-prob,V", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum posterior probability for a genotype to be considered.")
 		("subsample,S", boost::program_options::value< double >()->default_value(0.75, "0.75"), "Randomly subsample sites that have greater coverage than this percentile of all the sites in REF bias calculations. Set to 1 to turn off which is NOT RECOMMENED.")
@@ -129,7 +129,7 @@ void ase_main(vector < string > & argv) {
 	D.param_imputation_score_label = D.options["imp-qual-id"].as <string> ();
 	D.param_genotype_likelihood_label = D.options["geno-prob-id"].as <string> ();
 	D.param_min_gp = D.options["geno-prob"].as < double > ();
-	if (D.param_min_gp < 0.0 || D.param_min_gp > 1.0) vrb.error("--geno-prob must be between 0 and 1!");
+	if (D.param_min_gp < 0.0) vrb.error("--geno-prob cannot be negative!");
 	D.param_min_iq = D.options["imp-qual"].as < double > ();
 	if (D.param_min_iq < 0.0) vrb.error("--imp-qual cannot be negative!");
 	D.param_sample = D.options["subsample"].as < double > ();
