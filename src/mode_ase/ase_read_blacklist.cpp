@@ -44,10 +44,11 @@ void ase_data::readBlacklist(string fgtf) {
 				missed_c.insert(chr);
 			}
 		}else found_c.insert(chr);
-		if (bam_region.isSet() && bam_region.chr != chr) continue;
         unsigned int start = atoi(str[1].c_str());
         unsigned int end = atoi(str[2].c_str());
-        input.push_back(ase_basic_block(chr,start+1,end));
+        ase_basic_block abb(chr,start+1,end);
+        if (bam_region.isSet() && !abb.overlap(bam_region)) continue;
+        input.push_back(ase_basic_block(abb));
         mem += sizeof(ase_basic_block) + chr.capacity();
         if (on_the_fly && mem > max_step){
         	vector <ase_basic_block> temp;

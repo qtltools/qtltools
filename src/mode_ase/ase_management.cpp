@@ -116,7 +116,7 @@ void ase_data::collapseRegions(){
 	if (bam_chrs != ase_chrs){
 		vrb.bullet("Not all BAM chromosomes have an ASE site, will query individual chromosomes");
 		for (auto it = ase_chrs.begin(); it != ase_chrs.end(); it++){
-			my_regions.push_back(ase_region(*it,0,1000000000));
+			my_regions.push_back(ase_region(*it,POS_MIN,POS_MAX));
 		}
 		vrb.bullet(stb.str(my_regions.size()) + " chromosomes will be processed");
 	}

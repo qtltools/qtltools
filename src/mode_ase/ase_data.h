@@ -172,6 +172,10 @@ public:
 		return (chr == b.chr && b.end >= start && b.start <= end);
 	}
 
+	bool overlap(genomic_region &b){
+		return (chr == b.chr && b.end >= start && b.start <= end);
+	}
+
 	bool overlap(string c , unsigned long int s , unsigned long int e){
 		return (chr == c && e >= start && s <= end);
 	}
