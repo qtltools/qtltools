@@ -57,7 +57,7 @@ void ase_main(vector < string > & argv) {
 		("geno-prob,V", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum posterior probability for a genotype to be considered.")
 		("subsample,S", boost::program_options::value< double >()->default_value(0.75, "0.75"), "Randomly subsample sites that have greater coverage than this percentile of all the sites in REF bias calculations. Set to 1 to turn off which is NOT RECOMMENED.")
 		("both-alleles-seen,a", "Require both alleles to be observed in RNA-seq reads for a site for ASE calculations.")
-		("keep-homozygotes-for-bias,A", "DON'T require both alleles to be observed in RNA-seq reads for a site for REF mapping bias calculations. (NOT RECOMMENDED)")
+		("keep-bans-for-bias,A", "DON'T require both alleles to be observed in RNA-seq reads for a site for REF mapping bias calculations. (NOT RECOMMENDED)")
 		("keep-discordant-for-bias,E", "If given sites with more discordant alleles than REF or ALT alleles will be included in the REF bias calculations. (NOT RECOMMENDED)")
 		("filter-indel-reads,D", "Remove reads that contain indels.")
 		("keep-failed-qc,e", "Keep fastq reads that fail sequencing QC (as indicated by the sequencer).")
@@ -135,7 +135,7 @@ void ase_main(vector < string > & argv) {
 	D.param_sample = D.options["subsample"].as < double > ();
 	if (D.param_sample < 0.0 || D.param_sample > 1.0) vrb.error("--subsample must be between 0 and 1!");
 	D.param_both_alleles_seen = D.options.count("both-alleles-seen");
-	D.param_both_alleles_seen_bias = (D.options.count("keep-homozygotes-for-bias") == 0);
+	D.param_both_alleles_seen_bias = (D.options.count("keep-bans-for-bias") == 0);
 	D.param_rm_indel = D.options.count("filter-indel-reads");
 	D.keep_failqc = D.options.count("keep-failed-qc");
 	D.keep_orphan = D.options.count("keep-orphan-reads");
