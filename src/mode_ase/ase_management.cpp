@@ -108,6 +108,18 @@ void ase_data::getRegions(){
 		pp = one_based;
 	}
 	my_regions.back().end = pp;
+	vrb.bullet(stb.str(my_regions.size()) + " regions found");
+}
+
+void ase_data::collapseRegions(){
+	vrb.title("Collapsing regions");
+	if (bam_chrs != ase_chrs){
+		vrb.bullet("Not all BAM chromosomes have an ASE site, will query individual chromosomes");
+		for (auto it = ase_chrs.begin(); it != ase_chrs.end(); it++){
+			my_regions.push_back(ase_region(*it,0,1000000000));
+		}
+		vrb.bullet(stb.str(my_regions.size()) + " chromosomes will be processed");
+	}
 }
 
 void ase_data::assignGenesToAseSite(ase_site &in){

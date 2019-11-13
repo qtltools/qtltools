@@ -171,6 +171,7 @@ void ase_data::readGenotypes(string filename ,string olog) {
 				if (olog != "") fdo << "VMI " << ases.getName() << endl;
 			}
 			all_variants.insert(ases);
+			ase_chrs.insert(ases.chr);
 			n_includedG ++;
 		}
 		if (linecount >= next_update){

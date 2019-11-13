@@ -318,7 +318,7 @@ public :
 	vector <string> all_allele_combinations;
 	vector < ase_basic_block> blacklisted_regions;
 	set <string> add_chr,remove_chr;
-	set <string> bam_chrs,vcf_chrs;
+	set <string> bam_chrs,vcf_chrs,ase_chrs;
 	map <string, string> genome;
 	map < string , map < unsigned int , vector < ase_exon > > > annotation;
 
@@ -372,6 +372,7 @@ public :
 	void calculateRefToAltBias(string l = "");
 	void calculateASE(string o , string l = "");
 	void getRegions();
+	void collapseRegions();
 	void parseBam(void *);
 	void compareChrs(string, string,string);
 	void assignGenesToAseSite(ase_site &);

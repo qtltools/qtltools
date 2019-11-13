@@ -213,6 +213,7 @@ void ase_main(vector < string > & argv) {
 	if (D.options.count("gtf")) D.readGTF(D.options["gtf"].as < string > ());
 	D.readGenotypes(D.options["vcf"].as < string > (), D.options["filtered"].as < string > ());
 	if (D.region_length) D.getRegions();
+	else if (D.options["reg"].as < string > () == "") D.collapseRegions();
 	D.readSequences(D.options["bam"].as < string > ());
 	D.calculateRefToAltBias(D.options["filtered"].as < string > ());
 	D.calculateASE(D.options["out"].as < string > (), D.options["filtered"].as < string > ());
