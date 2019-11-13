@@ -27,10 +27,11 @@ void ase_data::calculateRefToAltBias(string olog){
 	vector < unsigned int > all_total_counts;
 	map < string , vector <unsigned int> > alleles_total_counts;
 	vector < ase_site * > filtered_variants;
-	unsigned int filtered_cov = 0 , filtered_bas = 0;
+	unsigned int filtered_cov = 0 , filtered_bas = 0, filtered_discordant = 0;
 	for (int i = 0 ; i < passing_variants.size(); i++){
 		if (passing_variants[i].total_count < param_min_cov_for_ref_alt) { filtered_cov++; if(olog!="") fdo<<"BIAS_COV " << passing_variants[i].sid << endl; continue;}
 		if (param_both_alleles_seen_bias && (passing_variants[i].alt_count == 0 || passing_variants[i].ref_count == 0 )) {filtered_bas++; if(olog!="") fdo<<"BIAS_BOTH_ALLELES " << passing_variants[i].sid << endl; continue;}
+		if (!keep_discordant && (passing_variants[i].alt_count < passing_variants[i].other_count || passing_variants[i].ref_count < passing_variants[i].other_count )) {filtered_discordant++; if(olog!="") fdo<<"BIAS_MANY_DISCORDANT " << passing_variants[i].sid << endl; continue;}
 		filtered_variants.push_back(&passing_variants[i]);
 		if (alleles_total_counts.count(passing_variants[i].alleles)) alleles_total_counts[passing_variants[i].alleles].push_back(passing_variants[i].total_count);
 		else alleles_total_counts[passing_variants[i].alleles] = vector <unsigned int> (1, passing_variants[i].total_count);
@@ -39,6 +40,7 @@ void ase_data::calculateRefToAltBias(string olog){
 
 	if (filtered_cov) vrb.bullet(stb.str(filtered_cov) + " sites with coverage less than " + stb.str(param_min_cov_for_ref_alt));
 	if (filtered_bas) vrb.bullet(stb.str(filtered_bas) + " sites where both alleles were not observed");
+	if (filtered_discordant) vrb.bullet(stb.str(filtered_discordant) + " sites where more discordant alleles than ref or alt");
 
 	bool calculate_all = false;
 	vector <string> add;

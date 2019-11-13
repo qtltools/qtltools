@@ -106,7 +106,7 @@ void ase_data::parseBam(void * d){
 			mapping_stats ms;
 			set <string> as;
 			//STEP1: Parse sequencing reads
-			if (n_plp >= max_depth * 0.95) vrb.warning(av_it->sid + " depth " + stb.str(n_plp) + " is >= 95% max-depth, potential data loss!");
+			if (print_warnings && n_plp >= max_depth * 0.95) vrb.warning(av_it->sid + " depth " + stb.str(n_plp) + " is >= 95% max-depth, potential data loss!");
 			for (int iread = 0 ; iread < n_plp ; iread ++) {
 				bool failed_qc = false;
 				const bam_pileup1_t * p = v_plp + iread;
@@ -149,6 +149,14 @@ void ase_data::parseBam(void * d){
 			ase_site current = *av_it;
 			current.setCounts(b_ref,b_alt,b_dis,as,ms);
 			if (n_plp >= max_depth * 0.95) current.concern += "PD,";
+			if (print_warnings){
+				if (current.other_count && current.ref_count == 0 && current.alt_count == 0) vrb.warning("No ref or alt allele for " + current.getName() + " in " + stb.str(current.other_count) + " sites");
+				else{
+					if (current.other_count > current.alt_count) {vrb.warning("More discordant alleles than alt alleles for " + current.getName() + " " + stb.str(current.other_count) + " > " + stb.str(current.alt_count));}
+					if (current.other_count > current.ref_count) {vrb.warning("More discordant alleles than ref alleles for " + current.getName() + " " + stb.str(current.other_count) + " > " + stb.str(current.ref_count));}
+
+				}
+			}
 			passing_variants.push_back(current);
 		}
 	}

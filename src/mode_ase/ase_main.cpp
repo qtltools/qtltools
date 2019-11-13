@@ -24,46 +24,48 @@ void ase_main(vector < string > & argv) {
 	D.declareBasicOptions();
 	boost::program_options::options_description opt_files ("\x1B[32mI/O\33[0m");
 	opt_files.add_options()
-		("vcf,v", boost::program_options::value< string >(), "Genotypes in VCF/BCF format.")
-		("bam,b", boost::program_options::value< string >(), "Sequence data in BAM/SAM format.")
-		("fasta,f", boost::program_options::value< string >(), "Genome sequence in FASTA format.")
-		("ind,i", boost::program_options::value< string >(), "Sample to be processed.")
+		("vcf,v", boost::program_options::value< string >(), "Genotypes in VCF/BCF format. (REQUIRED)")
+		("bam,b", boost::program_options::value< string >(), "Sequence data in BAM/SAM format. (REQUIRED)")
+		("fasta,f", boost::program_options::value< string >(), "Genome sequence in FASTA format. (REQUIRED)")
+		("ind,i", boost::program_options::value< string >(), "Sample to be processed. (REQUIRED)")
 		("reg,r", boost::program_options::value< string >()->default_value(""), "Genomic region(s) to be processed.")
 		("blacklist,B", boost::program_options::value< string >(), "BED file for blacklisted regions.")
-		("merge-on-the-fly,t", "Merges the blacklisted regions on the fly. This can reduce memory usage if there are many overlapping regions in the blacklist.")
+		("merge-on-the-fly,t", "Merges the blacklisted regions on the fly. This can reduce memory usage if there are many overlapping or contiguous regions in the blacklist.")
 		("gtf,g", boost::program_options::value< string >(), "Annotation in GTF format")
 		("fix-chr,F", "Attempt to match chromosome names to the BAM file")
 		("fix-id,R", "Convert missing VCF variant IDs to chr_pos_refalt")
-		("auto-flip,x", "Attempt to fix reference allele mismatches. Requires a fasta file for the reference sequence.")
+		("auto-flip,x", "Attempt to fix reference allele mismatches. Requires a fasta file for the reference sequence. (NOT RECOMMENDED)")
 		("print-stats,P", "Print out stats for the filtered reads for ASE sites.")
+		("suppress-warnings,k", "Suppress the warnings about individual variants.")
 		("illumina13,j", "Base quality is in the Illumina-1.3+ encoding")
 		("group-by,G", boost::program_options::value< int >()->default_value(0,"OFF"), "Group variants separated by this much into batches. This allows you not to stream the whole BAM file and may improve running time.")
-		("max-depth,d", boost::program_options::value< int >()->default_value(16000,"16000"), "Pileup max-depth. Set to 0 if you want maximum but this will be slower.")
+		("max-depth,d", boost::program_options::value< int >()->default_value(16000,"16000"), "Pileup max-depth. Set to 0 if you want maximum but this will be slower and use more memory.")
 		("filtered,l", boost::program_options::value< string >()->default_value(""), "File to output filtered variants.")
 		("out,o", boost::program_options::value< string >(), "Output file.");
 
 	boost::program_options::options_description opt_parameters ("\x1B[32mFilters\33[0m");
 	opt_parameters.add_options()
-		("mapq,q", boost::program_options::value< int >(), "Minimum mapping quality for a read to be considered.")
+		("mapq,q", boost::program_options::value< int >(), "Minimum mapping quality for a read to be considered. (REQUIRED)")
 		("baseq,Q", boost::program_options::value< int >()->default_value(10), "Minimum phred quality for a base to be considered.")
-		("pvalue,p", boost::program_options::value< double >()->default_value(1.0, "1.0"), "Binomial p-value threshold for ASE in output.")
-		("cov,c", boost::program_options::value< int >()->default_value(16), "Minimum coverage for a genotype to be considered.")
+		("pvalue,p", boost::program_options::value< double >()->default_value(1.0, "1.0"), "Binomial p-value threshold for ASE output.")
+		("cov,c", boost::program_options::value< int >()->default_value(16), "Minimum coverage for a genotype to be considered in ASE analysis.")
 		("cov-bias,C", boost::program_options::value< int >()->default_value(10), "Minimum coverage for a genotype to be considered in REF bias.")
 		("sites,s", boost::program_options::value< int >()->default_value(200), "Minimum number of sites to calculate a REF bias from for a specific REF/ALT pair. The REF bias for pairs with less than this many sites will be calculated from all sites.")
 		("imp-qual-id,I", boost::program_options::value< string >()->default_value("INFO", "INFO"), "The INFO ID of the imputation score in the VCF.")
 		("geno-prob-id,L", boost::program_options::value< string >()->default_value("GL", "GL"), "The FORMAT ID of the genotype likelihoods for RR/RA/AA  in the VCF.")
 		("imp-qual,W", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum imputation score for a variant to be considered.")
 		("geno-prob,V", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum posterior probability for a genotype to be considered.")
-		("subsample,S", boost::program_options::value< double >()->default_value(0.75, "0.75"), "Randomly subsample sites that have greater coverage than this percentile of all the sites in REF bias calculations. Set to 1 to turn off. (NOT RECOMMENED)")
+		("subsample,S", boost::program_options::value< double >()->default_value(0.75, "0.75"), "Randomly subsample sites that have greater coverage than this percentile of all the sites in REF bias calculations. Set to 1 to turn off which is NOT RECOMMENED.")
 		("both-alleles-seen,a", "Require both alleles to be observed in RNA-seq reads for a site for ASE calculations.")
 		("keep-homozygotes-for-bias,A", "DON'T require both alleles to be observed in RNA-seq reads for a site for REF mapping bias calculations. (NOT RECOMMENDED)")
+		("keep-discordant-for-bias,E", "If given sites with more discordant alleles than REF or ALT alleles will be included in the REF bias calculations. (NOT RECOMMENDED)")
 		("filter-indel-reads,D", "Remove reads that contain indels.")
 		("keep-failed-qc,e", "Keep fastq reads that fail sequencing QC (as indicated by the sequencer).")
 		("keep-orphan-reads,O", "Keep paired end reads where one of mates is unmapped.")
 		("check-proper-pairing,y", "If provided only properly paired reads according to the aligner will be considered.")
-		("ignore-orientation,X", "If NOT provided only mate pairs where both mates are on the same chromosome, first mate is on the +ve strand and the second is on the -ve strand, and the second mate does not start before the first mate will be considered.")
+		("ignore-orientation,X", "If NOT provided only mate pairs where both mates are on the same chromosome and where the first mate is on the +ve strand and the second is on the -ve strand will be considered. (NOT RECOMMENED)")
 		("filter-duplicates,u", "Remove duplicate sequencing reads in the process. (NOT RECOMMENED)")
-		("legacy-options,J", "Replicate legacy options used. (DO NOT USE).");
+		("legacy-options,J", "Replicate legacy options used. (NOT RECOMMENED).");
 
 	D.option_descriptions.add(opt_files).add(opt_parameters);
 
@@ -144,8 +146,10 @@ void ase_main(vector < string > & argv) {
 	D.fix_id = D.options.count("fix-id");
 	D.auto_flip = D.options.count("auto-flip");
 	D.print_stats = D.options.count("print-stats");
+	D.print_warnings = (D.options.count("suppress-warnings") == 0);
 	D.illumina13 = D.options.count("illumina13");
 	D.on_the_fly = D.options.count("merge-on-the-fly");
+	D.keep_discordant = D.options.count("keep-discordant-for-bias");
 	ot = D.options["group-by"].as < int > ();
 	if (ot < 0) vrb.error("--group-by cannot be negative!");
 	D.region_length = ot;
@@ -157,6 +161,7 @@ void ase_main(vector < string > & argv) {
 		if (!D.check_proper_pair) vrb.warning("--check-proper-pairing is overwritten!");
 		if (D.keep_orphan) vrb.warning("--keep-orphan-reads is overwritten!");
 		if (D.keep_failqc) vrb.warning("--keep-failqc is overwritten!");
+		if (!D.keep_discordant) vrb.warning("--keep-discordant-for-bias is overwritten!");
 		if (D.param_rm_indel) vrb.warning("--filter-indel-reads is overwritten!");
 		if (D.check_orientation) vrb.warning("--check-orientation is overwritten!");
 		D.legacy_options = true;
@@ -168,6 +173,7 @@ void ase_main(vector < string > & argv) {
 		D.keep_failqc = false;
 		D.param_rm_indel = false;
 		D.check_orientation = false;
+		D.keep_discordant = true;
 	}
 
 	vrb.bullet("Mapping quality >= " + stb.str(D.param_min_mapQ));
@@ -179,6 +185,7 @@ void ase_main(vector < string > & argv) {
 	vrb.bullet("Imputation quality >= " + stb.str(D.param_min_iq));
 	vrb.bullet("Both alleles seen for ASE = " + stb.str(D.param_both_alleles_seen));
 	vrb.bullet("Both alleles seen for REF bias = " + stb.str(D.param_both_alleles_seen_bias));
+	vrb.bullet("Keep sites with more discordant alleles than ref or alt for REF bias = " + stb.str(D.keep_discordant));
 	vrb.bullet("Remove duplicate reads = " + stb.str(D.param_dup_rd));
 	vrb.bullet("Remove indel reads = " + stb.str(D.param_rm_indel));
 	vrb.bullet("Keep failed qc reads = " + stb.str(D.keep_failqc));

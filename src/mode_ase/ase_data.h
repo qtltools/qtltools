@@ -89,10 +89,10 @@ public:
 		mar = (double) (r < a ? r : a) / (double) total_count;
 		stats = _stats;
 		alleles_seen = as;
-		if (other_count && ref_count == 0 && alt_count == 0) {vrb.warning("No ref or alt allele for " + this->getName() + " in " + stb.str(other_count) + " sites"); concern += "NRA,";}
+		if (other_count && ref_count == 0 && alt_count == 0) { concern += "NRA,";}
 		else{
-			if (other_count > alt_count) {vrb.warning("More discordant alleles than alt alleles for " + this->getName() + " " + stb.str(other_count) + " > " + stb.str(alt_count)); concern += "MDTA,";}
-			if (other_count > ref_count) {vrb.warning("More discordant alleles than ref alleles for " + this->getName() + " " + stb.str(other_count) + " > " + stb.str(ref_count)); concern += "MDTR,";}
+			if (other_count > alt_count) { concern += "MDTA,";}
+			if (other_count > ref_count) { concern += "MDTR,";}
 			if (other_count) concern += "DA,";
 		}
 
@@ -312,7 +312,7 @@ public :
 	float param_min_pval;
 	float param_sample;
 	bool param_dup_rd,param_both_alleles_seen,param_both_alleles_seen_bias,fix_chr,param_rm_indel,fix_id;
-	bool keep_orphan,check_proper_pair,keep_failqc,legacy_options,auto_flip,check_orientation,print_stats,illumina13,on_the_fly;
+	bool keep_orphan,check_proper_pair,keep_failqc,legacy_options,auto_flip,check_orientation,print_stats,illumina13,on_the_fly,keep_discordant,print_warnings;
 	string param_imputation_score_label,param_genotype_likelihood_label;
 	static const int binsize = 10000;
 
@@ -364,6 +364,8 @@ public :
 		illumina13 = false;
 		fix_id = false;
 		on_the_fly = false;
+		keep_discordant = false;
+		print_warnings = false;
 	}
 
 	~ase_data() {

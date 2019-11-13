@@ -111,7 +111,7 @@ void ase_data::readGenotypes(string filename ,string olog) {
 					string tsr = ref;
 					ref = alt;
 					alt = tsr;
-					//vrb.warning( curr_chr + ":" + stb.str(pos)+ ":" + alt + ref + ":" + sid + " was swapped to " + ref + alt);
+					if (print_warnings) vrb.warning( curr_chr + ":" + stb.str(pos)+ ":" + alt + ref + ":" + sid + " was swapped to " + ref + alt);
 					n_fixed_swapped++;
 					if (olog != "") fdo << "VCF_SWAPPED " << sid << " " << alt + ref << " " << ref+alt << endl;
 					af = true;
@@ -120,16 +120,18 @@ void ase_data::readGenotypes(string filename ,string olog) {
 					ref[0] = complement(ref);
 					alt[0] = complement(alt);
 					n_fixed_flipped++;
-					//vrb.warning( curr_chr + ":" + stb.str(pos)+ ":" + ola + ":" + sid + " was flipped to " + ref + alt);
+					if (print_warnings) vrb.warning( curr_chr + ":" + stb.str(pos)+ ":" + ola + ":" + sid + " was flipped to " + ref + alt);
 					if (olog != "") fdo << "VCF_FLIPPED " << sid << " " << ola << " " << ref+alt <<  endl;
 					af = true;
 				}else{
 					n_excludedG_wr++;
+					if (print_warnings) vrb.warning( curr_chr + ":" + stb.str(pos)+ ":" + ref + ":" + alt + " does not match reference sequence" );
 					if (olog != "") fdo << "VCF_WRONG_REF " << sid << endl;
 					continue;
 				}
 			}else{
 				n_excludedG_wr++;
+				if (print_warnings) vrb.warning( curr_chr + ":" + stb.str(pos)+ ":" + ref + ":" + alt + " does not match reference sequence" );
 				if (olog != "") fdo << "VCF_WRONG_REF " << sid << endl;
 				continue;
 			}
@@ -157,15 +159,15 @@ void ase_data::readGenotypes(string filename ,string olog) {
 		//filter duplicate sites
 		if(cit != all_variants.end()){
 			ase_site old = *cit;
-			vrb.warning(ases.getName() + " was already seen as " + old.getName() + " ignoring this");
+			if (print_warnings) vrb.warning(ases.getName() + " was already seen as " + old.getName() + " ignoring this");
 			n_excludedG_dupl++;
 			if (olog != "") fdo << "VCF_DUPLICATE " << sid << endl;
 		}else{
 			if (ases.sid == "." || ases.sid == ""){
 				if (fix_id){
 					ases.sid = ases.chr + "_" + stb.str(ases.pos + 1) + "_" + ases.ref + ases.alt;
-					vrb.warning("Missing id was changed to " + ases.sid);
-				}else vrb.warning("Missing id for " + ases.getName());
+					if (print_warnings) vrb.warning("Missing id was changed to " + ases.sid);
+				}else if (print_warnings) vrb.warning("Missing id for " + ases.getName());
 			}
 			all_variants.insert(ases);
 			n_includedG ++;
