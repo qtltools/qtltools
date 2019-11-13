@@ -24,15 +24,15 @@ void ase_main(vector < string > & argv) {
 	D.declareBasicOptions();
 	boost::program_options::options_description opt_files ("\x1B[32mI/O\33[0m");
 	opt_files.add_options()
-		("vcf,v", boost::program_options::value< string >(), "Genotypes in VCF/BCF format. (REQUIRED)")
-		("bam,b", boost::program_options::value< string >(), "Sequence data in BAM/SAM format. (REQUIRED)")
-		("fasta,f", boost::program_options::value< string >(), "Genome sequence in FASTA format. (REQUIRED)")
+		("vcf,v", boost::program_options::value< string >(), "Genotypes in VCF/BCF format. (REQUIRED and RECOMMENED to use a BCF file for performance)")
+		("bam,b", boost::program_options::value< string >(), "Sequence data in BAM/SAM format sorted by position. (REQUIRED)")
+		("fasta,f", boost::program_options::value< string >(), "Genome sequence in FASTA format. (RECOMMENED)")
 		("ind,i", boost::program_options::value< string >(), "Sample to be processed. (REQUIRED)")
 		("reg,r", boost::program_options::value< string >()->default_value(""), "Genomic region(s) to be processed.")
-		("blacklist,B", boost::program_options::value< string >(), "BED file for blacklisted regions.")
+		("blacklist,B", boost::program_options::value< string >(), "BED file for blacklisted regions. RECOMMENED to use to filter out low mappability regions.")
 		("merge-on-the-fly,t", "Merges the blacklisted regions on the fly. This can reduce memory usage if there are many overlapping or contiguous regions in the blacklist.")
-		("gtf,g", boost::program_options::value< string >(), "Annotation in GTF format")
-		("fix-chr,F", "Attempt to match chromosome names to the BAM file")
+		("gtf,g", boost::program_options::value< string >(), "Annotation in GTF format. If provided variants will be matched to exons. (RECOMMENDED)")
+		("fix-chr,F", "Attempt to match chromosome names to the BAM file by adding or removing chr to chromosome names. Does not apply to --{include,exclude}-positions options. These should be in the VCF chromosome names.")
 		("fix-id,R", "Convert missing VCF variant IDs to chr_pos_refalt")
 		("auto-flip,x", "Attempt to fix reference allele mismatches. Requires a fasta file for the reference sequence. (NOT RECOMMENDED)")
 		("print-stats,P", "Print out stats for the filtered reads for ASE sites.")
@@ -40,8 +40,8 @@ void ase_main(vector < string > & argv) {
 		("illumina13,j", "Base quality is in the Illumina-1.3+ encoding")
 		("group-by,G", boost::program_options::value< int >()->default_value(0,"OFF"), "Group variants separated by this much into batches. This allows you not to stream the whole BAM file and may improve running time.")
 		("max-depth,d", boost::program_options::value< int >()->default_value(16000,"16000"), "Pileup max-depth. Set to 0 if you want maximum but this will be slower and use more memory.")
-		("filtered,l", boost::program_options::value< string >()->default_value(""), "File to output filtered variants.")
-		("out,o", boost::program_options::value< string >(), "Output file.");
+		("filtered,l", boost::program_options::value< string >()->default_value(""), "File to output filtered variants. RECOMMENED for troubleshooting especially if --suppress-warnings.")
+		("out,o", boost::program_options::value< string >(), "Output file. (REQUIRED)");
 
 	boost::program_options::options_description opt_parameters ("\x1B[32mFilters\33[0m");
 	opt_parameters.add_options()

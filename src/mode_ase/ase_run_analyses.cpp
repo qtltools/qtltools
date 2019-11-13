@@ -29,9 +29,9 @@ void ase_data::calculateRefToAltBias(string olog){
 	vector < ase_site * > filtered_variants;
 	unsigned int filtered_cov = 0 , filtered_bas = 0, filtered_discordant = 0;
 	for (int i = 0 ; i < passing_variants.size(); i++){
-		if (passing_variants[i].total_count < param_min_cov_for_ref_alt) { filtered_cov++; if(olog!="") fdo<<"BIAS_COV " << passing_variants[i].sid << endl; continue;}
-		if (param_both_alleles_seen_bias && (passing_variants[i].alt_count == 0 || passing_variants[i].ref_count == 0 )) {filtered_bas++; if(olog!="") fdo<<"BIAS_BOTH_ALLELES " << passing_variants[i].sid << endl; continue;}
-		if (!keep_discordant && (passing_variants[i].alt_count < passing_variants[i].other_count || passing_variants[i].ref_count < passing_variants[i].other_count )) {filtered_discordant++; if(olog!="") fdo<<"BIAS_MANY_DISCORDANT " << passing_variants[i].sid << endl; continue;}
+		if (passing_variants[i].total_count < param_min_cov_for_ref_alt) { filtered_cov++; if(olog!="") fdo<<"BC " << passing_variants[i].sid << endl; continue;}
+		if (param_both_alleles_seen_bias && (passing_variants[i].alt_count == 0 || passing_variants[i].ref_count == 0 )) {filtered_bas++; if(olog!="") fdo<<"BBANS " << passing_variants[i].sid << endl; continue;}
+		if (!keep_discordant && (passing_variants[i].alt_count < passing_variants[i].other_count || passing_variants[i].ref_count < passing_variants[i].other_count )) {filtered_discordant++; if(olog!="") fdo<<"BMDTRA " << passing_variants[i].sid << endl; continue;}
 		filtered_variants.push_back(&passing_variants[i]);
 		if (alleles_total_counts.count(passing_variants[i].alleles)) alleles_total_counts[passing_variants[i].alleles].push_back(passing_variants[i].total_count);
 		else alleles_total_counts[passing_variants[i].alleles] = vector <unsigned int> (1, passing_variants[i].total_count);
@@ -114,14 +114,14 @@ void ase_data::calculateASE(string fout , string olog){
 	fdoo <<endl;
 	for (int i = 0; i < passing_variants.size(); i++){
 		if (passing_variants[i].total_count >= param_min_cov){
-			if (param_both_alleles_seen && (passing_variants[i].alt_count == 0 || passing_variants[i].ref_count == 0 )){if(olog!="") fdo<<"ASE_BOTH_ALLELES " << passing_variants[i].sid << endl; continue;};
+			if (param_both_alleles_seen && (passing_variants[i].alt_count == 0 || passing_variants[i].ref_count == 0 )){if(olog!="") fdo<<"ABANS " << passing_variants[i].sid << endl; continue;};
 			if (ref_to_alt_bias[passing_variants[i].alleles] >= 0 && ref_to_alt_bias[passing_variants[i].alleles] <= 1) passing_variants[i].calculatePval(ref_to_alt_bias[passing_variants[i].alleles]);
 			else vrb.error("Reference allele mapping bias is incorrect [" + stb.str(ref_to_alt_bias[passing_variants[i].alleles]) + "]");
 			assignGenesToAseSite(passing_variants[i]);
 			fdoo << sample_id[0] << "\t" << passing_variants[i];
 			if (print_stats) fdoo << "\t" << passing_variants[i].stats;
 			fdoo << endl;
-		}else if(olog!="") fdo<<"ASE_COV " << passing_variants[i].sid << endl;
+		}else if(olog!="") fdo<<"AC " << passing_variants[i].sid << endl;
 	}
 
 }

@@ -148,15 +148,23 @@ void ase_data::parseBam(void * d){
 			}
 			ase_site current = *av_it;
 			current.setCounts(b_ref,b_alt,b_dis,as,ms);
+			//check ASE site
 			if (n_plp >= max_depth * 0.95) current.concern += "PD,";
-			if (print_warnings){
-				if (current.other_count && current.ref_count == 0 && current.alt_count == 0) vrb.warning("No ref or alt allele for " + current.getName() + " in " + stb.str(current.other_count) + " sites");
-				else{
-					if (current.other_count > current.alt_count) {vrb.warning("More discordant alleles than alt alleles for " + current.getName() + " " + stb.str(current.other_count) + " > " + stb.str(current.alt_count));}
-					if (current.other_count > current.ref_count) {vrb.warning("More discordant alleles than ref alleles for " + current.getName() + " " + stb.str(current.other_count) + " > " + stb.str(current.ref_count));}
-
+			if (current.other_count && current.ref_count == 0 && current.alt_count == 0) {
+				if (print_warnings) vrb.warning("No ref or alt allele for " + current.getName() + " in " + stb.str(current.other_count) + " sites");
+				current.concern += "NRA,";
+			}else{
+				if (current.other_count > current.alt_count) {
+					if (print_warnings) vrb.warning("More discordant alleles than alt alleles for " + current.getName() + " " + stb.str(current.other_count) + " > " + stb.str(current.alt_count));
+					current.concern += "MDTA,";
+				}
+				if (current.other_count > current.ref_count) {
+					if (print_warnings) vrb.warning("More discordant alleles than ref alleles for " + current.getName() + " " + stb.str(current.other_count) + " > " + stb.str(current.ref_count));
+					current.concern += "MDTR,";
 				}
 			}
+			if (!current.ref_count || !current.alt_count) {current.concern += "BANS,";}
+			else if (current.mar < 0.02) {current.concern += "LMAR,";}
 			passing_variants.push_back(current);
 		}
 	}

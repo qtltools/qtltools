@@ -85,25 +85,25 @@ void ase_data::readGenotypes(string filename ,string olog) {
 		string sid = string(line->d.id);
 
 		//filter multiallelic
-		if (line->n_allele > 2) {n_excludedG_mult ++; if (olog != "") fdo << "VCF_MULTI_ALLELIC " << sid << endl; continue;}
+		if (line->n_allele > 2) {n_excludedG_mult ++; if (olog != "") fdo << "VMA " << sid << endl; continue;}
 		unsigned int pos = line->pos;	//position 0-based
 		string curr_chr = bcf_hdr_id2name(sr->readers[0].header, line->rid);				//chr
 		//filter user provided
-		if (!filter_genotype.check(sid) || !filter_position.check(curr_chr + "_" + stb.str(pos+1))) { n_excludedG_user ++; if (olog != "") fdo << "VCF_USER " << sid << endl; continue;}
+		if (!filter_genotype.check(sid) || !filter_position.check(curr_chr + "_" + stb.str(pos+1))) { n_excludedG_user ++; if (olog != "") fdo << "VU " << sid << endl; continue;}
 		if(fix_chr){
 			if (add_chr.count(curr_chr)) curr_chr = "chr" + curr_chr;
 			if (remove_chr.count(curr_chr)) curr_chr = curr_chr.substr(3);
 		}
 		//filter blacklisted regions
-		if(ase_basic_block(curr_chr,pos+1,pos+1).find_this_in_bool(blacklisted_regions)){n_excludedG_blkl++; if (olog != "") fdo << "VCF_BLACKLIST " << sid << endl; continue;}
+		if(ase_basic_block(curr_chr,pos+1,pos+1).find_this_in_bool(blacklisted_regions)){n_excludedG_blkl++; if (olog != "") fdo << "VB " << sid << endl; continue;}
 		string ref = string(line->d.allele[0]);												//ref
 		string alt = string(line->d.allele[1]);												//alt
 		//filter indels
-		if (ref.size() > 1 || alt.size() > 1) {n_excludedG_snpv ++; if (olog != "") fdo << "VCF_INDEL " << sid << endl; continue;}
+		if (ref.size() > 1 || alt.size() > 1) {n_excludedG_snpv ++; if (olog != "") fdo << "VI " << sid << endl; continue;}
 		//filter missing ref alt alleles
-		if (ref == "N" || alt == "N" || ref == "" || alt == "" || ref == "." || alt == ".") {n_excludedG_snpN++; if (olog != "") fdo << "VCF_MISSING_REF_ALT " << sid << endl; continue;}
+		if (ref == "N" || alt == "N" || ref == "" || alt == "" || ref == "." || alt == ".") {n_excludedG_snpN++; if (olog != "") fdo << "VMRA " << sid << endl; continue;}
 		//filter not in fasta
-		if (genome.size() && (genome.count(curr_chr) == 0 ||  pos >= genome[curr_chr].size())) {n_excludedG_nir++; if (olog != "") fdo << "VCF_NOT_IN_FASTA " << sid << endl; continue;}
+		if (genome.size() && (genome.count(curr_chr) == 0 ||  pos >= genome[curr_chr].size())) {n_excludedG_nir++; if (olog != "") fdo << "VNIF " << sid << endl; continue;}
 		//filter ref mismatches
 		if (genome.size() && ref[0] != genome[curr_chr][pos]) {
 			if (auto_flip){
@@ -113,7 +113,7 @@ void ase_data::readGenotypes(string filename ,string olog) {
 					alt = tsr;
 					if (print_warnings) vrb.warning( curr_chr + ":" + stb.str(pos)+ ":" + alt + ref + ":" + sid + " was swapped to " + ref + alt);
 					n_fixed_swapped++;
-					if (olog != "") fdo << "VCF_SWAPPED " << sid << " " << alt + ref << " " << ref+alt << endl;
+					if (olog != "") fdo << "VS " << sid << " " << alt + ref << " " << ref+alt << endl;
 					af = true;
 				}else if(complement(ref) == genome[curr_chr][pos]){
 					string ola = ref + alt;
@@ -121,37 +121,37 @@ void ase_data::readGenotypes(string filename ,string olog) {
 					alt[0] = complement(alt);
 					n_fixed_flipped++;
 					if (print_warnings) vrb.warning( curr_chr + ":" + stb.str(pos)+ ":" + ola + ":" + sid + " was flipped to " + ref + alt);
-					if (olog != "") fdo << "VCF_FLIPPED " << sid << " " << ola << " " << ref+alt <<  endl;
+					if (olog != "") fdo << "VF " << sid << " " << ola << " " << ref+alt <<  endl;
 					af = true;
 				}else{
 					n_excludedG_wr++;
 					if (print_warnings) vrb.warning( curr_chr + ":" + stb.str(pos)+ ":" + ref + ":" + alt + " does not match reference sequence" );
-					if (olog != "") fdo << "VCF_WRONG_REF " << sid << endl;
+					if (olog != "") fdo << "VWR " << sid << endl;
 					continue;
 				}
 			}else{
 				n_excludedG_wr++;
 				if (print_warnings) vrb.warning( curr_chr + ":" + stb.str(pos)+ ":" + ref + ":" + alt + " does not match reference sequence" );
-				if (olog != "") fdo << "VCF_WRONG_REF " << sid << endl;
+				if (olog != "") fdo << "VWR " << sid << endl;
 				continue;
 			}
 		}
 		//filter imputation score
 		if (param_min_iq > 0.0){
 			niq = bcf_get_info_float(sr->readers[0].header, line, param_imputation_score_label.c_str(), &iq_arr, &niq_arr);		//imputation score
-			if (niq > 0 && iq_arr[0] < param_min_iq) {n_excludedG_impq ++; if (olog != "") fdo << "VCF_BAD_IMPUTATION " << sid << endl; continue;}
+			if (niq > 0 && iq_arr[0] < param_min_iq) {n_excludedG_impq ++; if (olog != "") fdo << "VBI " << sid << endl; continue;}
 		}
 		ngt = bcf_get_genotypes(sr->readers[0].header, line, &gt_arr, &ngt_arr); //genotypes
 		//filter variants without the GT field
-		if (ngt != n_samples_in_file * 2){n_excludedG_void ++; if (olog != "") fdo << "VCF_MISSING_GT " << sid << endl; continue;}
+		if (ngt != n_samples_in_file * 2){n_excludedG_void ++; if (olog != "") fdo << "VMGT " << sid << endl; continue;}
 		//filter missing genotypes
-		if (gt_arr[2*index_sample+0] == bcf_gt_missing || gt_arr[2*index_sample+1] == bcf_gt_missing) {n_excludedG_miss ++; if (olog != "") fdo << "VCF_MISSING_GENOTYPE " << sid << endl; continue;}
+		if (gt_arr[2*index_sample+0] == bcf_gt_missing || gt_arr[2*index_sample+1] == bcf_gt_missing) {n_excludedG_miss ++; if (olog != "") fdo << "VMG " << sid << endl; continue;}
 		//filter homozygous
-		if (bcf_gt_allele(gt_arr[2*index_sample+0]) == bcf_gt_allele(gt_arr[2*index_sample+1])) {n_excludedG_homo ++; if (olog != "") fdo << "VCF_HOMOZYGOUS " << sid << endl; continue;}
+		if (bcf_gt_allele(gt_arr[2*index_sample+0]) == bcf_gt_allele(gt_arr[2*index_sample+1])) {n_excludedG_homo ++; if (olog != "") fdo << "VH " << sid << endl; continue;}
 		//filter bad genotype quality
 		if (param_min_gp > 0.0){
 			ngp = bcf_get_format_float(sr->readers[0].header, line,param_genotype_likelihood_label.c_str(), &gp_arr, &ngp_arr); //genotype likelihoods
-			if (ngp == 3 * n_samples_in_file && gp_arr[3*index_sample+0] != bcf_float_missing && gp_arr[3*index_sample+1] != bcf_float_missing && gp_arr[3*index_sample+2] != bcf_float_missing && gp_arr[3*index_sample+0] < param_min_gp && gp_arr[3*index_sample+1] < param_min_gp && gp_arr[3*index_sample+2] < param_min_gp) {n_excludedG_impp ++; if (olog != "") fdo << "VCF_BAD_GENOTYPE " << sid << endl; continue;}
+			if (ngp == 3 * n_samples_in_file && gp_arr[3*index_sample+0] != bcf_float_missing && gp_arr[3*index_sample+1] != bcf_float_missing && gp_arr[3*index_sample+2] != bcf_float_missing && gp_arr[3*index_sample+0] < param_min_gp && gp_arr[3*index_sample+1] < param_min_gp && gp_arr[3*index_sample+2] < param_min_gp) {n_excludedG_impp ++; if (olog != "") fdo << "VBG " << sid << endl; continue;}
 		}
 		ase_site ases(curr_chr, sid, pos, ref, alt);
 		if(af) ases.concern += "RM,";
@@ -161,13 +161,14 @@ void ase_data::readGenotypes(string filename ,string olog) {
 			ase_site old = *cit;
 			if (print_warnings) vrb.warning(ases.getName() + " was already seen as " + old.getName() + " ignoring this");
 			n_excludedG_dupl++;
-			if (olog != "") fdo << "VCF_DUPLICATE " << sid << endl;
+			if (olog != "") fdo << "VD " << sid << endl;
 		}else{
 			if (ases.sid == "." || ases.sid == ""){
 				if (fix_id){
 					ases.sid = ases.chr + "_" + stb.str(ases.pos + 1) + "_" + ases.ref + ases.alt;
 					if (print_warnings) vrb.warning("Missing id was changed to " + ases.sid);
 				}else if (print_warnings) vrb.warning("Missing id for " + ases.getName());
+				if (olog != "") fdo << "VMI " << ases.getName() << endl;
 			}
 			all_variants.insert(ases);
 			n_includedG ++;

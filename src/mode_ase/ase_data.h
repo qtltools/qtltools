@@ -89,16 +89,6 @@ public:
 		mar = (double) (r < a ? r : a) / (double) total_count;
 		stats = _stats;
 		alleles_seen = as;
-		if (other_count && ref_count == 0 && alt_count == 0) { concern += "NRA,";}
-		else{
-			if (other_count > alt_count) { concern += "MDTA,";}
-			if (other_count > ref_count) { concern += "MDTR,";}
-			if (other_count) concern += "DA,";
-		}
-
-		if (!ref_count || !alt_count) {concern += "BANS,";}
-		else if (mar < 0.02) {concern += "LMAR,";}
-
 	}
 
 	void calculatePval(double rab = 0.5){
