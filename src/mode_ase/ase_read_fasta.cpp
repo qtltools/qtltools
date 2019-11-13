@@ -24,13 +24,14 @@ void ase_data::readGenome(string fin) {
 	if (fd.fail()) vrb.error("Cannot open file!");
 	string chr = MISSING_CHR;
 	int found_c = 0 , missed_c = 0;
+	bool read = false;
 	while (getline(fd, buffer)) {
 		if (buffer=="") continue;
 		if (buffer[0] == '>'){
 			buffer.erase(0,1);
 			if(buffer == MISSING_CHR) vrb.error("Chromosome name cannot be " + MISSING_CHR);
 			if (chr != MISSING_CHR) {
-				if (!bam_region.isSet() || bam_region.chr == chr ) {
+				if ((!bam_region.isSet() || bam_region.chr == chr) && read ) {
 					vrb.print("    - " + chr + " " + stb.str(genome[chr].size()) + " bp read.");
 					genome[chr].shrink_to_fit();
 				}
@@ -41,26 +42,30 @@ void ase_data::readGenome(string fin) {
 				if(fix_chr && chr.size() > 3 && chr.substr(0,3) == "chr" && bam_chrs.count(chr.substr(3))){
 					found_c++;
 					chr = chr.substr(3);
+					read = true;
 				}else if (fix_chr && bam_chrs.count("chr" + chr)){
 					found_c++;
 					chr = "chr" + chr;
+					read = true;
 				}else{
 					missed_c++;
+					read = false;
 				}
 			}else{
 				found_c++;
+				read = true;
 			}
-			if (!bam_region.isSet() || bam_region.chr == chr ) genome[chr].reserve(BUFFER_SIZE);
+			if ((!bam_region.isSet() || bam_region.chr == chr) && read ) genome[chr].reserve(BUFFER_SIZE);
 		}else{
 			if(chr == MISSING_CHR) vrb.error("Chromosome name missing for a sequence");
-			if (bam_region.isSet()  && bam_region.chr != chr ) continue;
+			if (!read || (bam_region.isSet()  && bam_region.chr != chr) ) continue;
 			transform(buffer.begin(), buffer.end(),buffer.begin(), ::toupper);
 			//copy(buffer.begin(), buffer.end(), back_inserter(genome[chr]));
 			genome[chr] += buffer;
 		}
 	}
 
-	if (!bam_region.isSet() || bam_region.chr == chr ) {
+	if ((!bam_region.isSet() || bam_region.chr == chr) && read ) {
 		vrb.print("    - " + chr + " "+ stb.str(genome[chr].size()) + " bp read.");
 		genome[chr].shrink_to_fit();
 	}
