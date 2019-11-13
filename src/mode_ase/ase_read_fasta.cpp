@@ -37,6 +37,7 @@ void ase_data::readGenome(string fin) {
 				}
 			}
 			chr = buffer;
+			read = false;
 			if (bam_region.isSet() && genome.size()) break;
 			if(bam_chrs.count(chr) == 0){
 				if(fix_chr && chr.size() > 3 && chr.substr(0,3) == "chr" && bam_chrs.count(chr.substr(3))){
@@ -49,7 +50,6 @@ void ase_data::readGenome(string fin) {
 					read = true;
 				}else{
 					missed_c++;
-					read = false;
 				}
 			}else{
 				found_c++;
