@@ -153,7 +153,8 @@ void ase_data::parseBam(void * d){
 			if (current.other_count && current.ref_count == 0 && current.alt_count == 0) {
 				if (print_warnings) vrb.warning("No ref or alt allele for " + current.getName() + " in " + stb.str(current.other_count) + " sites");
 				current.concern += "NRA,";
-			}else{
+			}else if (current.other_count){
+				current.concern += "DA,";
 				if (current.other_count > current.alt_count) {
 					if (print_warnings) vrb.warning("More discordant alleles than alt alleles for " + current.getName() + " " + stb.str(current.other_count) + " > " + stb.str(current.alt_count));
 					current.concern += "MDTA,";
