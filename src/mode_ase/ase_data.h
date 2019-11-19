@@ -80,6 +80,10 @@ public:
 		genes = "NA";
 	}
 
+	~ase_site(){
+		alleles_seen.clear();
+	}
+
 
 	void setCounts(const unsigned int r, const unsigned a, const unsigned o, const set <string> &as ,  const mapping_stats _stats = mapping_stats()){
 		ref_count = r;
@@ -313,7 +317,6 @@ public :
 	genomic_region vcf_region,bam_region;
 
 	//DATA
-	vector < string > regions;
 	vector < ase_region > my_regions;
 	vector < vector < ase_site > > variants;
 	set < ase_site >  all_variants;
@@ -363,8 +366,20 @@ public :
 	}
 
 	~ase_data() {
-		regions.clear();
+		my_regions.clear();
 		variants.clear();
+		all_variants.clear();
+		passing_variants.clear();
+		ref_to_alt_bias.clear();
+		all_allele_combinations.clear();
+		blacklisted_regions.clear();
+		add_chr.clear();
+		remove_chr.clear();
+		bam_chrs.clear();
+		vcf_chrs.clear();
+		ase_chrs.clear();
+		genome.clear();
+		annotation.clear();
 	}
 
 	//
