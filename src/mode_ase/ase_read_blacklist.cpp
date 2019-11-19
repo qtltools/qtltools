@@ -50,7 +50,7 @@ void ase_data::readBlacklist(string fgtf) {
         if (bam_region.isSet() && !abb.overlap(bam_region)) continue;
         input.push_back(ase_basic_block(abb));
         mem += sizeof(ase_basic_block) + chr.capacity();
-        if (on_the_fly && mem > max_step){
+        if (on_the_fly && mem > max_step && input.size() > 1){
         	vector <ase_basic_block> temp;
         	sort(input.begin(),input.end());
         	ase_basic_block prev = input[0];
@@ -72,16 +72,18 @@ void ase_data::readBlacklist(string fgtf) {
 	if(found_c.size() == 0) vrb.error("No chromosomes match between BED and BAM. Try --fix-chr!");
 	if(missed_c.size()) vrb.warning(stb.str(missed_c.size()) + " BED chromosomes are missing from the BAM file. Found " + stb.str(found_c.size()) + " chromosomes.");
 	blacklisted_regions.clear();
-	sort(input.begin(),input.end());
-	ase_basic_block prev = input[0];
-	for (int i = 1 ; i < input.size(); i++){
-		if (prev.contiguous(input[i])) {
-			prev = prev.merge_nocheck(input[i]);
-		}else {
-			blacklisted_regions.push_back(prev);
-			prev = input[i];
+	if (input.size() > 1){
+		sort(input.begin(),input.end());
+		ase_basic_block prev = input[0];
+		for (int i = 1 ; i < input.size(); i++){
+			if (prev.contiguous(input[i])) {
+				prev = prev.merge_nocheck(input[i]);
+			}else {
+				blacklisted_regions.push_back(prev);
+				prev = input[i];
+			}
 		}
-	}
-	blacklisted_regions.push_back(prev);
+		blacklisted_regions.push_back(prev);
+	}else blacklisted_regions = input;
 	vrb.bullet(stb.str(blacklisted_regions.size()) + " non-overlapping regions read.");
 }

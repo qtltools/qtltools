@@ -106,7 +106,7 @@ void ase_data::parseBam(void * d){
 			mapping_stats ms;
 			set <string> as;
 			//STEP1: Parse sequencing reads
-			if (print_warnings && n_plp >= max_depth * 0.95) vrb.warning(av_it->sid + " depth " + stb.str(n_plp) + " is >= 95% max-depth, potential data loss!");
+			if (print_warnings && n_plp >= max_depth * 0.8) vrb.warning(av_it->sid + " depth " + stb.str(n_plp) + " is >= 80% max-depth, potential data loss!");
 			for (int iread = 0 ; iread < n_plp ; iread ++) {
 				bool failed_qc = false;
 				const bam_pileup1_t * p = v_plp + iread;
@@ -149,7 +149,7 @@ void ase_data::parseBam(void * d){
 			ase_site current = *av_it;
 			current.setCounts(b_ref,b_alt,b_dis,as,ms);
 			//check ASE site
-			if (n_plp >= max_depth * 0.95) current.concern += "PD,";
+			if (n_plp >= max_depth * 0.80) current.concern += "PD,";
 			if (current.other_count && current.ref_count == 0 && current.alt_count == 0) {
 				if (print_warnings) vrb.warning("No ref or alt allele for " + current.getName() + " in " + stb.str(current.other_count) + " sites");
 				current.concern += "NRA,";

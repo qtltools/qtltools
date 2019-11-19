@@ -39,7 +39,7 @@ void ase_main(vector < string > & argv) {
 		("suppress-warnings,k", "Suppress the warnings about individual variants.")
 		("illumina13,j", "Base quality is in the Illumina-1.3+ encoding")
 		("group-by,G", boost::program_options::value< int >()->default_value(0,"OFF"), "Group variants separated by this much into batches. This allows you not to stream the whole BAM file and may improve running time.")
-		("max-depth,d", boost::program_options::value< int >()->default_value(16000,"16000"), "Pileup max-depth. Set to 0 if you want maximum but this will be slower and use more memory.")
+		("max-depth,d", boost::program_options::value< int >()->default_value(65536,"65536"), "Pileup max-depth. Set to 0 if you want maximum but this will be slower and use more memory.")
 		("filtered,l", boost::program_options::value< string >()->default_value(""), "File to output filtered variants. RECOMMENED for troubleshooting especially if --suppress-warnings.")
 		("out,o", boost::program_options::value< string >(), "Output file. (REQUIRED)");
 
@@ -163,7 +163,7 @@ void ase_main(vector < string > & argv) {
 		if (D.keep_failqc) vrb.warning("--keep-failqc is overwritten!");
 		if (!D.keep_discordant) vrb.warning("--keep-discordant-for-bias is overwritten!");
 		if (D.param_rm_indel) vrb.warning("--filter-indel-reads is overwritten!");
-		if (D.check_orientation) vrb.warning("--check-orientation is overwritten!");
+		if (D.check_orientation) vrb.warning("--ignore-orientation is overwritten!");
 		D.legacy_options = true;
 		D.param_min_baseQ = 13;
 		D.max_depth = 8000;
