@@ -52,7 +52,7 @@ void ase_data::calculateRefToAltBias(string olog){
 		}
 		else{
 			sort(alleles_total_counts[*it].begin(), alleles_total_counts[*it].end());
-			unsigned int max_index = alleles_total_counts[*it].size() * param_sample - 1;
+			unsigned int max_index = param_sample == 0.0 ? 0 : alleles_total_counts[*it].size() * param_sample - 1;
 			unsigned int max = alleles_total_counts[*it][max_index];
 			unsigned int refc = 0, altc = 0, sc = 0;
 			for (int i = 0; i < filtered_variants.size(); i++){
@@ -76,7 +76,7 @@ void ase_data::calculateRefToAltBias(string olog){
 	}
 	if (calculate_all){
 		sort(all_total_counts.begin(),all_total_counts.end());
-		unsigned int max_index = all_total_counts.size() * param_sample - 1;
+		unsigned int max_index = param_sample == 0.0 ? 0 : all_total_counts.size() * param_sample - 1;
 		unsigned int max = all_total_counts[max_index];
 		unsigned int refc = 0, altc = 0, sc = 0;
 		for (int i = 0; i < filtered_variants.size(); i++){
