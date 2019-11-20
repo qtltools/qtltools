@@ -39,9 +39,9 @@ void ase_main(vector < string > & argv) {
 		("suppress-warnings,k", "Suppress the warnings about individual variants.")
 		("illumina13,j", "Base quality is in the Illumina-1.3+ encoding")
 		("group-by,G", boost::program_options::value< int >()->default_value(0,"OFF"), "Group variants separated by this much into batches. This allows you not to stream the whole BAM file and may improve running time.")
-		("max-depth,d", boost::program_options::value< int >()->default_value(65536,"65536"), "Pileup max-depth. Set to 0 if you want maximum but this will be slower and use more memory.")
+		("max-depth,d", boost::program_options::value< int >()->default_value(1000000,"1000000"), "Pileup max-depth. Set to more reasonable value if you experience memory or performance issues. This is set to a high value by default by default since with RNA-seq you can have very high coverage sites. Set to 0 for max.")
 		("filtered,l", boost::program_options::value< string >()->default_value(""), "File to output filtered variants. RECOMMENED for troubleshooting especially if --suppress-warnings.")
-		("out,o", boost::program_options::value< string >(), "Output file. (REQUIRED)");
+		("out,o", boost::program_options::value< string >(), "Output prefix. Will generate THIS.ase and THIS.ref_bias. Or if you give THIS.gz or THIS.bz2 then THIS.ase.gz etc. (REQUIRED)");
 
 	boost::program_options::options_description opt_parameters ("\x1B[32mFilters\33[0m");
 	opt_parameters.add_options()
@@ -55,7 +55,7 @@ void ase_main(vector < string > & argv) {
 		("geno-prob-id,L", boost::program_options::value< string >()->default_value("GP", "GP"), "The FORMAT ID of the genotype posterior probabilities for RR/RA/AA  in the VCF.")
 		("imp-qual,W", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum imputation score for a variant to be considered.")
 		("geno-prob,V", boost::program_options::value< double >()->default_value(0.0, "0.0"), "Minimum posterior probability for a genotype to be considered.")
-		("subsample,S", boost::program_options::value< double >()->default_value(0.75, "0.75"), "Randomly subsample sites that have greater coverage than this percentile of all the sites in REF bias calculations. Set to 1 to turn off which is NOT RECOMMENED.")
+		("subsample,S", boost::program_options::value< double >()->default_value(0.75, "0.75"), "Randomly subsample sites that have greater coverage than this percentile of all the sites in REF bias calculations. Set to 1 to turn off which is NOT RECOMMENED. Set to 0 to subsample all sites to --cov-bias.")
 		("both-alleles-seen,a", "Require both alleles to be observed in RNA-seq reads for a site for ASE calculations.")
 		("keep-bans-for-bias,A", "DON'T require both alleles to be observed in RNA-seq reads for a site for REF mapping bias calculations. (NOT RECOMMENDED)")
 		("keep-discordant-for-bias,E", "If given sites with more discordant alleles than REF or ALT alleles will be included in the REF bias calculations. (NOT RECOMMENDED)")
@@ -104,7 +104,7 @@ void ase_main(vector < string > & argv) {
 	if (D.max_depth < 0) vrb.error("--max-depth cannot be less than 0!");
 	if(D.max_depth == 0) {
 		D.max_depth = INT_MAX;
-		vrb.warning("Setting pileup max-depth to INT_MAX!");
+		vrb.warning("Setting pileup max-depth to INT_MAX! [" + stb.str(INT_MAX) + "]");
 	}
 	if (D.max_depth > 1000000) vrb.warning("Pileup max-depth is above 1M. Potential memory hog!");
 
@@ -200,6 +200,23 @@ void ase_main(vector < string > & argv) {
 	//------------------------------------------
 	// 5. READ FILES / INITIALIZE / RUN ANALYSIS
 	//------------------------------------------
+
+	string ase_outfile =  D.options["out"].as < string > ();
+    string ext ="";
+    string prefix = ase_outfile;
+    if (ase_outfile.substr(ase_outfile.find_last_of(".") + 1) == "gz") {
+    	ext = ".gz";
+    	prefix = ase_outfile.substr(0,ase_outfile.find_last_of("."));
+    }
+    if (ase_outfile.substr(ase_outfile.find_last_of(".") + 1) == "bz2"){
+    	ext = ".bz2";
+    	prefix = ase_outfile.substr(0,ase_outfile.find_last_of("."));
+    }
+
+    ase_outfile = prefix + ".ase" + ext;
+    string bias_outfile = prefix + ".ref_bias" + ext;
+
+
 	D.processBasicOptions();
 	D.readSampleFromVCF(D.options["vcf"].as < string > ());
 	D.readSampleFromSTR(D.options["ind"].as < string > ());
@@ -215,6 +232,6 @@ void ase_main(vector < string > & argv) {
 	if (D.region_length) D.getRegions();
 	else if (D.options["reg"].as < string > () == "") D.collapseRegions();
 	D.readSequences(D.options["bam"].as < string > ());
-	D.calculateRefToAltBias(D.options["filtered"].as < string > ());
-	D.calculateASE(D.options["out"].as < string > (), D.options["filtered"].as < string > ());
+	D.calculateRefToAltBias(bias_outfile,D.options["filtered"].as < string > ());
+	D.calculateASE(ase_outfile, D.options["filtered"].as < string > ());
 }

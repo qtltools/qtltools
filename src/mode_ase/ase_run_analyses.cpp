@@ -16,14 +16,18 @@
 #include "ase_data.h"
 
 
-void ase_data::calculateRefToAltBias(string olog){
+void ase_data::calculateRefToAltBias(string fout , string olog){
+
+	vrb.title("Calculating reference allele mapping bias and writing to [" + fout + "]");
+	output_file fdoo(fout);
+	if (fdoo.fail()) vrb.error("Cannot open file [" + fout +"]");
 	output_file fdo;
-	vrb.title("Calculating reference allele mapping bias");
 	if (olog != ""){
 		vrb.bullet("Writing failed variants to [" + olog + "]");
 		fdo.append(olog);
 		if (fdo.fail()) vrb.error("Cannot open file [" + olog +"]");
 	}
+	map <string, bias_stats> stats;
 	vector < unsigned int > all_total_counts;
 	map < string , vector <unsigned int> > alleles_total_counts;
 	vector < ase_site * > filtered_variants;
@@ -73,6 +77,8 @@ void ase_data::calculateRefToAltBias(string olog){
 			ref_to_alt_bias[*it] = (double) refc / ((double) altc + (double) refc);
 			vrb.bullet("Bias for " + *it + " from " + stb.str(alleles_total_counts[*it].size()) + " sites is " + stb.str(ref_to_alt_bias[*it]));
 			if (sc) vrb.bullet("Subsampled " + stb.str(sc) + " sites to " + stb.str(max));
+			stats[*it] = bias_stats(refc,altc,alleles_total_counts[*it].size(),sc,max,ref_to_alt_bias[*it],"ALLELE_SPECIFIC");
+
 		}
 	}
 	if (calculate_all){
@@ -96,9 +102,18 @@ void ase_data::calculateRefToAltBias(string olog){
 		}
 		double all_bias = (double) refc / ((double) altc + (double) refc);
 		vrb.bullet("Bias from all sites is " + stb.str(all_bias));
-		for (int e = 0; e < add.size(); e++) ref_to_alt_bias[add[e]] = all_bias;
+		for (int e = 0; e < add.size(); e++) {
+			ref_to_alt_bias[add[e]] = all_bias;
+			stats[add[e]] = bias_stats(refc,altc,all_total_counts.size(),sc,max,all_bias);
+		}
 		if (sc) vrb.bullet("Subsampled " + stb.str(sc) + " sites to " + stb.str(max));
 	}
+
+	fdoo <<"INDIVIDUAL\tALLELES\tREF_ALL\tNONREF_ALL\tSITES\tSUBSAMPLED_SITES\tSUBSAMPLED_TO\tPERC\tUNIT" << endl;
+	for (auto it = stats.begin() ; it !=stats.end(); it++){
+		fdoo << sample_id[0] << "\t" << it->first << "\t" << it->second << endl;
+	}
+
 }
 
 void ase_data::calculateASE(string fout , string olog){

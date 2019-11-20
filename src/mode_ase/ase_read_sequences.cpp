@@ -207,6 +207,7 @@ void ase_data::readSequences(string fbam) {
     hts_itr_destroy(data->iter);
     free(data);
 	vrb.bullet("Time taken: " + stb.str(current_timer.abs_time()) + " seconds");
+	if (passing_variants.size() == 0) vrb.leave("Cannot find usable variants in target region!");
 }
 
 

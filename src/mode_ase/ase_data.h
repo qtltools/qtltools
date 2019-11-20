@@ -34,6 +34,27 @@ public:
 	}
 };
 
+class bias_stats{
+public:
+	string source;
+	unsigned int ref_count,alt_count,total_sites,subsambled_sites,subsampled_to;
+	double bias;
+	bias_stats(){source="NA",bias=0.5,ref_count=alt_count=total_sites=subsambled_sites=subsampled_to=0;}
+	bias_stats(unsigned int _r,unsigned int _a,unsigned int _s,unsigned int _t,unsigned int _m, double _b, string _g = "ALL_SITES"){
+		ref_count = _r;
+		alt_count = _a;
+		total_sites = _s;
+		subsambled_sites = _t;
+		subsampled_to = _m;
+		bias = _b;
+		source = _g;
+	}
+	friend ostream& operator<<(ostream& out, bias_stats& g){
+		out << g.ref_count << "\t" << g.alt_count << "\t" << g.total_sites  << "\t" << g.subsambled_sites << "\t" << g.subsampled_to  << "\t" << g.bias  << "\t" << g.source;
+		return out;
+	}
+};
+
 
 class ase_site {
 public:
@@ -388,7 +409,7 @@ public :
 	void readGTF(string );
 	void readBlacklist(string);
 	void readGenome(string);
-	void calculateRefToAltBias(string l = "");
+	void calculateRefToAltBias(string o , string l = "");
 	void calculateASE(string o , string l = "");
 	void getRegions();
 	void collapseRegions();
