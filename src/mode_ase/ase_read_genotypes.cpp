@@ -218,7 +218,7 @@ void ase_data::readGenotypes(string filename ,string olog) {
 	if (param_min_gp > 0.0 && !n_excludedG_impp) vrb.warning("Filtering for genotype probability but no genotypes with < " + stb.str(param_min_gp) + " with FORMAT ID [" + param_genotype_likelihood_label + "]!");
 
 	unsigned int n_duplicates = 0;
-	vrb.title("Checking for ASE sites with duplicate positions");
+	vrb.title("Checking for variants with duplicate positions");
 	vrb.bullet("There were " + stb.str(duplicates.size()) + " positions with multiple variants.");
 	if (duplicates.size()){
 		for (auto it = all_variants.begin(); it != all_variants.end(); it++){
@@ -231,7 +231,7 @@ void ase_data::readGenotypes(string filename ,string olog) {
 			}
 		}
 	}
-	if (n_duplicates > 0) vrb.warning(stb.str(n_duplicates) + " ASE sites have at least one more variant with the same position!");
+	if (n_duplicates > 0) vrb.warning(stb.str(n_duplicates) + " heterozygous variants have at least one more variant with the same position!");
 	free(gt_arr);
 	bcf_sr_destroy(sr);
 
