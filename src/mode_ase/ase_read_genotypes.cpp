@@ -21,22 +21,22 @@ void ase_data::readGenotypes(string filename ,string olog) {
 	timer current_timer;
 	output_file fdo;
 
-	int n_includedG = 0;
-	int n_excludedG_mult = 0;
-	int n_excludedG_snpv = 0;
-	int n_excludedG_snpN = 0;
-	int n_excludedG_void = 0;
-	int n_excludedG_user = 0;
-	int n_excludedG_impq = 0;
-	int n_excludedG_impp = 0;
-	int n_excludedG_homo = 0;
-	int n_excludedG_miss = 0;
-	int n_excludedG_blkl = 0;
-	int n_excludedG_dupl = 0;
-	int n_excludedG_nir = 0;
-	int n_excludedG_wr = 0;
-	int n_fixed_flipped = 0;
-	int n_fixed_swapped = 0;
+	unsigned int n_includedG = 0;
+	unsigned int n_excludedG_mult = 0;
+	unsigned int n_excludedG_snpv = 0;
+	unsigned int n_excludedG_snpN = 0;
+	unsigned int n_excludedG_void = 0;
+	unsigned int n_excludedG_user = 0;
+	unsigned int n_excludedG_impq = 0;
+	unsigned int n_excludedG_impp = 0;
+	unsigned int n_excludedG_homo = 0;
+	unsigned int n_excludedG_miss = 0;
+	unsigned int n_excludedG_blkl = 0;
+	unsigned int n_excludedG_dupl = 0;
+	unsigned int n_excludedG_nir = 0;
+	unsigned int n_excludedG_wr = 0;
+	unsigned int n_fixed_flipped = 0;
+	unsigned int n_fixed_swapped = 0;
 
 	vrb.title("Reading VCF [" + filename + "]");
 	if (olog != ""){
@@ -77,27 +77,42 @@ void ase_data::readGenotypes(string filename ,string olog) {
 	bcf1_t * line;
 
 	unsigned int linecount = 0, update_interval = 1000000, next_update = 1000000;
+	string prev_chr = "";
+	unsigned int ppos = 0;
+	set <ase_site> duplicates;
+	set < string > found_chrs;
 	while(bcf_sr_next_line (sr)) {
 		linecount++;
 		bool af = false;
 		line =  bcf_sr_get_line(sr, 0);
 		bcf_unpack(line, BCF_UN_STR);
-		string sid = string(line->d.id);
-
+		string sid = string(line->d.id); //id
 		//filter multiallelic
 		if (line->n_allele > 2) {n_excludedG_mult ++; if (olog != "") fdo << "VMA " << sid << endl; continue;}
+
 		unsigned int pos = line->pos;	//position 0-based
-		string curr_chr = bcf_hdr_id2name(sr->readers[0].header, line->rid);				//chr
+		string curr_chr = bcf_hdr_id2name(sr->readers[0].header, line->rid); //chr
 		//filter user provided
 		if (!filter_genotype.check(sid) || !filter_position.check(curr_chr + "_" + stb.str(pos+1))) { n_excludedG_user ++; if (olog != "") fdo << "VU " << sid << endl; continue;}
+		//fix chr
 		if(fix_chr){
 			if (add_chr.count(curr_chr)) curr_chr = "chr" + curr_chr;
 			if (remove_chr.count(curr_chr)) curr_chr = curr_chr.substr(3);
 		}
+		//check duplicate positions and if the file is sorted
+		if (curr_chr == prev_chr){
+			if (pos < ppos) vrb.error("Variants are not sorted by chromosome and position (ascending)");
+			else if (pos == ppos) {duplicates.insert(ase_site(curr_chr,pos+1));}
+		}else{
+			if(found_chrs.count(curr_chr)) vrb.error("Variants are not sorted by chromosome and position (ascending)");
+			found_chrs.insert(curr_chr);
+		}
+		ppos = pos;
+		prev_chr = curr_chr;
 		//filter blacklisted regions
 		if(ase_basic_block(curr_chr,pos+1,pos+1).find_this_in_bool(blacklisted_regions)){n_excludedG_blkl++; if (olog != "") fdo << "VB " << sid << endl; continue;}
-		string ref = string(line->d.allele[0]);												//ref
-		string alt = string(line->d.allele[1]);												//alt
+		string ref = string(line->d.allele[0]);	//ref
+		string alt = string(line->d.allele[1]);	//alt
 		//filter indels
 		if (ref.size() > 1 || alt.size() > 1) {n_excludedG_snpv ++; if (olog != "") fdo << "VI " << sid << endl; continue;}
 		//filter missing ref alt alleles
@@ -158,8 +173,7 @@ void ase_data::readGenotypes(string filename ,string olog) {
 		auto cit = all_variants.find(ases);
 		//filter duplicate sites
 		if(cit != all_variants.end()){
-			ase_site old = *cit;
-			if (print_warnings) vrb.warning(ases.getName() + " was already seen as " + old.getName() + " ignoring this");
+			if (print_warnings) vrb.warning(ases.getName() + " was already seen as " + cit->getName() + " ignoring this");
 			n_excludedG_dupl++;
 			if (olog != "") fdo << "VD " << sid << endl;
 		}else{
@@ -203,6 +217,21 @@ void ase_data::readGenotypes(string filename ,string olog) {
 	if (param_min_iq > 0.0 && !n_excludedG_impq) vrb.warning("Filtering for imputation quality but no variants with < " + stb.str(param_min_iq) + " with INFO ID [" + param_imputation_score_label + "]!");
 	if (param_min_gp > 0.0 && !n_excludedG_impp) vrb.warning("Filtering for genotype probability but no genotypes with < " + stb.str(param_min_gp) + " with FORMAT ID [" + param_genotype_likelihood_label + "]!");
 
+	unsigned int n_duplicates = 0;
+	vrb.title("Checking for ASE sites with duplicate positions");
+	vrb.bullet("There were " + stb.str(duplicates.size()) + " positions with multiple variants.");
+	if (duplicates.size()){
+		for (auto it = all_variants.begin(); it != all_variants.end(); it++){
+			auto dit = duplicates.find(*it);
+			if (dit != duplicates.end()){
+				n_duplicates++;
+				it->concern += "DP,";
+				if (print_warnings) vrb.warning(it->getName() + " had another variant with the same position");
+				if (olog != "") fdo << "VDK " << it->sid << endl;
+			}
+		}
+	}
+	if (n_duplicates > 0) vrb.warning(stb.str(n_duplicates) + " ASE sites have at least one more variant with the same position!");
 	free(gt_arr);
 	bcf_sr_destroy(sr);
 

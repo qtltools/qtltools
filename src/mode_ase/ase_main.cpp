@@ -24,7 +24,7 @@ void ase_main(vector < string > & argv) {
 	D.declareBasicOptions();
 	boost::program_options::options_description opt_files ("\x1B[32mI/O\33[0m");
 	opt_files.add_options()
-		("vcf,v", boost::program_options::value< string >(), "Genotypes in VCF/BCF format. (REQUIRED and RECOMMENED to use a BCF file for performance)")
+		("vcf,v", boost::program_options::value< string >(), "Genotypes in VCF/BCF format sorted by chromosome then position. (REQUIRED and RECOMMENED to use a BCF file for performance)")
 		("bam,b", boost::program_options::value< string >(), "Sequence data in BAM/SAM format sorted by position. (REQUIRED)")
 		("fasta,f", boost::program_options::value< string >(), "Genome sequence in FASTA format. (RECOMMENED)")
 		("ind,i", boost::program_options::value< string >(), "Sample to be processed. (REQUIRED)")

@@ -58,14 +58,15 @@ public:
 
 class ase_site {
 public:
-	unsigned int pos,ref_count,alt_count,total_count,other_count;
-	double weighted_ref_count,weighted_alt_count,pval,ref_allele_mapping_bias,mar;
-	string alleles;
-	string chr, sid;
-	char ref, alt;
-	mapping_stats stats;
-	set <string> alleles_seen;
-	string concern,genes;
+	unsigned int pos;
+	string chr;
+	mutable char ref, alt;
+	mutable unsigned int ref_count,alt_count,total_count,other_count;
+	mutable double weighted_ref_count,weighted_alt_count,pval,ref_allele_mapping_bias,mar;
+	mutable string alleles, sid;
+	mutable mapping_stats stats;
+	mutable set <string> alleles_seen;
+	mutable string concern,genes;
 
 	ase_site(string _chr,unsigned int _pos){
 		chr = _chr;
@@ -136,7 +137,7 @@ public:
 		}
 	}
 
-	string getName(){
+	string getName() const {
 		return chr + ":" + stb.str(pos+1) + ":" + alleles + ":" + sid;
 	}
 
@@ -151,7 +152,7 @@ public:
 		return false;
 	}
 
-    friend ostream& operator<<(ostream& out, ase_site& g){
+    friend ostream& operator<<(ostream& out, const ase_site& g) {
         out << g.sid  << "\t" << g.chr << "\t" << g.pos + 1 << "\t" << g.alleles << "\t" << (g.ref_count && g.alt_count) << "\t" << g.mar  << "\t" << g.ref_count
             << "\t" << g.alt_count << "\t" << g.total_count << "\t" << g.weighted_ref_count << "\t" << g.weighted_alt_count << "\t" << g.weighted_ref_count - g.weighted_alt_count << "\t";
         if (g.alleles_seen.size()){
@@ -159,7 +160,6 @@ public:
         	copy(g.alleles_seen.begin(), g.alleles_seen.end(), ostream_iterator<string>(stream, ":"));
         	out << stream.str().substr(0,stream.str().size() - 1);
         }else out << "NA";
-
 		out << "\t" << g.ref << "\t" << g.alt << "\t" << g.other_count  << "\t" << g.ref_allele_mapping_bias << "\t" << g.pval << "\t" << (g.concern == "" ? "PASS" : g.concern.substr(0,g.concern.size()-1)) << "\t" << g.genes;
         return out;
     }
@@ -168,8 +168,9 @@ public:
 
 class ase_basic_block{
 public:
-	unsigned long  start, end, length;
-	bool merged;
+	unsigned long  start, end;
+	mutable unsigned long length;
+	mutable bool merged;
 	string chr;
 	ase_basic_block(){start = 0; end = 0 ; chr="NA"; length = 0; merged=false;}
 	ase_basic_block(string c, unsigned long int s , unsigned long int e, bool m = false){
@@ -184,32 +185,32 @@ public:
 		ase_basic_block(in.chr,in.pos,in.pos);
 	}
 
-	bool contains(unsigned long p){
+	bool contains(unsigned long p) const{
 		if (p<=end && p>=start) return true;
 		else return false;
 	}
-	bool contains(string c ,unsigned long p){
+	bool contains(string c ,unsigned long p) const{
 		if (c == chr && p<=end && p>=start) return true;
 		else return false;
 	}
 
-	bool overlap(ase_basic_block &b){
+	bool overlap(ase_basic_block &b) const{
 		return (chr == b.chr && b.end >= start && b.start <= end);
 	}
 
-	bool overlap(genomic_region &b){
+	bool overlap(genomic_region &b) const{
 		return (chr == b.chr && b.end >= start && b.start <= end);
 	}
 
-	bool overlap(string c , unsigned long int s , unsigned long int e){
+	bool overlap(string c , unsigned long int s , unsigned long int e) const{
 		return (chr == c && e >= start && s <= end);
 	}
 
-	bool contiguous(ase_basic_block &b){
+	bool contiguous(ase_basic_block &b) const{
 		return (overlap(b) || end + 1 == b.start || b.end + 1 == start);
 	}
 
-	vector < ase_basic_block > subtract(ase_basic_block &b){
+	vector < ase_basic_block > subtract(ase_basic_block &b) const{
 		if (overlap(b)){
 			if (start >= b.start && end <= b.end) return vector <ase_basic_block>(0);
 			if (start <  b.start && end <= b.end) return {ase_basic_block(chr,start,b.start-1)};
@@ -218,7 +219,7 @@ public:
 		}else return {*this};
 	}
 
-	vector < ase_basic_block > subtract(vector < ase_basic_block > &b ){
+	vector < ase_basic_block > subtract(vector < ase_basic_block > &b ) const{
 		vector < ase_basic_block> s {*this};
 		for (int i = 0 ; i < b.size(); i++){
 			if (i > 0 && (b[i-1].overlap(b[i]) || b[i] < b[i-1])) {
@@ -242,41 +243,41 @@ public:
 		else return false;
 	}
 
-	static bool cmp_blocks (const ase_basic_block &a, const ase_basic_block &b){
+	static bool cmp_blocks (const ase_basic_block &a, const ase_basic_block &b) {
 		if (a.chr == b.chr && a.end >= b.start && a.start <= b.end) return false;
 		else return (a < b);
 	}
 
-	ase_basic_block merge(ase_basic_block &b){
+	ase_basic_block merge(ase_basic_block &b) const{
 		if (overlap(b)) {
 			return ase_basic_block(b.chr, start < b.start ? start : b.start, end > b.end ? end : b.end , true);
 		}else return ase_basic_block();
 	}
 
-	ase_basic_block merge_nocheck(ase_basic_block &b){
+	ase_basic_block merge_nocheck(ase_basic_block &b) const{
 			return ase_basic_block(b.chr, start < b.start ? start : b.start, end > b.end ? end : b.end, true);
 	}
 
-	string get_string(){
+	string get_string() const {
 		return chr + ":" + stb.str(start)+ "-" + stb.str(end);
 	}
 
-	string get_string_merged(){
+	string get_string_merged() const {
 		return chr + ":" + stb.str(start)+ "-" + stb.str(end) + "-" + stb.str(merged);
 	}
 
-	bool null(){
+	bool null() const {
 		return (start == 0 && end == 0 && chr == "NA");
 	}
 
-	template <class B> vector <B> find_this_in(vector <B> &input){
+	template <class B> vector <B> find_this_in(vector <B> &input) const {
 		auto lower = lower_bound(input.begin(),input.end(),*this,this->cmp_blocks);
 		auto upper = upper_bound(input.begin(),input.end(),*this,this->cmp_blocks);
 		if (lower >= upper) return vector <B>(0);
 		else return vector <B>(lower,upper);
 	}
 
-	template <class B> bool find_this_in_bool(vector <B> &input){
+	template <class B> bool find_this_in_bool(vector <B> &input) const{
 		auto lower = lower_bound(input.begin(),input.end(),*this,this->cmp_blocks);
 		auto upper = upper_bound(input.begin(),input.end(),*this,this->cmp_blocks);
 		if (lower >= upper) return false;
@@ -287,7 +288,7 @@ public:
 
 class ase_region: public ase_basic_block{
 public:
-	unsigned int count;
+	mutable unsigned int count;
 	ase_region() : ase_basic_block(){
 		count = 0;
 	}
@@ -304,7 +305,7 @@ public:
 
 class ase_exon: public ase_basic_block{
 public:
-	string id;
+	mutable string id;
 	ase_exon() : ase_basic_block(){id="NA";}
 	ase_exon(unsigned int s, unsigned int e) : ase_basic_block("NA",s,e){
 		id = "NA";
