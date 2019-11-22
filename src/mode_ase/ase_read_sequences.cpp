@@ -24,7 +24,15 @@ typedef struct {     			// auxiliary data structure
 
 static int ase_read_bam(void *data, bam1_t *b) {
 	aux_t * aux = (aux_t*) data;
-	return (aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b));
+	int ret, skip = 0;
+	do{
+		ret =  (aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b));
+		if (ret < 0) break;
+		if (b->core.tid < 0 || (b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY ))) { skip = 1; continue;}
+		skip = 0;
+		if (b->core.qual < aux->mq)  {skip = 1;} //having the mapq filter here improves performance drastically
+	}while(skip);
+	return ret;
 }
 
 static int mplp_func(void *data, bam1_t *b){
@@ -87,18 +95,46 @@ void ase_data::parseBam(void * d){
 		beg = data->iter->beg;
 		end = data->iter->end;
 	}
-	unsigned long linecount = 0;
+	unsigned long linecount = 0, prevstart = 0, prevend = 0;
 	string prevchr = "";
 	timer local;
+	unsigned int max_depth_limit = max_depth * 0.90;
 	while((v_plp = bam_plp_auto(s_plp, &tid, &pos, &n_plp)) != 0){
 		linecount++;
-		if (pos < beg || pos > end) continue;
-		string chr = data->hdr->target_name[tid];
-		if (region_length == 0 && !bam_region.isSet( )&& chr != prevchr){
-			vrb.bullet("Processing chromosome [" + chr + "]");
-			prevchr = chr;
-		}
 		if (linecount % 50000000 == 0) vrb.bullet(stb.str(linecount) + " positions read, " + stb.str((double) linecount / (double) local.abs_time()) + " per second.");
+		if (pos < beg || pos > end) continue;
+		bool depth_prb = false;
+		string chr = data->hdr->target_name[tid];
+
+		//Check for position exceeding max depth
+		if (chr != prevchr){
+			if (region_length == 0 && !bam_region.isSet( ) && ase_chrs == bam_chrs){
+				vrb.bullet("Processing chromosome [" + chr + "]");
+			}
+			if (prevstart){
+				depth_exceeded.push_back(ase_basic_block(prevchr,prevstart > depth_flag_length ? prevstart - depth_flag_length : 1 , prevend + depth_flag_length <= ULONG_MAX ? prevend + depth_flag_length : ULONG_MAX));
+			}
+			if (n_plp >= max_depth_limit){
+				depth_prb = true;
+				prevstart = prevend = pos+1;
+			}else prevstart = prevend = 0;
+			prevchr = chr;
+		}else if (n_plp >= max_depth_limit){
+			depth_prb = true;
+			if(prevstart){
+				if (pos == prevend){
+					prevend = pos+1;
+				}else{
+					depth_exceeded.push_back(ase_basic_block(prevchr,prevstart > depth_flag_length ? prevstart - depth_flag_length : 1 , prevend + depth_flag_length <= ULONG_MAX ? prevend + depth_flag_length : ULONG_MAX));
+					prevstart = prevend = pos+1;
+				}
+			}else prevstart = prevend = pos+1;
+		}else if (prevstart){
+			depth_exceeded.push_back(ase_basic_block(prevchr,prevstart > depth_flag_length ? prevstart - depth_flag_length : 1 , prevend + depth_flag_length <= ULONG_MAX ? prevend + depth_flag_length : ULONG_MAX));
+			prevstart = prevend = 0;
+		}
+
+
 		ase_site temp(chr,pos);
 		auto av_it = all_variants.find(temp);
 		if (av_it != all_variants.end()){
@@ -106,7 +142,7 @@ void ase_data::parseBam(void * d){
 			mapping_stats ms;
 			set <string> as;
 			//STEP1: Parse sequencing reads
-			if (print_warnings && n_plp >= max_depth * 0.8) vrb.warning(av_it->sid + " depth " + stb.str(n_plp) + " is >= 80% max-depth, potential data loss!");
+			if (print_warnings && depth_prb) vrb.warning(av_it->sid + " depth " + stb.str(n_plp) + " is >= 90% max-depth, potential data loss!");
 			for (int iread = 0 ; iread < n_plp ; iread ++) {
 				bool failed_qc = false;
 				const bam_pileup1_t * p = v_plp + iread;
@@ -114,10 +150,7 @@ void ase_data::parseBam(void * d){
 				int baseq = p->qpos < p->b->core.l_qseq ? bam_get_qual(p->b)[p->qpos] : 0;
 				if (illumina13) baseq = baseq > 31 ? baseq - 31 : 0;
 
-				if (p->b->core.tid < 0 || (p->b->core.flag & BAM_FUNMAP)) {ms.unmapped++; failed_qc = true;} //unmapped
-				else if (p->b->core.flag & BAM_FSECONDARY) {ms.secondary++; failed_qc = true;} //secondary alignment
-				else if ((int)p->b->core.qual < param_min_mapQ) {ms.fail_mapping++; failed_qc = true;} //fail map q
-				else if (p->is_del || p->is_refskip) {ms.skipped++; failed_qc = true;} //skipped read
+				if (p->is_del || p->is_refskip) {ms.skipped++; failed_qc = true;} //skipped read
 				else if (baseq < param_min_baseQ) {ms.fail_baseq++; failed_qc = true;} //fail base q
 				else{
 					if (p->b->core.flag & BAM_FQCFAIL) {ms.fail_qc++; if(!keep_failqc) failed_qc = true;} //fail qc
@@ -149,7 +182,6 @@ void ase_data::parseBam(void * d){
 			ase_site current = *av_it;
 			current.setCounts(b_ref,b_alt,b_dis,as,ms);
 			//check ASE site
-			if (n_plp >= max_depth * 0.80) current.concern += "PD,";
 			if (current.other_count && current.ref_count == 0 && current.alt_count == 0) {
 				if (print_warnings) vrb.warning("No ref or alt allele for " + current.getName() + " in " + stb.str(current.other_count) + " sites");
 				current.concern += "NRA,";
@@ -168,6 +200,9 @@ void ase_data::parseBam(void * d){
 			else if (current.mar < 0.02) {current.concern += "LMAR,";}
 			passing_variants.push_back(current);
 		}
+	}
+	if (prevstart){
+		depth_exceeded.push_back(ase_basic_block(prevchr,prevstart > depth_flag_length ? prevstart - depth_flag_length : 1 , prevend + depth_flag_length <= ULONG_MAX ? prevend + depth_flag_length : ULONG_MAX));
 	}
 	bam_plp_reset(s_plp);
 	bam_plp_destroy(s_plp);
@@ -208,6 +243,20 @@ void ase_data::readSequences(string fbam) {
     free(data);
 	vrb.bullet("Time taken: " + stb.str(current_timer.abs_time()) + " seconds");
 	if (passing_variants.size() == 0) vrb.leave("Cannot find usable variants in target region!");
+	if (depth_exceeded.size()){
+		vector <ase_basic_block> temp;
+		mergeContiguousBlocks(depth_exceeded, temp);
+		depth_exceeded = temp;
+		//for (int i = 0 ; i < depth_exceeded.size() ; i++) cerr << depth_exceeded[i].get_string() << endl;
+		unsigned int n = 0;
+		for (int i = 0 ; i < passing_variants.size() ; i++){
+			if (ase_basic_block(passing_variants[i]).find_this_in_bool(depth_exceeded)){
+				n++;
+				passing_variants[i].concern += "PD,";
+			}
+		}
+		if (n) vrb.warning("Pileup depth is > 90% of max depth in " + stb.str(depth_exceeded.size()) + " regions. Due to intricacies of HTSlib, and to be on the safe side, " + stb.str(n) + " variants within " + stb.str(depth_flag_length) + " bp around these regions will be labeled with the PD concern. HIGHLY RECOMMENDED to increase --max-depth and rerun the analysis.");
+	}
 }
 
 

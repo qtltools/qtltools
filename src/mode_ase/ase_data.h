@@ -21,15 +21,14 @@
 
 class mapping_stats{
 public:
-	unsigned int fail_mapping,fail_baseq,indel, duplicate, unmapped, secondary, fail_qc,skipped, not_pp, mate_unmapped, orientation;
+	unsigned int fail_baseq,indel, duplicate, fail_qc,skipped, not_pp, mate_unmapped, orientation, depth;
 	mapping_stats(){
-		fail_mapping = fail_baseq = indel = duplicate = 0;
-		unmapped = secondary = fail_qc = skipped = not_pp = mate_unmapped = orientation = 0;
+		fail_baseq = indel = duplicate = fail_qc = skipped = not_pp = mate_unmapped = orientation = depth = 0;
 	}
 	friend ostream& operator<<(ostream& out, mapping_stats& g){
-		out << g.unmapped << "\t" << g.secondary << "\t" << g.fail_mapping  << "\t" << g.skipped << "\t" << g.fail_baseq  << "\t"
+		out << g.skipped << "\t" << g.fail_baseq  << "\t"
 		<< g.fail_qc  << "\t" << g.duplicate << "\t" << g.indel << "\t" << g.mate_unmapped << "\t"
-		<< g.orientation  << "\t" << g.not_pp;
+		<< g.orientation  << "\t" << g.not_pp << "\t" << g.depth;
 		return out;
 	}
 };
@@ -181,8 +180,12 @@ public:
 		length = end - start + 1;
 		merged = m;
 	}
-	ase_basic_block(ase_site &in){
-		ase_basic_block(in.chr,in.pos,in.pos);
+	ase_basic_block(ase_site &in, bool m = false){
+		start = in.pos;
+		end = in.pos;
+		chr = in.chr;
+		length = end - start + 1;
+		merged = m;
 	}
 
 	bool contains(unsigned long p) const{
@@ -334,7 +337,7 @@ public :
 	bool param_dup_rd,param_both_alleles_seen,param_both_alleles_seen_bias,fix_chr,param_rm_indel,fix_id;
 	bool keep_orphan,check_proper_pair,keep_failqc,legacy_options,auto_flip,check_orientation,print_stats,illumina13,on_the_fly,keep_discordant,print_warnings;
 	string param_imputation_score_label,param_genotype_likelihood_label;
-	static const int binsize = 10000;
+	static const int binsize = 10000, depth_flag_length = 1000;
 
 	genomic_region vcf_region,bam_region;
 
@@ -350,6 +353,7 @@ public :
 	set <string> bam_chrs,vcf_chrs,ase_chrs;
 	map <string, string> genome;
 	map < string , map < unsigned int , vector < ase_exon > > > annotation;
+	vector < ase_basic_block> depth_exceeded;
 
 	//CONSTRUCTOR/DESTRUCTOR
 	ase_data() {
@@ -433,6 +437,22 @@ public :
 		case 15: return 'N';
 		}
 		return -1;
+	}
+	inline void mergeContiguousBlocks(vector <ase_basic_block> &input, vector <ase_basic_block> &output){
+		output.clear();
+		if (input.size() > 1){
+			sort(input.begin(),input.end());
+			ase_basic_block prev = input[0];
+			for (int i = 1 ; i < input.size(); i++){
+				if (prev.contiguous(input[i])) {
+					prev = prev.merge_nocheck(input[i]);
+				}else {
+					output.push_back(prev);
+					prev = input[i];
+				}
+			}
+			output.push_back(prev);
+		}else output = input;
 	}
 };
 
