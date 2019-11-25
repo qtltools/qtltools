@@ -21,12 +21,17 @@
 
 class mapping_stats{
 public:
-	unsigned int fail_baseq,indel, duplicate, fail_qc,skipped, not_pp, mate_unmapped, orientation, depth;
+	unsigned int fail_baseq,indel, duplicate, fail_qc,skipped, not_pp, mate_unmapped, orientation, depth, mapq , secondary;
 	mapping_stats(){
-		fail_baseq = indel = duplicate = fail_qc = skipped = not_pp = mate_unmapped = orientation = depth = 0;
+		fail_baseq = indel = duplicate = fail_qc = skipped = not_pp = mate_unmapped = orientation = depth = mapq = secondary = 0;
 	}
+
+	void clear(){
+		fail_baseq = indel = duplicate = fail_qc = skipped = not_pp = mate_unmapped = orientation = depth = mapq = secondary =0;
+	}
+
 	friend ostream& operator<<(ostream& out, mapping_stats& g){
-		out << g.skipped << "\t" << g.fail_baseq  << "\t"
+		out << "\t" << g.secondary << "\t" << g.mapq << "\t"<< g.skipped << "\t" << g.fail_baseq  << "\t"
 		<< g.fail_qc  << "\t" << g.duplicate << "\t" << g.indel << "\t" << g.mate_unmapped << "\t"
 		<< g.orientation  << "\t" << g.not_pp << "\t" << g.depth;
 		return out;
@@ -354,6 +359,7 @@ public :
 	map <string, string> genome;
 	map < string , map < unsigned int , vector < ase_exon > > > annotation;
 	vector < ase_basic_block> depth_exceeded;
+	mapping_stats ms;
 
 	//CONSTRUCTOR/DESTRUCTOR
 	ase_data() {

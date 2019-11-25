@@ -20,9 +20,11 @@ typedef struct {     			// auxiliary data structure
 	bam_hdr_t * hdr;			// the file header
 	hts_itr_t * iter;			// NULL if a region not specified
 	int mq;
+	bool keep_failqc,param_dup_rd,keep_orphan,check_orientation,check_proper_pair;
+	mapping_stats * ms;
 } aux_t;
 
-static int ase_read_bam(void *data, bam1_t *b) {
+/*static int ase_read_bam(void *data, bam1_t *b) {
 	aux_t * aux = (aux_t*) data;
 	int ret, skip = 0;
 	do{
@@ -31,6 +33,36 @@ static int ase_read_bam(void *data, bam1_t *b) {
 		if (b->core.tid < 0 || (b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY ))) { skip = 1; continue;}
 		skip = 0;
 		if (b->core.qual < aux->mq)  {skip = 1;} //having the mapq filter here improves performance drastically
+	}while(skip);
+	return ret;
+}*/
+
+static int ase_read_bam(void *data, bam1_t *b) {
+	aux_t * aux = (aux_t*) data;
+	int ret, skip = 0;
+	aux->ms->clear();
+	do{
+		ret =  (aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b));
+		if (ret < 0) break;
+		if (b->core.tid < 0 || (b->core.flag & (BAM_FUNMAP))) {skip = 1; continue;}
+		if (b->core.flag & BAM_FSECONDARY) {aux->ms->secondary++; skip = 1; continue;}
+		if (b->core.qual < aux->mq)  {aux->ms->mapq++; skip = 1;continue;}
+		if (!aux->keep_failqc && (b->core.flag & BAM_FQCFAIL))  {aux->ms->fail_qc++; skip = 1;continue;}
+		if (aux->param_dup_rd && (b->core.flag & BAM_FDUP))  {aux->ms->duplicate++; skip = 1;continue;}
+		if(b->core.flag & BAM_FPAIRED){
+			if (b->core.flag & BAM_FMUNMAP){
+				if (!aux->keep_orphan) {aux->ms->mate_unmapped++; skip = 1;continue;}
+			}else{
+				if (aux->check_orientation && ((b->core.tid !=b->core.mtid) ||  //must be on the same chr
+					((b->core.flag & BAM_FREVERSE) && (b->core.flag & BAM_FMREVERSE)) || // read 1 and 2 cannot be on the same strand
+					((b->core.pos < b->core.mpos) && (b->core.flag & BAM_FREVERSE)) || //read 1 must be on the +ve strand
+					((b->core.pos > b->core.mpos) && !(b->core.flag & BAM_FREVERSE)) //read 2 must be on the -ve strand
+				   )) {aux->ms->orientation++; skip = 1; continue;}
+				if (aux->check_proper_pair && !(b->core.flag & BAM_FPROPER_PAIR)) {aux->ms->not_pp++; skip = 1; continue;}
+			}
+		}
+
+		skip = 0;
 	}while(skip);
 	return ret;
 }
@@ -139,37 +171,21 @@ void ase_data::parseBam(void * d){
 		auto av_it = all_variants.find(temp);
 		if (av_it != all_variants.end()){
 			unsigned int b_ref = 0, b_alt = 0, b_dis = 0;
-			mapping_stats ms;
+			//mapping_stats ms;
 			set <string> as;
 			//STEP1: Parse sequencing reads
 			if (print_warnings && depth_prb) vrb.warning(av_it->sid + " depth " + stb.str(n_plp) + " is >= 90% max-depth, potential data loss!");
+			ms.depth = n_plp;
 			for (int iread = 0 ; iread < n_plp ; iread ++) {
-				bool failed_qc = false;
 				const bam_pileup1_t * p = v_plp + iread;
 
 				int baseq = p->qpos < p->b->core.l_qseq ? bam_get_qual(p->b)[p->qpos] : 0;
 				if (illumina13) baseq = baseq > 31 ? baseq - 31 : 0;
 
-				if (p->is_del || p->is_refskip) {ms.skipped++; failed_qc = true;} //skipped read
-				else if (baseq < param_min_baseQ) {ms.fail_baseq++; failed_qc = true;} //fail base q
+				if (p->is_del || p->is_refskip) ms.skipped++; //skipped read
+				else if (baseq < param_min_baseQ) ms.fail_baseq++; //fail base q
+				else if (param_rm_indel && p->indel != 0) ms.indel++; //read containing an indel
 				else{
-					if (p->b->core.flag & BAM_FQCFAIL) {ms.fail_qc++; if(!keep_failqc) failed_qc = true;} //fail qc
-					if (!failed_qc && (p->b->core.flag & BAM_FDUP)) {ms.duplicate++; if(param_dup_rd) failed_qc = true;} //duplicate alingment
-					if (!failed_qc && p->indel != 0) {ms.indel++; if(param_rm_indel) failed_qc = true;} //read containing an indel
-					if (!failed_qc && (p->b->core.flag & BAM_FPAIRED)) { //paired read
-						if (p->b->core.flag & BAM_FMUNMAP) {ms.mate_unmapped++; if(!keep_orphan) failed_qc = true;} //mate unmapped
-						else {
-							if ((p->b->core.tid != p->b->core.mtid) ||  //must be on the same chr
-								((p->b->core.flag & BAM_FREVERSE) && (p->b->core.flag & BAM_FMREVERSE)) || // read 1 and 2 cannot be on the same strand
-								((p->b->core.pos < p->b->core.mpos) && (p->b->core.flag & BAM_FREVERSE)) || //read 1 must be on the +ve strand
-								((p->b->core.pos > p->b->core.mpos) && !(p->b->core.flag & BAM_FREVERSE)) //read 2 must be on the -ve strand
-							   ) { ms.orientation++; if(check_orientation) failed_qc = true;}
-							if (!failed_qc && !(p->b->core.flag & BAM_FPROPER_PAIR)) {ms.not_pp++; if(check_proper_pair) failed_qc = true;} //not proper pair
-						}
-					}
-				}
-
-				if (!failed_qc){
 					char base = getBase(bam_seqi(bam_get_seq(p->b), p->qpos));
 					as.insert(string(1,base));
 					bool isRef = (base == av_it->ref);
@@ -224,6 +240,13 @@ void ase_data::readSequences(string fbam) {
     hts_idx_t *idx = sam_index_load(data->fp, fbam.c_str());
     if (idx == NULL) vrb.error("Cannot load BAM index!");
 	data->mq = param_min_mapQ;
+	data->keep_failqc = keep_failqc;
+	data->keep_orphan = keep_orphan;
+	data->param_dup_rd = param_dup_rd;
+	data->check_orientation = check_orientation;
+	data->check_proper_pair = check_proper_pair;
+	data->ms = &ms;
+
 
     if (my_regions.size()){
     	for (int reg = 0; reg < my_regions.size(); reg++){
