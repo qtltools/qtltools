@@ -19,10 +19,10 @@
 //INCLUDES
 #include "../common/data.h"
 
-class mapping_stats{
+class mapping_stats_full{
 public:
 	unsigned int fail_baseq,indel, duplicate, fail_qc,skipped, not_pp, mate_unmapped, orientation, depth, mapq , secondary;
-	mapping_stats(){
+	mapping_stats_full(){
 		fail_baseq = indel = duplicate = fail_qc = skipped = not_pp = mate_unmapped = orientation = depth = mapq = secondary = 0;
 	}
 
@@ -30,12 +30,30 @@ public:
 		fail_baseq = indel = duplicate = fail_qc = skipped = not_pp = mate_unmapped = orientation = depth = mapq = secondary =0;
 	}
 
-	friend ostream& operator<<(ostream& out, mapping_stats& g){
-		out << "\t" << g.secondary << "\t" << g.mapq << "\t"<< g.skipped << "\t" << g.fail_baseq  << "\t"
-		<< g.fail_qc  << "\t" << g.duplicate << "\t" << g.indel << "\t" << g.mate_unmapped << "\t"
-		<< g.orientation  << "\t" << g.not_pp << "\t" << g.depth;
+	friend ostream& operator<<(ostream& out, mapping_stats_full& g){
+		out << g.secondary << "\t" << g.mapq << "\t"<< g.fail_qc << "\t" << g.duplicate  << "\t"
+		<< g.mate_unmapped  << "\t" << g.orientation << "\t" << g.not_pp  << "\t" << g.skipped  << "\t"
+		<< g.fail_baseq   << "\t" << g.indel << "\t" << g.depth;
 		return out;
 	}
+};
+
+class mapping_stats{
+public:
+	unsigned int fail_baseq,indel,skipped,depth;
+	mapping_stats(){
+		fail_baseq = indel = skipped= depth = 0;
+	}
+
+	void clear(){
+		fail_baseq = indel = skipped= depth = 0;
+	}
+
+	friend ostream& operator<<(ostream& out, mapping_stats& g){
+		out << g.skipped  << "\t" << g.fail_baseq   << "\t" << g.indel << "\t" << g.depth;
+		return out;
+	}
+
 };
 
 class bias_stats{
@@ -359,7 +377,6 @@ public :
 	map <string, string> genome;
 	map < string , map < unsigned int , vector < ase_exon > > > annotation;
 	vector < ase_basic_block> depth_exceeded;
-	mapping_stats ms;
 
 	//CONSTRUCTOR/DESTRUCTOR
 	ase_data() {

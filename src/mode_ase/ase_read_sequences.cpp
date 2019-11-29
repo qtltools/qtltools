@@ -20,8 +20,8 @@ typedef struct {     			// auxiliary data structure
 	bam_hdr_t * hdr;			// the file header
 	hts_itr_t * iter;			// NULL if a region not specified
 	int mq;
-	bool keep_failqc,param_dup_rd,keep_orphan,check_orientation,check_proper_pair;
-	mapping_stats * ms;
+	bool keep_orphan,check_orientation,check_proper_pair;
+	int fflag;
 } aux_t;
 
 /*static int ase_read_bam(void *data, bam1_t *b) {
@@ -37,37 +37,33 @@ typedef struct {     			// auxiliary data structure
 	return ret;
 }*/
 
+
 static int ase_read_bam(void *data, bam1_t *b) {
 	aux_t * aux = (aux_t*) data;
 	int ret, skip = 0;
-	aux->ms->clear();
 	do{
 		ret =  (aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b));
 		if (ret < 0) break;
-		if (b->core.tid < 0 || (b->core.flag & (BAM_FUNMAP))) {skip = 1; continue;}
-		if (b->core.flag & BAM_FSECONDARY) {aux->ms->secondary++; skip = 1; continue;}
-		if (b->core.qual < aux->mq)  {aux->ms->mapq++; skip = 1;continue;}
-		if (!aux->keep_failqc && (b->core.flag & BAM_FQCFAIL))  {aux->ms->fail_qc++; skip = 1;continue;}
-		if (aux->param_dup_rd && (b->core.flag & BAM_FDUP))  {aux->ms->duplicate++; skip = 1;continue;}
-		if(b->core.flag & BAM_FPAIRED){
+		else if (b->core.tid < 0 || (b->core.flag & aux->fflag) || b->core.qual < aux->mq) {skip = 1; continue;}
+		else if(b->core.flag & BAM_FPAIRED){
 			if (b->core.flag & BAM_FMUNMAP){
-				if (!aux->keep_orphan) {aux->ms->mate_unmapped++; skip = 1;continue;}
+				if (!aux->keep_orphan) { skip = 1;continue;}
 			}else{
 				if (aux->check_orientation && ((b->core.tid !=b->core.mtid) ||  //must be on the same chr
 					((b->core.flag & BAM_FREVERSE) && (b->core.flag & BAM_FMREVERSE)) || // read 1 and 2 cannot be on the same strand
 					((b->core.pos < b->core.mpos) && (b->core.flag & BAM_FREVERSE)) || //read 1 must be on the +ve strand
 					((b->core.pos > b->core.mpos) && !(b->core.flag & BAM_FREVERSE)) //read 2 must be on the -ve strand
-				   )) {aux->ms->orientation++; skip = 1; continue;}
-				if (aux->check_proper_pair && !(b->core.flag & BAM_FPROPER_PAIR)) {aux->ms->not_pp++; skip = 1; continue;}
+				   )) { skip = 1; continue;}
+				if (aux->check_proper_pair && !(b->core.flag & BAM_FPROPER_PAIR)) { skip = 1; continue;}
 			}
 		}
-
 		skip = 0;
 	}while(skip);
 	return ret;
 }
 
-static int mplp_func(void *data, bam1_t *b){
+
+/*static int mplp_func(void *data, bam1_t *b){
 	aux_t * aux = (aux_t*) data;
 	int ret, skip = 0;
 	do{
@@ -80,7 +76,7 @@ static int mplp_func(void *data, bam1_t *b){
 
 	}while(skip);
 	return ret;
-}
+}*/
 
 /*static inline void pileup_seq(const bam_pileup1_t * p){
 	if(p->is_head){
@@ -116,7 +112,8 @@ void ase_data::parseBam(void * d){
 	//Pile up reads
 	const bam_pileup1_t * v_plp;
 	int n_plp = 0, tid, pos;
-	bam_plp_t s_plp = legacy_options ? bam_plp_init(mplp_func, (void*)data) : bam_plp_init(ase_read_bam, (void*)data);
+	//bam_plp_t s_plp = legacy_options ? bam_plp_init(mplp_func, (void*)data) : bam_plp_init(ase_read_bam, (void*)data) ;
+	bam_plp_t s_plp = bam_plp_init(ase_read_bam, (void*)data);
 	bam_plp_set_maxcnt(s_plp, max_depth);
 
 	int beg,end;
@@ -171,7 +168,7 @@ void ase_data::parseBam(void * d){
 		auto av_it = all_variants.find(temp);
 		if (av_it != all_variants.end()){
 			unsigned int b_ref = 0, b_alt = 0, b_dis = 0;
-			//mapping_stats ms;
+			mapping_stats ms;
 			set <string> as;
 			//STEP1: Parse sequencing reads
 			if (print_warnings && depth_prb) vrb.warning(av_it->sid + " depth " + stb.str(n_plp) + " is >= 90% max-depth, potential data loss!");
@@ -216,7 +213,8 @@ void ase_data::parseBam(void * d){
 			else if (current.mar < 0.02) {current.concern += "LMAR,";}
 			passing_variants.push_back(current);
 		}
-	}
+	}//while end
+
 	if (prevstart){
 		depth_exceeded.push_back(ase_basic_block(prevchr,prevstart > depth_flag_length ? prevstart - depth_flag_length : 1 , prevend + depth_flag_length <= ULONG_MAX ? prevend + depth_flag_length : ULONG_MAX));
 	}
@@ -239,13 +237,14 @@ void ase_data::readSequences(string fbam) {
     if (data->hdr == 0) vrb.error("Cannot parse BAM header!");
     hts_idx_t *idx = sam_index_load(data->fp, fbam.c_str());
     if (idx == NULL) vrb.error("Cannot load BAM index!");
+    data->fflag = (BAM_FUNMAP | BAM_FSECONDARY);
+    if (!keep_failqc) data->fflag |= BAM_FQCFAIL;
+    if (param_dup_rd) data->fflag |= BAM_FDUP;
 	data->mq = param_min_mapQ;
-	data->keep_failqc = keep_failqc;
 	data->keep_orphan = keep_orphan;
-	data->param_dup_rd = param_dup_rd;
 	data->check_orientation = check_orientation;
 	data->check_proper_pair = check_proper_pair;
-	data->ms = &ms;
+
 
 
     if (my_regions.size()){

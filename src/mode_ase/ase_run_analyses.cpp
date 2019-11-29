@@ -127,7 +127,8 @@ void ase_data::calculateASE(string fout , string olog){
 		if (fdo.fail()) vrb.error("Cannot open file [" + olog +"]");
 	}
 	fdoo <<"INDIVIDUAL\tRSID\tCHR\tPOS\tALLELES\tBOTH_ALLELES_SEEN\tMIN_ALLELE_RATIO\tREF_COUNT\tNONREF_COUNT\tTOTAL_COUNT\tWEIGHTED_REF_COUNT\tWEIGHTED_NONREF_COUNT\tWRC_MINUS_WNC\tALLELES_SEEN\tREF_ALLELE\tALT_ALLELE\tOTHER_COUNT\tREF_RATIO\tPVALUE\tCONCERN\tEXON_INFO";
-	if (print_stats) fdoo <<"\tSECONDARY\tFAIL_MAPQ\tSKIPPED\tFAIL_BASEQ\tFAILQC\tDUPLICATE\tINDEL\tMATE_UNMAPPED\tWRONG_ORIENTATION\tNOT_PROPER_PAIR\tDEPTH";
+	//if (print_stats) fdoo <<"\tSECONDARY\tFAIL_MAPQ\tFAILQC\tDUPLICATE\tMATE_UNMAPPED\tWRONG_ORIENTATION\tNOT_PROPER_PAIR\tSKIPPED\tFAIL_BASEQ\tINDEL\tDEPTH";
+	if (print_stats) fdoo <<"\tSKIPPED\tFAIL_BASEQ\tINDEL\tDEPTH";
 	fdoo <<endl;
 	for (int i = 0; i < passing_variants.size(); i++){
 		if (passing_variants[i].total_count >= param_min_cov){

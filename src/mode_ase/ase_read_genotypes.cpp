@@ -102,7 +102,7 @@ void ase_data::readGenotypes(string filename ,string olog) {
 		//check duplicate positions and if the file is sorted
 		if (curr_chr == prev_chr){
 			if (pos < ppos) vrb.error("Variants are not sorted by chromosome and position (ascending)");
-			else if (pos == ppos) {duplicates.insert(ase_site(curr_chr,pos+1));}
+			else if (pos == ppos) {duplicates.insert(ase_site(curr_chr,pos));}
 		}else{
 			if(found_chrs.count(curr_chr)) vrb.error("Variants are not sorted by chromosome and position (ascending)");
 			found_chrs.insert(curr_chr);
@@ -219,8 +219,8 @@ void ase_data::readGenotypes(string filename ,string olog) {
 
 	unsigned int n_duplicates = 0;
 	vrb.title("Checking for variants with duplicate positions");
-	vrb.bullet("There were " + stb.str(duplicates.size()) + " positions with multiple variants.");
 	if (duplicates.size()){
+		vrb.bullet("There were " + stb.str(duplicates.size()) + " positions with multiple variants.");
 		for (auto it = all_variants.begin(); it != all_variants.end(); it++){
 			auto dit = duplicates.find(*it);
 			if (dit != duplicates.end()){
