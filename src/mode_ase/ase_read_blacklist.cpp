@@ -18,8 +18,8 @@
 void ase_data::readBlacklist(string fgtf) {
 	string buffer;
 	vector < string > str;
-	vector < ase_basic_block> input;
-	unsigned long long mem = sizeof(vector < ase_basic_block>);
+	vector < basic_block> input;
+	unsigned long long mem = sizeof(vector < basic_block>);
 	unsigned long long max_step = 500000000;
 	vrb.title("Reading blacklist in [" + fgtf + "]");
 	input_file fd (fgtf);
@@ -46,12 +46,12 @@ void ase_data::readBlacklist(string fgtf) {
 		}else found_c.insert(chr);
         unsigned int start = atoi(str[1].c_str());
         unsigned int end = atoi(str[2].c_str());
-        ase_basic_block abb(chr,start+1,end);
+        basic_block abb(chr,start+1,end);
         if (bam_region.isSet() && !abb.overlap(bam_region)) continue;
-        input.push_back(ase_basic_block(abb));
-        mem += sizeof(ase_basic_block) + chr.capacity();
+        input.push_back(basic_block(abb));
+        mem += sizeof(basic_block) + chr.capacity();
         if (on_the_fly && mem > max_step ){
-        	vector <ase_basic_block> temp;
+        	vector <basic_block> temp;
         	mergeContiguousBlocks(input,temp);
         	vrb.bullet("Reduced from " + stb.str(input.size()) + " to " + stb.str(temp.size()));
         	input = temp;

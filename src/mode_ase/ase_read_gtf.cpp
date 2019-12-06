@@ -48,7 +48,7 @@ void ase_data::readGTF(string fgtf){
 		}
         unsigned int start = atoi(str[3].c_str());
         unsigned int end = atoi(str[4].c_str());
-        if (bam_region.isSet() && !ase_basic_block(chr,start,end).overlap(bam_region)) continue;
+        if (bam_region.isSet() && !basic_block(chr,start,end).overlap(bam_region)) continue;
         string gene_id="",gene_name="",trans_id="";
         for (int i = 8 ; i < str.size(); i+=2 ){
             str[i+1].erase(remove(str[i+1].begin(), str[i+1].end(), '"'), str[i+1].end());

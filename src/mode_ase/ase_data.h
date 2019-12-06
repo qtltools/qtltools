@@ -80,11 +80,11 @@ public:
 
 class ase_site {
 public:
-	unsigned int pos;
+	unsigned int pos; //should be 1-based
 	string chr;
 	mutable char ref, alt;
 	mutable unsigned int ref_count,alt_count,total_count,other_count;
-	mutable double weighted_ref_count,weighted_alt_count,pval,ref_allele_mapping_bias,mar;
+	mutable double weighted_ref_count,weighted_alt_count,pval,ref_allele_mapping_bias,mar,discordant_pval,expected_error;
 	mutable string alleles, sid;
 	mutable mapping_stats stats;
 	mutable set <string> alleles_seen;
@@ -100,11 +100,12 @@ public:
 		alleles += alt;
 		other_count =ref_count= alt_count = total_count = 0;
 		weighted_ref_count = weighted_alt_count = 0.0;
-		pval = 1.0;
+		discordant_pval = pval = 1.0;
 		ref_allele_mapping_bias = 0.5;
 		mar = 0.0 / 0.0;
 		concern = "";
 		genes = "NA";
+		expected_error = 0.0;
 	}
 
 	ase_site (string _chr, string _sid, unsigned int _pos, string _ref, string _alt) {
@@ -117,11 +118,12 @@ public:
 		alleles += alt;
 		other_count =ref_count= alt_count = total_count = 0;
 		weighted_ref_count = weighted_alt_count = 0.0;
-		pval = 1.0;
+		discordant_pval = pval = 1.0;
 		ref_allele_mapping_bias = 0.5;
 		mar = 0.0 / 0.0;
 		concern = "";
 		genes = "NA";
+		expected_error = 0.0;
 	}
 
 	~ase_site(){
@@ -129,7 +131,7 @@ public:
 	}
 
 
-	void setCounts(const unsigned int r, const unsigned a, const unsigned o, const set <string> &as ,  const mapping_stats _stats = mapping_stats()){
+	void setCounts(const unsigned int r, const unsigned a, const unsigned o, const set <string> &as ,  const mapping_stats _stats = mapping_stats() , const double _em = 0.0){
 		ref_count = r;
 		alt_count = a;
 		other_count = o;
@@ -137,12 +139,14 @@ public:
 		mar = (double) (r < a ? r : a) / (double) total_count;
 		stats = _stats;
 		alleles_seen = as;
+		expected_error = _em;
 	}
 
 	void calculatePval(double rab = 0.5){
 		ref_allele_mapping_bias = rab;
 		weighted_ref_count = ref_count * (1 - ref_allele_mapping_bias);
 		weighted_alt_count = alt_count * ref_allele_mapping_bias;
+		if (other_count) discordant_pval = ppois(other_count-1, expected_error , 0, 0);
 		int y = 0;
 		if (ref_allele_mapping_bias == 0) {pval = (ref_count == 0); return;}
 		if (ref_allele_mapping_bias == 1) {pval = (ref_count == total_count); return;}
@@ -160,7 +164,7 @@ public:
 	}
 
 	string getName() const {
-		return chr + ":" + stb.str(pos+1) + ":" + alleles + ":" + sid;
+		return chr + ":" + stb.str(pos) + ":" + alleles + ":" + sid;
 	}
 
 	bool operator < (ase_site const & a) const {
@@ -175,27 +179,27 @@ public:
 	}
 
     friend ostream& operator<<(ostream& out, const ase_site& g) {
-        out << g.sid  << "\t" << g.chr << "\t" << g.pos + 1 << "\t" << g.alleles << "\t" << (g.ref_count && g.alt_count) << "\t" << g.mar  << "\t" << g.ref_count
+        out << g.sid  << "\t" << g.chr << "\t" << g.pos << "\t" << g.alleles << "\t" << (g.ref_count && g.alt_count) << "\t" << g.mar  << "\t" << g.ref_count
             << "\t" << g.alt_count << "\t" << g.total_count << "\t" << g.weighted_ref_count << "\t" << g.weighted_alt_count << "\t" << g.weighted_ref_count - g.weighted_alt_count << "\t";
         if (g.alleles_seen.size()){
         	ostringstream stream;
         	copy(g.alleles_seen.begin(), g.alleles_seen.end(), ostream_iterator<string>(stream, ":"));
         	out << stream.str().substr(0,stream.str().size() - 1);
         }else out << "NA";
-		out << "\t" << g.ref << "\t" << g.alt << "\t" << g.other_count  << "\t" << g.ref_allele_mapping_bias << "\t" << g.pval << "\t" << (g.concern == "" ? "PASS" : g.concern.substr(0,g.concern.size()-1)) << "\t" << g.genes;
+		out << "\t" << g.ref << "\t" << g.alt << "\t" << g.other_count << "\t" << g.expected_error << "\t" << (g.discordant_pval <= std::numeric_limits<double>::min() ? std::numeric_limits<double>::min() : g.discordant_pval) << "\t" << g.ref_allele_mapping_bias << "\t" << (g.pval<= std::numeric_limits<double>::min() ? std::numeric_limits<double>::min() : g.pval) << "\t" << (g.concern == "" ? "PASS" : g.concern.substr(0,g.concern.size()-1)) << "\t" << g.genes;
         return out;
     }
 
 };
 
-class ase_basic_block{
+class basic_block{
 public:
-	unsigned long  start, end;
+	unsigned long  start, end; //should be 1-based
 	mutable unsigned long length;
 	mutable bool merged;
 	string chr;
-	ase_basic_block(){start = 0; end = 0 ; chr="NA"; length = 0; merged=false;}
-	ase_basic_block(string c, unsigned long int s , unsigned long int e, bool m = false){
+	basic_block(){start = 0; end = 0 ; chr="NA"; length = 0; merged=false;}
+	basic_block(string c, unsigned long int s , unsigned long int e, bool m = false){
 		assert(e >= s);
 		start = s;
 		end = e;
@@ -203,7 +207,7 @@ public:
 		length = end - start + 1;
 		merged = m;
 	}
-	ase_basic_block(ase_site &in, bool m = false){
+	basic_block(ase_site &in, bool m = false){
 		start = in.pos;
 		end = in.pos;
 		chr = in.chr;
@@ -220,7 +224,7 @@ public:
 		else return false;
 	}
 
-	bool overlap(ase_basic_block &b) const{
+	bool overlap(basic_block &b) const{
 		return (chr == b.chr && b.end >= start && b.start <= end);
 	}
 
@@ -232,27 +236,27 @@ public:
 		return (chr == c && e >= start && s <= end);
 	}
 
-	bool contiguous(ase_basic_block &b) const{
+	bool contiguous(basic_block &b) const{
 		return (overlap(b) || end + 1 == b.start || b.end + 1 == start);
 	}
 
-	vector < ase_basic_block > subtract(ase_basic_block &b) const{
+	vector < basic_block > subtract(basic_block &b) const{
 		if (overlap(b)){
-			if (start >= b.start && end <= b.end) return vector <ase_basic_block>(0);
-			if (start <  b.start && end <= b.end) return {ase_basic_block(chr,start,b.start-1)};
-			if (start >= b.start && end >  b.end) return {ase_basic_block(chr,b.end+1,end)};
-			return { ase_basic_block(chr,start,b.start-1),ase_basic_block(chr,b.end+1,end)};
+			if (start >= b.start && end <= b.end) return vector <basic_block>(0);
+			if (start <  b.start && end <= b.end) return {basic_block(chr,start,b.start-1)};
+			if (start >= b.start && end >  b.end) return {basic_block(chr,b.end+1,end)};
+			return { basic_block(chr,start,b.start-1),basic_block(chr,b.end+1,end)};
 		}else return {*this};
 	}
 
-	vector < ase_basic_block > subtract(vector < ase_basic_block > &b ) const{
-		vector < ase_basic_block> s {*this};
+	vector < basic_block > subtract(vector < basic_block > &b ) const{
+		vector < basic_block> s {*this};
 		for (int i = 0 ; i < b.size(); i++){
 			if (i > 0 && (b[i-1].overlap(b[i]) || b[i] < b[i-1])) {
 				cerr << "Cannot subtract overlapping or unsorted blocks" << endl;
 				exit(10);
 			}
-			vector < ase_basic_block > temp = s.back().subtract(b[i]);
+			vector < basic_block > temp = s.back().subtract(b[i]);
 			s.pop_back();
 			if (!temp.size()) return s;
 			s.insert(s.end(),temp.begin(),temp.end());
@@ -260,7 +264,7 @@ public:
 		return s;
 	}
 
-	bool operator < (const ase_basic_block &b) const {
+	bool operator < (const basic_block &b) const {
 		if (chr < b.chr) return true;
 		if (chr > b.chr) return false;
 		if (start < b.start) return true;
@@ -269,19 +273,19 @@ public:
 		else return false;
 	}
 
-	static bool cmp_blocks (const ase_basic_block &a, const ase_basic_block &b) {
+	static bool cmp_blocks (const basic_block &a, const basic_block &b) {
 		if (a.chr == b.chr && a.end >= b.start && a.start <= b.end) return false;
 		else return (a < b);
 	}
 
-	ase_basic_block merge(ase_basic_block &b) const{
+	basic_block merge(basic_block &b) const{
 		if (overlap(b)) {
-			return ase_basic_block(b.chr, start < b.start ? start : b.start, end > b.end ? end : b.end , true);
-		}else return ase_basic_block();
+			return basic_block(b.chr, start < b.start ? start : b.start, end > b.end ? end : b.end , true);
+		}else return basic_block();
 	}
 
-	ase_basic_block merge_nocheck(ase_basic_block &b) const{
-			return ase_basic_block(b.chr, start < b.start ? start : b.start, end > b.end ? end : b.end, true);
+	basic_block merge_nocheck(basic_block &b) const{
+			return basic_block(b.chr, start < b.start ? start : b.start, end > b.end ? end : b.end, true);
 	}
 
 	string get_string() const {
@@ -312,32 +316,32 @@ public:
 };
 
 
-class ase_region: public ase_basic_block{
+class ase_region: public basic_block{
 public:
 	mutable unsigned int count;
-	ase_region() : ase_basic_block(){
+	ase_region() : basic_block(){
 		count = 0;
 	}
-	ase_region(string c, unsigned int s) : ase_basic_block(c,s,s){
+	ase_region(string c, unsigned int s) : basic_block(c,s,s){
 		count = 1;
 	}
-	ase_region(string c, unsigned int s, unsigned int e) : ase_basic_block(c,s,e){
+	ase_region(string c, unsigned int s, unsigned int e) : basic_block(c,s,e){
 		count = 1;
 	}
-	ase_region(genomic_region &in) : ase_basic_block(in.chr,in.start,in.end){
+	ase_region(genomic_region &in) : basic_block(in.chr,in.start,in.end){
 		count = 1;
 	}
 };
 
-class ase_exon: public ase_basic_block{
+class ase_exon: public basic_block{
 public:
 	mutable string id;
-	ase_exon() : ase_basic_block(){id="NA";}
-	ase_exon(unsigned int s, unsigned int e) : ase_basic_block("NA",s,e){
+	ase_exon() : basic_block(){id="NA";}
+	ase_exon(unsigned int s, unsigned int e) : basic_block("NA",s,e){
 		id = "NA";
 	}
 
-	ase_exon(string gid, string tid, string gn, unsigned int s, unsigned int e) : ase_basic_block("NA",s,e){
+	ase_exon(string gid, string tid, string gn, unsigned int s, unsigned int e) : basic_block("NA",s,e){
 		id = gid + ":" + tid + ":" + stb.str(start) + "_" + stb.str(end) + ":" + gn;
 	}
 };
@@ -360,7 +364,8 @@ public :
 	bool param_dup_rd,param_both_alleles_seen,param_both_alleles_seen_bias,fix_chr,param_rm_indel,fix_id;
 	bool keep_orphan,check_proper_pair,keep_failqc,legacy_options,auto_flip,check_orientation,print_stats,illumina13,on_the_fly,keep_discordant,print_warnings;
 	string param_imputation_score_label,param_genotype_likelihood_label;
-	static const int binsize = 10000, depth_flag_length = 1000;
+	static const int binsize = 10000, depth_flag_length = 10000;
+	static constexpr float depth_fraction = 0.9f;
 
 	genomic_region vcf_region,bam_region;
 
@@ -371,12 +376,12 @@ public :
 	vector < ase_site >  passing_variants;
 	map < string , double> ref_to_alt_bias;
 	vector <string> all_allele_combinations;
-	vector < ase_basic_block> blacklisted_regions;
+	vector < basic_block> blacklisted_regions;
 	set <string> add_chr,remove_chr;
 	set <string> bam_chrs,vcf_chrs,ase_chrs;
 	map <string, string> genome;
 	map < string , map < unsigned int , vector < ase_exon > > > annotation;
-	vector < ase_basic_block> depth_exceeded;
+	vector < basic_block> depth_exceeded;
 
 	//CONSTRUCTOR/DESTRUCTOR
 	ase_data() {
@@ -461,11 +466,11 @@ public :
 		}
 		return -1;
 	}
-	inline void mergeContiguousBlocks(vector <ase_basic_block> &input, vector <ase_basic_block> &output){
+	inline void mergeContiguousBlocks(vector <basic_block> &input, vector <basic_block> &output){
 		output.clear();
 		if (input.size() > 1){
 			sort(input.begin(),input.end());
-			ase_basic_block prev = input[0];
+			basic_block prev = input[0];
 			for (int i = 1 ; i < input.size(); i++){
 				if (prev.contiguous(input[i])) {
 					prev = prev.merge_nocheck(input[i]);

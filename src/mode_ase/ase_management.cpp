@@ -38,8 +38,11 @@ void ase_data::compareChrs(string vcf, string bam, string str_regions){
 	if(!(bcf_sr_add_reader (sr, vcf.c_str()))) {
 		switch (sr->errnum) {
 		case not_bgzf: vrb.error("Not compressed with bgzip");
+		// fall through
 		case idx_load_failed: vrb.error("Impossible to load index file");
+		// fall through
 		case file_type_error: vrb.error("Unrecognized file format");
+		// fall through
 		default: vrb.error("Unknown error when opening");
 		}
 	}
@@ -99,7 +102,7 @@ void ase_data::getRegions(){
 
 	unsigned int pp = 0;
 	for (auto it = all_variants.begin(); it != all_variants.end(); it++){
-		unsigned int one_based = it->pos+1;
+		unsigned int one_based = it->pos;
 		if (my_regions.size()==0 || my_regions.back().chr != it->chr || one_based - my_regions.back().start + 1 > region_length ){
 			ase_region newr(it->chr, one_based);
 			if (my_regions.size()) my_regions.back().end = pp;
@@ -124,7 +127,7 @@ void ase_data::collapseRegions(){
 
 void ase_data::assignGenesToAseSite(ase_site &in){
 	if (annotation.size() && annotation.count(in.chr)){
-		unsigned int pos1based = in.pos + 1;
+		unsigned int pos1based = in.pos;
 		unsigned int b = pos1based / binsize;
 		if (annotation[in.chr].count(b)){
 			string anno = "";

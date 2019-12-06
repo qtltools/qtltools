@@ -57,8 +57,11 @@ void ase_data::readGenotypes(string filename ,string olog) {
 	if(!(bcf_sr_add_reader (sr, filename.c_str()))) {
 		switch (sr->errnum) {
 		case not_bgzf: vrb.error("Not compressed with bgzip");
+		// fall through
 		case idx_load_failed: vrb.error("Impossible to load index file");
+		// fall through
 		case file_type_error: vrb.error("Unrecognized file format");
+		// fall through
 		default: vrb.error("Unknown error when opening");
 		}
 	}
@@ -91,9 +94,10 @@ void ase_data::readGenotypes(string filename ,string olog) {
 		if (line->n_allele > 2) {n_excludedG_mult ++; if (olog != "") fdo << "VMA " << sid << endl; continue;}
 
 		unsigned int pos = line->pos;	//position 0-based
+		unsigned int pos1based = pos+1;	//position 1-based
 		string curr_chr = bcf_hdr_id2name(sr->readers[0].header, line->rid); //chr
 		//filter user provided
-		if (!filter_genotype.check(sid) || !filter_position.check(curr_chr + "_" + stb.str(pos+1))) { n_excludedG_user ++; if (olog != "") fdo << "VU " << sid << endl; continue;}
+		if (!filter_genotype.check(sid) || !filter_position.check(curr_chr + "_" + stb.str(pos1based))) { n_excludedG_user ++; if (olog != "") fdo << "VU " << sid << endl; continue;}
 		//fix chr
 		if(fix_chr){
 			if (add_chr.count(curr_chr)) curr_chr = "chr" + curr_chr;
@@ -102,7 +106,7 @@ void ase_data::readGenotypes(string filename ,string olog) {
 		//check duplicate positions and if the file is sorted
 		if (curr_chr == prev_chr){
 			if (pos < ppos) vrb.error("Variants are not sorted by chromosome and position (ascending)");
-			else if (pos == ppos) {duplicates.insert(ase_site(curr_chr,pos));}
+			else if (pos == ppos) {duplicates.insert(ase_site(curr_chr,pos1based));}
 		}else{
 			if(found_chrs.count(curr_chr)) vrb.error("Variants are not sorted by chromosome and position (ascending)");
 			found_chrs.insert(curr_chr);
@@ -110,7 +114,7 @@ void ase_data::readGenotypes(string filename ,string olog) {
 		ppos = pos;
 		prev_chr = curr_chr;
 		//filter blacklisted regions
-		if(ase_basic_block(curr_chr,pos+1,pos+1).find_this_in_bool(blacklisted_regions)){n_excludedG_blkl++; if (olog != "") fdo << "VB " << sid << endl; continue;}
+		if(basic_block(curr_chr,pos1based,pos1based).find_this_in_bool(blacklisted_regions)){n_excludedG_blkl++; if (olog != "") fdo << "VB " << sid << endl; continue;}
 		string ref = string(line->d.allele[0]);	//ref
 		string alt = string(line->d.allele[1]);	//alt
 		//filter indels
@@ -126,7 +130,7 @@ void ase_data::readGenotypes(string filename ,string olog) {
 					string tsr = ref;
 					ref = alt;
 					alt = tsr;
-					if (print_warnings) vrb.warning( curr_chr + ":" + stb.str(pos)+ ":" + alt + ref + ":" + sid + " was swapped to " + ref + alt);
+					if (print_warnings) vrb.warning( curr_chr + ":" + stb.str(pos1based)+ ":" + alt + ref + ":" + sid + " was swapped to " + ref + alt);
 					n_fixed_swapped++;
 					if (olog != "") fdo << "VS " << sid << " " << alt + ref << " " << ref+alt << endl;
 					af = true;
@@ -135,18 +139,18 @@ void ase_data::readGenotypes(string filename ,string olog) {
 					ref[0] = complement(ref);
 					alt[0] = complement(alt);
 					n_fixed_flipped++;
-					if (print_warnings) vrb.warning( curr_chr + ":" + stb.str(pos)+ ":" + ola + ":" + sid + " was flipped to " + ref + alt);
+					if (print_warnings) vrb.warning( curr_chr + ":" + stb.str(pos1based)+ ":" + ola + ":" + sid + " was flipped to " + ref + alt);
 					if (olog != "") fdo << "VF " << sid << " " << ola << " " << ref+alt <<  endl;
 					af = true;
 				}else{
 					n_excludedG_wr++;
-					if (print_warnings) vrb.warning( curr_chr + ":" + stb.str(pos)+ ":" + ref + ":" + alt + " does not match reference sequence" );
+					if (print_warnings) vrb.warning( curr_chr + ":" + stb.str(pos1based)+ ":" + ref + ":" + alt + " does not match reference sequence" );
 					if (olog != "") fdo << "VWR " << sid << endl;
 					continue;
 				}
 			}else{
 				n_excludedG_wr++;
-				if (print_warnings) vrb.warning( curr_chr + ":" + stb.str(pos)+ ":" + ref + ":" + alt + " does not match reference sequence" );
+				if (print_warnings) vrb.warning( curr_chr + ":" + stb.str(pos1based)+ ":" + ref + ":" + alt + " does not match reference sequence" );
 				if (olog != "") fdo << "VWR " << sid << endl;
 				continue;
 			}
@@ -168,7 +172,7 @@ void ase_data::readGenotypes(string filename ,string olog) {
 			ngp = bcf_get_format_float(sr->readers[0].header, line,param_genotype_likelihood_label.c_str(), &gp_arr, &ngp_arr); //genotype likelihoods
 			if (ngp == 3 * n_samples_in_file && gp_arr[3*index_sample+0] != bcf_float_missing && gp_arr[3*index_sample+1] != bcf_float_missing && gp_arr[3*index_sample+2] != bcf_float_missing && gp_arr[3*index_sample+0] < param_min_gp && gp_arr[3*index_sample+1] < param_min_gp && gp_arr[3*index_sample+2] < param_min_gp) {n_excludedG_impp ++; if (olog != "") fdo << "VBG " << sid << endl; continue;}
 		}
-		ase_site ases(curr_chr, sid, pos, ref, alt);
+		ase_site ases(curr_chr, sid, pos1based, ref, alt);
 		if(af) ases.concern += "RM,";
 		auto cit = all_variants.find(ases);
 		//filter duplicate sites
@@ -179,7 +183,7 @@ void ase_data::readGenotypes(string filename ,string olog) {
 		}else{
 			if (ases.sid == "." || ases.sid == ""){
 				if (fix_id){
-					ases.sid = ases.chr + "_" + stb.str(ases.pos + 1) + "_" + ases.ref + ases.alt;
+					ases.sid = ases.chr + "_" + stb.str(ases.pos) + "_" + ases.ref + ases.alt;
 					if (print_warnings) vrb.warning("Missing id was changed to " + ases.sid);
 				}else if (print_warnings) vrb.warning("Missing id for " + ases.getName());
 				if (olog != "") fdo << "VMI " << ases.getName() << endl;
