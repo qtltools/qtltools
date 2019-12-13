@@ -56,13 +56,23 @@ static int ase_read_bam(void *data, bam1_t *b) {
 	return ret;
 }
 
+static int ase_read_bam_no_filter(void *data, bam1_t *b) {
+	aux_t * aux = (aux_t*) data;
+	int ret = aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b);
+	if (ret >= 0){
+		unsigned int isize = abs(b->core.isize); // fragment length
+		if(isize > aux->mtlen) aux->mtlen = isize;
+	} 
+	return ret;
+}
+
+
 void ase_data::parseBam(void * d){
 	aux_t * data = (aux_t *) d;
 	//Pile up reads
 	const bam_pileup1_t * v_plp;
 	int n_plp = 0, tid, pos;
-	//bam_plp_t s_plp = legacy_options ? bam_plp_init(mplp_func, (void*)data) : bam_plp_init(ase_read_bam, (void*)data) ;
-	bam_plp_t s_plp = bam_plp_init(ase_read_bam, (void*)data);
+	bam_plp_t s_plp = print_stats ? bam_plp_init(ase_read_bam_no_filter, (void*)data) : bam_plp_init(ase_read_bam, (void*)data) ;
 	bam_plp_set_maxcnt(s_plp, max_depth);
 
 	int beg,end;
@@ -117,32 +127,60 @@ void ase_data::parseBam(void * d){
 		auto av_it = all_variants.find(temp);
 		if (av_it != all_variants.end()){
 			unsigned int b_ref = 0, b_alt = 0, b_dis = 0;
-			double expected_number_of_mutations = 0.0;
-			mapping_stats ms;
+			double expected_number_of_mistakes = 0.0;
+			mapping_stats_full ms;
 			set <string> as;
 			//STEP1: Parse sequencing reads
 			if (print_warnings && depth_prb) vrb.warning(av_it->sid + " depth " + stb.str(n_plp) + " is >= 90% max-depth, potential data loss!");
 			ms.depth = n_plp;
-			for (int iread = 0 ; iread < n_plp ; iread ++) {
-				const bam_pileup1_t * p = v_plp + iread;
+			if (print_stats){
+				for (int iread = 0 ; iread < n_plp ; iread ++) {
+					const bam_pileup1_t * p = v_plp + iread;
 
-				int baseq = p->qpos < p->b->core.l_qseq ? bam_get_qual(p->b)[p->qpos] : 0;
-				if (illumina13) baseq = baseq > 31 ? baseq - 31 : 0;
+					int baseq = p->qpos < p->b->core.l_qseq ? bam_get_qual(p->b)[p->qpos] : 0;
+					if (illumina13) baseq = baseq > 31 ? baseq - 31 : 0;
 
-				if (p->is_del || p->is_refskip) ms.skipped++; //skipped read
-				else if (baseq < param_min_baseQ) ms.fail_baseq++; //fail base q
-				else if (param_rm_indel && p->indel != 0) ms.indel++; //read containing an indel
-				else{
-					char base = getBase(bam_seqi(bam_get_seq(p->b), p->qpos));
-					as.insert(string(1,base));
-					if (base == av_it->ref) {b_ref++;}
-					else if (base == av_it->alt) {b_alt++;}
-					else {b_dis++;}
-					expected_number_of_mutations += pow(10.0, (double) baseq / 10.0 * -1.0 ); // expected number of mutations is the sum of the error probabilities converted from phred scale
+					if(p->b->core.tid >= 0 && !(p->b->core.flag & BAM_FUNMAP)){ // mapped
+						if (p->b->core.flag & BAM_FSECONDARY) ms.secondary++; // secondary alingment
+						else if (remove_supp && (p->b->core.flag & BAM_FSUPPLEMENTARY)) ms.supp++; // supplementary alingment
+						else if (p->b->core.qual < param_min_mapQ) ms.mapq++; // fail mapping quality
+						else if (!keep_failqc && (p->b->core.flag & BAM_FQCFAIL)) ms.fail_qc++; // read failed qc
+						else if (param_dup_rd && (p->b->core.flag & BAM_FDUP)) ms.duplicate++; //duplicate read
+						else if (!keep_orphan && (p->b->core.flag & BAM_FPAIRED) && (p->b->core.flag & BAM_FMUNMAP)) ms.mate_unmapped++; // mate unmapped
+						else if (check_orientation && (p->b->core.flag & BAM_FPAIRED) && !(p->b->core.flag & BAM_FMUNMAP) && ((p->b->core.tid != p->b->core.mtid) || ((p->b->core.flag & BAM_FREVERSE) && (p->b->core.flag & BAM_FMREVERSE)) || ((p->b->core.pos < p->b->core.mpos) && (p->b->core.flag & BAM_FREVERSE)) || ((p->b->core.pos > p->b->core.mpos) && !(p->b->core.flag & BAM_FREVERSE)))) ms.orientation++; // wrong orientation
+						else if (check_proper_pair && (p->b->core.flag & BAM_FPAIRED) && !(p->b->core.flag & BAM_FMUNMAP) && !(p->b->core.flag & BAM_FPROPER_PAIR)) ms.not_pp++; // not properly paired
+						else if (p->is_del || p->is_refskip) ms.skipped++; //skipped read
+						else if (baseq < param_min_baseQ) ms.fail_baseq++; //fail base q
+						else if (param_rm_indel && p->indel != 0) ms.indel++; //read containing an indel
+						else{
+							char base = getBase(bam_seqi(bam_get_seq(p->b), p->qpos));
+							as.insert(string(1,base));
+							if (base == av_it->ref) {b_ref++;}
+							else if (base == av_it->alt) {b_alt++;}
+							else {b_dis++;}
+							expected_number_of_mistakes += pow(10.0, (double) baseq / 10.0 * -1.0 ); // expected number of mistakes is the sum of the error probabilities converted from phred scale
+						}
+					}
+				}
+			}else{
+				for (int iread = 0 ; iread < n_plp ; iread ++) {
+					const bam_pileup1_t * p = v_plp + iread;
+
+					int baseq = p->qpos < p->b->core.l_qseq ? bam_get_qual(p->b)[p->qpos] : 0;
+					if (illumina13) baseq = baseq > 31 ? baseq - 31 : 0;
+
+					if (!p->is_del && !p->is_refskip && baseq >= param_min_baseQ && (!param_rm_indel || p->indel==0)){
+						char base = getBase(bam_seqi(bam_get_seq(p->b), p->qpos));
+						as.insert(string(1,base));
+						if (base == av_it->ref) {b_ref++;}
+						else if (base == av_it->alt) {b_alt++;}
+						else {b_dis++;}
+						expected_number_of_mistakes += pow(10.0, (double) baseq / 10.0 * -1.0 ); // expected number of mutations is the sum of the error probabilities converted from phred scale
+					}
 				}
 			}
 			ase_site current = *av_it;
-			current.setCounts(b_ref,b_alt,b_dis,as,ms , expected_number_of_mutations);
+			current.setCounts(b_ref,b_alt,b_dis,as,ms , expected_number_of_mistakes);
 			//check ASE site
 			if (current.other_count && current.ref_count == 0 && current.alt_count == 0) {
 				if (print_warnings) vrb.warning("No ref or alt allele for " + current.getName() + " in " + stb.str(current.other_count) + " sites");
@@ -189,6 +227,8 @@ void ase_data::readSequences(string fbam) {
     data->fflag = (BAM_FUNMAP | BAM_FSECONDARY);
     if (!keep_failqc) data->fflag |= BAM_FQCFAIL;
     if (param_dup_rd) data->fflag |= BAM_FDUP;
+	if (remove_supp) data->fflag  |= BAM_FSUPPLEMENTARY;
+
 	data->mq = param_min_mapQ;
 	data->keep_orphan = keep_orphan;
 	data->check_orientation = check_orientation;

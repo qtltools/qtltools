@@ -25,7 +25,7 @@ void ase_main(vector < string > & argv) {
 	boost::program_options::options_description opt_files ("\x1B[32mI/O\33[0m");
 	opt_files.add_options()
 		("vcf,v", boost::program_options::value< string >(), "Genotypes in VCF/BCF format sorted by chromosome then position. (REQUIRED and RECOMMENED to use a BCF file for performance)")
-		("bam,b", boost::program_options::value< string >(), "Sequence data in BAM/SAM format sorted by position. (REQUIRED)")
+		("bam,b", boost::program_options::value< string >(), "Sequence data in BAM/SAM format sorted by chromosome and position. (REQUIRED)")
 		("fasta,f", boost::program_options::value< string >(), "Genome sequence in FASTA format. (RECOMMENED)")
 		("ind,i", boost::program_options::value< string >(), "Sample to be processed. (REQUIRED)")
 		("reg,r", boost::program_options::value< string >()->default_value(""), "Genomic region(s) to be processed.")
@@ -35,7 +35,7 @@ void ase_main(vector < string > & argv) {
 		("fix-chr,F", "Attempt to match chromosome names to the BAM file by adding or removing chr to chromosome names. Does not apply to --{include,exclude}-positions options. These should be in the VCF chromosome names.")
 		("fix-id,R", "Convert missing VCF variant IDs to chr_pos_refalt")
 		("auto-flip,x", "Attempt to fix reference allele mismatches. Requires a fasta file for the reference sequence. (NOT RECOMMENDED)")
-		("print-stats,P", "Print out stats for the filtered reads for ASE sites.")
+		("print-stats,P", "Print out stats for the filtered reads for ASE sites. This will be slower and if there are sites with more reads than --max-depth, then will potentially give different results.")
 		("suppress-warnings,k", "Suppress the warnings about individual variants.")
 		("illumina13,j", "Base quality is in the Illumina-1.3+ encoding")
 		("group-by,G", boost::program_options::value< int >()->default_value(0,"OFF"), "Group variants separated by this much into batches. This allows you not to stream the whole BAM file and may improve running time.")
@@ -45,7 +45,7 @@ void ase_main(vector < string > & argv) {
 
 	boost::program_options::options_description opt_parameters ("\x1B[32mFilters\33[0m");
 	opt_parameters.add_options()
-		("mapq,q", boost::program_options::value< int >(), "Minimum mapping quality for a read to be considered. (REQUIRED)")
+		("mapq,q", boost::program_options::value< int >(), "Minimum mapping quality for a read to be considered. Set this to only include uniquely mapped reads. (REQUIRED)")
 		("baseq,Q", boost::program_options::value< int >()->default_value(10), "Minimum phred quality for a base to be considered.")
 		("pvalue,p", boost::program_options::value< double >()->default_value(1.0, "1.0"), "Binomial p-value threshold for ASE output.")
 		("cov,c", boost::program_options::value< int >()->default_value(16), "Minimum coverage for a genotype to be considered in ASE analysis.")
@@ -65,6 +65,7 @@ void ase_main(vector < string > & argv) {
 		("check-proper-pairing,y", "If provided only properly paired reads according to the aligner will be considered.")
 		("ignore-orientation,X", "If NOT provided only mate pairs where both mates are on the same chromosome and where the first mate is on the +ve strand and the second is on the -ve strand will be considered. (NOT RECOMMENED)")
 		("filter-duplicates,u", "Remove duplicate sequencing reads in the process. (NOT RECOMMENED)")
+		("filter-supp,m", "Remove supplementary (non-linear) alignments.")
 		("legacy-options,J", "Replicate legacy options used. (NOT RECOMMENED).");
 
 	D.option_descriptions.add(opt_files).add(opt_parameters);
@@ -84,7 +85,7 @@ void ase_main(vector < string > & argv) {
 	//---------------------
 	// 3. PRINT HELP/HEADER
 	//---------------------
-	vrb.ctitle("CALLING ALLELE SPECIFIC SITES");
+	vrb.ctitle("RUNNING ASE ANALYSIS");
 	if (D.options.count("help")) {
 		cout << D.option_descriptions << endl;
 		exit(EXIT_SUCCESS);
@@ -142,6 +143,7 @@ void ase_main(vector < string > & argv) {
 	D.check_proper_pair = D.options.count("check-proper-pairing");
 	D.check_orientation = (D.options.count("ignore-orientation") == 0);
 	D.param_dup_rd = D.options.count("filter-duplicates");
+	D.remove_supp = D.options.count("filter-supp");
 	D.fix_chr = D.options.count("fix-chr");
 	D.fix_id = D.options.count("fix-id");
 	D.auto_flip = D.options.count("auto-flip");
@@ -164,6 +166,8 @@ void ase_main(vector < string > & argv) {
 		if (!D.keep_discordant) vrb.warning("--keep-discordant-for-bias is overwritten!");
 		if (D.param_rm_indel) vrb.warning("--filter-indel-reads is overwritten!");
 		if (D.check_orientation) vrb.warning("--ignore-orientation is overwritten!");
+		if (D.remove_supp) vrb.warning("--filter-supp is overwritten!");
+		if (D.print_stats) vrb.warning("--print-stats is overwritten!");
 		D.legacy_options = true;
 		D.param_min_baseQ = 13;
 		D.max_depth = 8000;
@@ -174,12 +178,15 @@ void ase_main(vector < string > & argv) {
 		D.param_rm_indel = false;
 		D.check_orientation = false;
 		D.keep_discordant = true;
+		D.remove_supp = false;
+		D.print_stats = false;
 	}
 
 	vrb.bullet("Mapping quality >= " + stb.str(D.param_min_mapQ));
 	vrb.bullet("Base quality >= " + stb.str(D.param_min_baseQ));
 	vrb.bullet("Coverage ASE >= " + stb.str(D.param_min_cov));
 	vrb.bullet("Coverage for REF bias >= " + stb.str(D.param_min_cov_for_ref_alt));
+	vrb.bullet("Number of sites for alllelic REF bias calculation >= " + stb.str(D.param_min_sites_for_ref_alt));
 	vrb.bullet("Binomial p-value threshold = " + stb.str(D.param_min_pval));
 	vrb.bullet("Genotype probability >= " + stb.str(D.param_min_gp));
 	vrb.bullet("Imputation quality >= " + stb.str(D.param_min_iq));
@@ -194,8 +201,11 @@ void ase_main(vector < string > & argv) {
 	vrb.bullet("Check proper pairing = " + stb.str(D.check_proper_pair));
 	vrb.bullet("Subsample above this percentile for REF bias = " + stb.str(D.param_sample));
 	vrb.bullet("Max depth for pileup = " + stb.str(D.max_depth));
-
-	//if (D.param_min_cov_for_ref_alt > D.param_min_cov) vrb.error("--filter-minimal-cov-bias cannot be greater than --filter-mininal-cov")
+	vrb.bullet("Attempt to match chromosome names = " + stb.str(D.fix_chr));
+	vrb.bullet("Convert missing variant IDs = " + stb.str(D.fix_id));
+	vrb.bullet("Correct ref allele mismatches = " + stb.str(D.auto_flip));
+	vrb.bullet("Base quality is in the Illumina-1.3+ encoding = " + stb.str(D.illumina13));
+	vrb.bullet("Print stats for the filtered reads for ASE sites = " + stb.str(D.print_stats));
 
 	//------------------------------------------
 	// 5. READ FILES / INITIALIZE / RUN ANALYSIS

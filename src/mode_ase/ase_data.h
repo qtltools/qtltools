@@ -21,17 +21,17 @@
 
 class mapping_stats_full{
 public:
-	unsigned int fail_baseq,indel, duplicate, fail_qc,skipped, not_pp, mate_unmapped, orientation, depth, mapq , secondary;
+	unsigned int fail_baseq,indel, duplicate, fail_qc,skipped, not_pp, mate_unmapped, orientation, depth, mapq , secondary, supp;
 	mapping_stats_full(){
-		fail_baseq = indel = duplicate = fail_qc = skipped = not_pp = mate_unmapped = orientation = depth = mapq = secondary = 0;
+		supp = fail_baseq = indel = duplicate = fail_qc = skipped = not_pp = mate_unmapped = orientation = depth = mapq = secondary = 0;
 	}
 
 	void clear(){
-		fail_baseq = indel = duplicate = fail_qc = skipped = not_pp = mate_unmapped = orientation = depth = mapq = secondary =0;
+		supp = fail_baseq = indel = duplicate = fail_qc = skipped = not_pp = mate_unmapped = orientation = depth = mapq = secondary =0;
 	}
 
 	friend ostream& operator<<(ostream& out, mapping_stats_full& g){
-		out << g.secondary << "\t" << g.mapq << "\t"<< g.fail_qc << "\t" << g.duplicate  << "\t"
+		out << g.secondary << "\t" << g.supp << "\t" << g.mapq << "\t"<< g.fail_qc << "\t" << g.duplicate  << "\t"
 		<< g.mate_unmapped  << "\t" << g.orientation << "\t" << g.not_pp  << "\t" << g.skipped  << "\t"
 		<< g.fail_baseq   << "\t" << g.indel << "\t" << g.depth;
 		return out;
@@ -86,7 +86,7 @@ public:
 	mutable unsigned int ref_count,alt_count,total_count,other_count;
 	mutable double weighted_ref_count,weighted_alt_count,pval,ref_allele_mapping_bias,mar,discordant_pval,expected_error;
 	mutable string alleles, sid;
-	mutable mapping_stats stats;
+	mutable mapping_stats_full stats;
 	mutable set <string> alleles_seen;
 	mutable string concern,genes;
 
@@ -131,7 +131,7 @@ public:
 	}
 
 
-	void setCounts(const unsigned int r, const unsigned a, const unsigned o, const set <string> &as ,  const mapping_stats _stats = mapping_stats() , const double _em = 0.0){
+	void setCounts(const unsigned int r, const unsigned a, const unsigned o, const set <string> &as ,  const mapping_stats_full _stats = mapping_stats_full() , const double _em = 0.0){
 		ref_count = r;
 		alt_count = a;
 		other_count = o;
@@ -146,7 +146,7 @@ public:
 		ref_allele_mapping_bias = rab;
 		weighted_ref_count = ref_count * (1 - ref_allele_mapping_bias);
 		weighted_alt_count = alt_count * ref_allele_mapping_bias;
-		if (other_count) discordant_pval = ppois(other_count-1, expected_error , 0, 0);
+		if (other_count) discordant_pval = pbinom(other_count-1, other_count + total_count, expected_error / (double) (other_count + total_count) , 0, 0);
 		int y = 0;
 		if (ref_allele_mapping_bias == 0) {pval = (ref_count == 0); return;}
 		if (ref_allele_mapping_bias == 1) {pval = (ref_count == total_count); return;}
@@ -361,7 +361,7 @@ public :
 	float param_min_iq;
 	float param_min_pval;
 	float param_sample;
-	bool param_dup_rd,param_both_alleles_seen,param_both_alleles_seen_bias,fix_chr,param_rm_indel,fix_id;
+	bool param_dup_rd,param_both_alleles_seen,param_both_alleles_seen_bias,fix_chr,param_rm_indel,fix_id,remove_supp;
 	bool keep_orphan,check_proper_pair,keep_failqc,legacy_options,auto_flip,check_orientation,print_stats,illumina13,on_the_fly,keep_discordant,print_warnings;
 	string param_imputation_score_label,param_genotype_likelihood_label;
 	static const int binsize = 10000, depth_flag_length = 10000;
@@ -417,6 +417,7 @@ public :
 		on_the_fly = false;
 		keep_discordant = false;
 		print_warnings = false;
+		remove_supp = false;
 	}
 
 	~ase_data() {

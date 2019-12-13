@@ -117,7 +117,7 @@ void ase_data::getRegions(){
 void ase_data::collapseRegions(){
 	vrb.title("Collapsing regions");
 	if (bam_chrs != ase_chrs){
-		vrb.bullet("Not all BAM chromosomes have an ASE site, will query individual chromosomes");
+		vrb.bullet("Not all BAM chromosomes have an heterezygous variant, will query individual chromosomes");
 		for (auto it = ase_chrs.begin(); it != ase_chrs.end(); it++){
 			my_regions.push_back(ase_region(*it,POS_MIN,POS_MAX));
 		}

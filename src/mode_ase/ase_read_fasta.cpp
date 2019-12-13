@@ -18,6 +18,7 @@ const string MISSING_CHR = "___NA___";
 const unsigned long BUFFER_SIZE = 250000000;
 
 void ase_data::readGenome(string fin) {
+	timer current_timer;
 	string buffer;
 	vrb.title("Reading genome sequence in [" + fin + "]");
 	input_file fd (fin);
@@ -72,6 +73,7 @@ void ase_data::readGenome(string fin) {
 
 	if(found_c == 0) vrb.error("No chromosomes match between FASTA and BAM. Try --fix-chr!");
 	if(missed_c) vrb.warning(stb.str(missed_c) + " FASTA chromosomes are missing from the BAM file. Found " + stb.str(found_c) + " chromosomes.");
+	vrb.bullet("Time taken: " + stb.str(current_timer.abs_time()) + " seconds");
 }
 
 

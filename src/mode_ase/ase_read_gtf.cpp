@@ -16,6 +16,7 @@
 #include "ase_data.h"
 
 void ase_data::readGTF(string fgtf){
+    timer current_timer;
     string buffer;
     vector < string > str;
 
@@ -72,4 +73,5 @@ void ase_data::readGTF(string fgtf){
 	if(found_c.size() == 0) vrb.error("No chromosomes match between GTF and BAM. Try --fix-chr!");
 	if(missed_c.size()) vrb.warning(stb.str(missed_c.size()) + " GTF chromosomes are missing from the BAM file. Found " + stb.str(found_c.size()) + " chromosomes.");
 	vrb.bullet(stb.str(exoncount) + " exons read.");
+    vrb.bullet("Time taken: " + stb.str(current_timer.abs_time()) + " seconds");
 }
