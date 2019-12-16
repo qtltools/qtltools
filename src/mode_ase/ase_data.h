@@ -465,7 +465,7 @@ public :
 		case 8: return 'T';
 		case 15: return 'N';
 		}
-		return -1;
+		return 0;
 	}
 	inline void mergeContiguousBlocks(vector <basic_block> &input, vector <basic_block> &output){
 		output.clear();

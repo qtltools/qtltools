@@ -171,6 +171,7 @@ void ase_data::parseBam(void * d){
 
 					if (!p->is_del && !p->is_refskip && baseq >= param_min_baseQ && (!param_rm_indel || p->indel==0)){
 						char base = getBase(bam_seqi(bam_get_seq(p->b), p->qpos));
+						if (!base || base == 'N') continue;
 						as.insert(string(1,base));
 						if (base == av_it->ref) {b_ref++;}
 						else if (base == av_it->alt) {b_alt++;}
