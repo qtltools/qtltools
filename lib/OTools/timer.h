@@ -46,6 +46,10 @@ public:
 		return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start_timing_clock).count();
 	}
 
+	double high_res_abs_time(){
+		return (double) (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_timing_clock).count()) / 1000.0;
+	}
+
 	std::string date() {
 		char buffer[256];
 		std::time_t t = std::time(NULL);

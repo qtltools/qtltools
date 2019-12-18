@@ -79,8 +79,11 @@ void rtc_data::readGenotypesVCF(string fvcf) {
 	if(!(bcf_sr_add_reader (sr, fvcf.c_str()))) {
 		switch (sr->errnum) {
 		case not_bgzf: vrb.error("File not compressed with bgzip!");
+		// fall through
 		case idx_load_failed: vrb.error("Impossible to load index file!");
+		// fall through
 		case file_type_error: vrb.error("File format not detected by htslib!");
+		// fall through
 		default : vrb.error("Unknown error!");
 		}
 	}
@@ -261,8 +264,11 @@ int rtc_data::readGenotypesVCFStats(string region, string &alleles, vector < str
     if(!(bcf_sr_add_reader (sr, stats_vcf_file.c_str()))) {
         switch (sr->errnum) {
             case not_bgzf: vrb.error("File not compressed with bgzip!");
+            // fall through
             case idx_load_failed: vrb.error("Impossible to load index file!");
+            // fall through
             case file_type_error: vrb.error("File format not detected by htslib!");
+            // fall through
             default : vrb.error("Unknown error!");
         }
     }
@@ -328,8 +334,11 @@ void rtc_data::scanGenotypesVCF(string fvcf) {
     if(!(bcf_sr_add_reader (sr, fvcf.c_str()))) {
         switch (sr->errnum) {
             case not_bgzf: vrb.error("File not compressed with bgzip!");
+            // fall through
             case idx_load_failed: vrb.error("Impossible to load index file!");
+            // fall through
             case file_type_error: vrb.error("File format not detected by htslib!");
+            // fall through
             default : vrb.error("Unknown error!");
         }
     }

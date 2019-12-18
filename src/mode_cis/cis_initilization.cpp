@@ -17,6 +17,7 @@
 
 cis_data::cis_data() {
 	grp_mode = GRP_NONE;
+	mode = CIS_NONE;
 	cis_window = 0.0;
 	n_permutations = 0;
 	threshold = 1.0;

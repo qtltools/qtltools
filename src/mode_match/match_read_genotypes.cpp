@@ -38,8 +38,11 @@ void match_data::readGenotypes(string filename, string str_regions) {
 	if(!(bcf_sr_add_reader (sr, filename.c_str()))) {
 		switch (sr->errnum) {
 		case not_bgzf: vrb.error("Not compressed with bgzip");
+		// fall through
 		case idx_load_failed: vrb.error("Impossible to load index file");
+		// fall through
 		case file_type_error: vrb.error("Unrecognized file format");
+		// fall through
 		default: vrb.error("Unknown error when opening");
 		}
 	}

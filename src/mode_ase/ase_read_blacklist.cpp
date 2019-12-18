@@ -64,5 +64,5 @@ void ase_data::readBlacklist(string fgtf) {
 	if(missed_c.size()) vrb.warning(stb.str(missed_c.size()) + " BED chromosomes are missing from the BAM file. Found " + stb.str(found_c.size()) + " chromosomes.");
 	mergeContiguousBlocks(input,blacklisted_regions);
 	vrb.bullet(stb.str(blacklisted_regions.size()) + " non-overlapping regions read.");
-	vrb.bullet("Time taken: " + stb.str(current_timer.abs_time()) + " seconds");
+	vrb.bullet("Time taken: " + stb.str(current_timer.high_res_abs_time()) + " seconds");
 }

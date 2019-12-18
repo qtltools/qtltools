@@ -193,11 +193,11 @@ void ase_data::readGenotypes(string filename ,string olog) {
 			n_includedG ++;
 		}
 		if (linecount >= next_update){
-			vrb.bullet(stb.str(linecount) + " lines read, " + stb.str(n_includedG) + " heterozygous genotypes included, " + stb.str(n_excludedG_user + n_excludedG_blkl + n_excludedG_mult + n_excludedG_snpv + n_excludedG_snpN + n_excludedG_impq + n_excludedG_impp + n_excludedG_void + n_excludedG_miss + n_excludedG_homo + n_excludedG_dupl + n_excludedG_nir + n_excludedG_wr) + " genotypes excluded. Current chromosome [" + curr_chr + "]. " + stb.str((double) linecount / (double) current_timer.abs_time()) + " per second.");
+			vrb.bullet(stb.str(linecount) + " lines read, " + stb.str(n_includedG) + " heterozygous genotypes included, " + stb.str(n_excludedG_user + n_excludedG_blkl + n_excludedG_mult + n_excludedG_snpv + n_excludedG_snpN + n_excludedG_impq + n_excludedG_impp + n_excludedG_void + n_excludedG_miss + n_excludedG_homo + n_excludedG_dupl + n_excludedG_nir + n_excludedG_wr) + " genotypes excluded. Current chromosome [" + curr_chr + "]. " + stb.str((double) linecount / (double) current_timer.high_res_abs_time()) + " per second.");
 			next_update = linecount + update_interval;
 		}
 	}
-	vrb.bullet(stb.str(linecount) + " lines read, " + stb.str((double) linecount / (double) current_timer.abs_time()) + " per second.");
+	vrb.bullet(stb.str(linecount) + " lines read, " + stb.str((double) linecount / (double) current_timer.high_res_abs_time()) + " per second.");
 	vrb.bullet(stb.str(n_includedG) + " heterozygous genotypes included");
 	if (n_excludedG_mult > 0) vrb.bullet(stb.str(n_excludedG_mult) + " multi-allelic variants excluded");
 	if (n_excludedG_user > 0) vrb.bullet(stb.str(n_excludedG_user) + " variants excluded by user");
@@ -239,7 +239,7 @@ void ase_data::readGenotypes(string filename ,string olog) {
 	free(gt_arr);
 	bcf_sr_destroy(sr);
 
-	vrb.bullet("Time taken: " + stb.str(current_timer.abs_time()) + " seconds");
+	vrb.bullet("Time taken: " + stb.str(current_timer.high_res_abs_time()) + " seconds");
 }
 
 

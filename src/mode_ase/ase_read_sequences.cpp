@@ -41,7 +41,7 @@ static int ase_read_bam(void *data, bam1_t *b) {
 			if (b->core.flag & BAM_FMUNMAP){ //mate unmapped
 				if (!aux->keep_orphan) { skip = 1;continue;}
 			}else{
-				if (aux->check_orientation && ((b->core.tid !=b->core.mtid) ||  //must be on the same chr
+				if (aux->check_orientation && ((b->core.tid != b->core.mtid) ||  //must be on the same chr
 					((b->core.flag & BAM_FREVERSE) && (b->core.flag & BAM_FMREVERSE)) || // read 1 and 2 cannot be on the same strand
 					((b->core.pos < b->core.mpos) && (b->core.flag & BAM_FREVERSE)) || //read 1 must be on the +ve strand
 					((b->core.pos > b->core.mpos) && !(b->core.flag & BAM_FREVERSE)) //read 2 must be on the -ve strand
@@ -89,7 +89,7 @@ void ase_data::parseBam(void * d){
 	unsigned int max_depth_limit = max_depth * depth_fraction;
 	while((v_plp = bam_plp_auto(s_plp, &tid, &pos, &n_plp)) != 0){
 		linecount++;
-		if (linecount % 50000000 == 0) vrb.bullet(stb.str(linecount) + " positions read, " + stb.str((double) linecount / (double) local.abs_time()) + " per second.");
+		if (linecount % 50000000 == 0) vrb.bullet(stb.str(linecount) + " positions read, " + stb.str((double) linecount / (double) local.high_res_abs_time()) + " per second.");
 		if (pos < beg || pos > end) continue;
 		bool depth_prb = false;
 		string chr = data->hdr->target_name[tid];
@@ -141,8 +141,8 @@ void ase_data::parseBam(void * d){
 					if (illumina13) baseq = baseq > 31 ? baseq - 31 : 0;
 
 					if(p->b->core.tid >= 0 && !(p->b->core.flag & BAM_FUNMAP)){ // mapped
-						if (p->b->core.flag & BAM_FSECONDARY) ms.secondary++; // secondary alingment
-						else if (remove_supp && (p->b->core.flag & BAM_FSUPPLEMENTARY)) ms.supp++; // supplementary alingment
+						if (p->b->core.flag & BAM_FSECONDARY) ms.secondary++; // secondary alignment
+						else if (remove_supp && (p->b->core.flag & BAM_FSUPPLEMENTARY)) ms.supp++; // supplementary alignment
 						else if (p->b->core.qual < param_min_mapQ) ms.mapq++; // fail mapping quality
 						else if (!keep_failqc && (p->b->core.flag & BAM_FQCFAIL)) ms.fail_qc++; // read failed qc
 						else if (param_dup_rd && (p->b->core.flag & BAM_FDUP)) ms.duplicate++; //duplicate read
@@ -154,6 +154,7 @@ void ase_data::parseBam(void * d){
 						else if (param_rm_indel && p->indel != 0) ms.indel++; //read containing an indel
 						else{
 							char base = getBase(bam_seqi(bam_get_seq(p->b), p->qpos));
+							if (!base || base == 'N') continue;
 							as.insert(string(1,base));
 							if (base == av_it->ref) {b_ref++;}
 							else if (base == av_it->alt) {b_alt++;}
@@ -208,7 +209,7 @@ void ase_data::parseBam(void * d){
 	}
 	bam_plp_reset(s_plp);
 	bam_plp_destroy(s_plp);
-	vrb.bullet(stb.str(linecount) + " positions read, " + stb.str((double) linecount / (double) local.abs_time()) + " per second.");
+	vrb.bullet(stb.str(linecount) + " positions read, " + stb.str((double) linecount / local.high_res_abs_time()) + " per second.");
 }
 
 void ase_data::readSequences(string fbam) {
@@ -274,7 +275,7 @@ void ase_data::readSequences(string fbam) {
     if (data->fp) sam_close(data->fp);
     hts_itr_destroy(data->iter);
     free(data);
-	vrb.bullet("Time taken: " + stb.str(current_timer.abs_time()) + " seconds");
+	vrb.bullet("Time taken: " + stb.str(current_timer.high_res_abs_time()) + " seconds");
 }
 
 

@@ -36,7 +36,7 @@ public:
     vector < int > data_start;						//data start positions
     vector < int > data_end;						//data end positions*/
     
-    pca_data(){maf_cutoff = 0.0 ; distance_separator = 0;}
+    pca_data(){maf_cutoff = 0.0 ; distance_separator = 0; data_count=0;}
     
     void resizeData();
     void finalizeData(int);
