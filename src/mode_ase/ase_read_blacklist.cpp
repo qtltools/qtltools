@@ -20,8 +20,9 @@ void ase_data::readBlacklist(string fgtf) {
 	string buffer;
 	vector < string > str;
 	vector < basic_block> input;
-	unsigned long long mem = sizeof(vector < basic_block>);
-	unsigned long long max_step = 500000000;
+	bool already_sorted = true, need_merging = false;
+	unsigned long long max_step = (500 * 1024 * 1024) / (sizeof(basic_block)+16);
+	unsigned long long next_step = max_step;
 	vrb.title("Reading blacklist in [" + fgtf + "]");
 	input_file fd (fgtf);
 	if (fd.fail()) vrb.error("Cannot open file!");
@@ -49,20 +50,33 @@ void ase_data::readBlacklist(string fgtf) {
         unsigned int end = atoi(str[2].c_str());
         basic_block abb(chr,start+1,end);
         if (bam_region.isSet() && !abb.overlap(bam_region)) continue;
+        if (input.size()){
+        	if(abb < input.back()){ already_sorted = false; need_merging = true;}
+        	else if (abb.contiguous(input.back())) need_merging = true;
+        }
         input.push_back(basic_block(abb));
-        mem += sizeof(basic_block) + chr.capacity();
-        if (on_the_fly && mem > max_step ){
-        	vector <basic_block> temp;
-        	mergeContiguousBlocks(input,temp);
-        	vrb.bullet("Reduced from " + stb.str(input.size()) + " to " + stb.str(temp.size()));
-        	input = temp;
-        	max_step += max_step;
+        if (on_the_fly && input.size() >= next_step ){
+        	if (need_merging){
+				size_t ps = blacklisted_regions.size();
+				mergeContiguousBlocks(input, !already_sorted);
+				//mergeContiguousBlocks(input, blacklisted_regions);
+				vrb.bullet("Reduced from " + stb.str(input.size() + ps) + " to " + stb.str(blacklisted_regions.size()));
+				//input = blacklisted_regions;
+				input = vector <basic_block>(0);
+				already_sorted = true;
+				need_merging = false;
+        	}else{
+        		next_step += max_step;
+        	}
+
         }
 
 	}
 	if(found_c.size() == 0) vrb.error("No chromosomes match between BED and BAM. Try --fix-chr!");
 	if(missed_c.size()) vrb.warning(stb.str(missed_c.size()) + " BED chromosomes are missing from the BAM file. Found " + stb.str(found_c.size()) + " chromosomes.");
-	mergeContiguousBlocks(input,blacklisted_regions);
+	//if (need_merging) mergeContiguousBlocks(input,blacklisted_regions);
+	if (need_merging) mergeContiguousBlocks(input,!already_sorted);
+	else blacklisted_regions.insert(blacklisted_regions.end(),input.begin(), input.end());
 	vrb.bullet(stb.str(blacklisted_regions.size()) + " non-overlapping regions read.");
 	vrb.bullet("Time taken: " + stb.str(current_timer.high_res_abs_time()) + " seconds");
 }

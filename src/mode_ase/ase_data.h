@@ -224,11 +224,7 @@ public:
 		else return false;
 	}
 
-	bool overlap(basic_block &b) const{
-		return (chr == b.chr && b.end >= start && b.start <= end);
-	}
-
-	bool overlap(genomic_region &b) const{
+	template <class B> bool overlap(B &b) const{
 		return (chr == b.chr && b.end >= start && b.start <= end);
 	}
 
@@ -236,8 +232,8 @@ public:
 		return (chr == c && e >= start && s <= end);
 	}
 
-	bool contiguous(basic_block &b) const{
-		return (overlap(b) || end + 1 == b.start || b.end + 1 == start);
+	template <class B> bool contiguous(B &b) const{
+		return (overlap(b) || (chr == b.chr && (end + 1 == b.start || b.end + 1 == start)));
 	}
 
 	vector < basic_block > subtract(basic_block &b) const{
@@ -271,6 +267,26 @@ public:
 		if (start > b.start) return false;
 		if (end < b.end) return true;
 		else return false;
+	}
+
+	bool operator == (const basic_block &b) const {
+		return (chr == b.chr && start == b.start && end == b.end);
+	}
+
+	bool operator != (const basic_block &b) const {
+		return !((*this) == b);
+	}
+
+	bool operator > (const basic_block &b) const {
+		return (*this) != b && !( (*this) < b) ;
+	}
+
+	bool operator >= (const basic_block &b) const {
+		return ((*this) == b || (*this) > b);
+	}
+
+	bool operator <= (const basic_block &b) const {
+		return ((*this) == b || (*this) < b);
 	}
 
 	static bool cmp_blocks (const basic_block &a, const basic_block &b) {
@@ -312,6 +328,11 @@ public:
 		auto upper = upper_bound(input.begin(),input.end(),*this,this->cmp_blocks);
 		if (lower >= upper) return false;
 		else return true;
+	}
+
+	friend ostream& operator<<(ostream& out, const basic_block& g) {
+		out << g.get_string();
+		return out;
 	}
 };
 
@@ -450,6 +471,8 @@ public :
 	void parseBam(void *);
 	void compareChrs(string, string,string);
 	void assignGenesToAseSite(ase_site &);
+	void mergeContiguousBlocks(vector <basic_block> &input, vector <basic_block> &output, bool sortFirst = true);
+	void mergeContiguousBlocks(vector <basic_block> &unmerged, bool sortFirst = true);
 	inline char complement(string &in){
 		if (in == "A") return 'T';
 		if (in == "T") return 'A';
@@ -466,22 +489,6 @@ public :
 		case 15: return 'N';
 		}
 		return 0;
-	}
-	inline void mergeContiguousBlocks(vector <basic_block> &input, vector <basic_block> &output){
-		output.clear();
-		if (input.size() > 1){
-			sort(input.begin(),input.end());
-			basic_block prev = input[0];
-			for (int i = 1 ; i < input.size(); i++){
-				if (prev.contiguous(input[i])) {
-					prev = prev.merge_nocheck(input[i]);
-				}else {
-					output.push_back(prev);
-					prev = input[i];
-				}
-			}
-			output.push_back(prev);
-		}else output = input;
 	}
 };
 

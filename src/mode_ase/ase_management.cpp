@@ -142,6 +142,51 @@ void ase_data::assignGenesToAseSite(ase_site &in){
 	}
 }
 
+void ase_data::mergeContiguousBlocks(vector <basic_block> &input, vector <basic_block> &output, bool sortFirst){
+	output.clear();
+	output.reserve(input.size());
+	if (input.size() > 1){
+		if(sortFirst) sort(input.begin(),input.end());
+		basic_block prev = input[0];
+		for (int i = 1 ; i < input.size(); i++){
+			if (prev.contiguous(input[i])) {
+				prev = prev.merge_nocheck(input[i]);
+			}else {
+				output.push_back(prev);
+				prev = input[i];
+			}
+		}
+		output.push_back(prev);
+	}else output = input;
+	output.shrink_to_fit();
+}
+
+void ase_data::mergeContiguousBlocks(vector <basic_block> &unmerged, bool sortFirst){
+	vector <basic_block> output;
+	if (unmerged.size()){
+
+		if (sortFirst) mergeContiguousBlocks(unmerged,output);
+		else mergeContiguousBlocks(unmerged,output,false);
+
+		size_t idx = 0;
+		if (blacklisted_regions.size()){
+			if (output.front() < blacklisted_regions.back()){
+				blacklisted_regions.insert(blacklisted_regions.end(),output.begin(),output.end());
+				mergeContiguousBlocks(blacklisted_regions,output);
+				blacklisted_regions.clear();
+			}else{
+				//we need to check for eg. the following case
+				//end     -------------------
+				//start       ----- -------- --------
+				while(idx < output.size() && blacklisted_regions.back().contiguous(output[idx])){
+					blacklisted_regions.back() = blacklisted_regions.back().merge_nocheck(output[idx]);
+					idx++;
+				}
+			}
+		}
+		blacklisted_regions.insert(blacklisted_regions.end(),output.begin()+idx,output.end());
+	}
+}
 
 
 
