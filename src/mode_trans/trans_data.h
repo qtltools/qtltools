@@ -120,8 +120,11 @@ inline double trans_data::fastCorrelation(vector < float > & P, float * G) {
 
 	switch (left) {
 	case 3:	sum0 += P[i+2] * G[i+2];
+	// fall through
 	case 2:	sum0 += P[i+1] * G[i+1];
+	// fall through
 	case 1:	sum0 += P[i+0] * G[i+0];
+	// fall through
 	case 0: ;
 	}
 

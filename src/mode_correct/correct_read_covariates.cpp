@@ -104,7 +104,7 @@ void correct_data::readQTLCovariates(string fqtl, string fvcf) {
 		if (mappingS.back() >= 0) n_includedS++;
 	}
     unsigned int linecount=0;
-	int ngt, ngt_arr = 0, nds, nds_arr = 0, * gt_arr = NULL, nsl, nsl_arr = 0, * sl_arr = NULL;
+	int ngt, ngt_arr = 0, nds, nds_arr = 0, * gt_arr = NULL;
 	float * ds_arr = NULL;
 	bcf1_t * line;
 	while(bcf_sr_next_line (sr)) {

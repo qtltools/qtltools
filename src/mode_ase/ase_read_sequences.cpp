@@ -15,21 +15,209 @@
 
 #include "ase_data.h"
 
-typedef struct {     			// auxiliary data structure
-	samFile * fp;				// the file handle
-	bam_hdr_t * hdr;			// the file header
-	hts_itr_t * iter;			// NULL if a region not specified
+typedef struct {     										// auxiliary data structure
+	samFile * fp;											// the file handle
+	bam_hdr_t * hdr;										// the file header
+	hts_itr_t * iter;										// NULL if a region not specified
+	int mq;													// mapping quality threshold
+	bool keep_orphan,check_orientation,check_proper_pair;	// parameters for filtering
+	int fflag;												// Filter flag
+	unsigned int mtlen;										// Maximum observed fragment length
 } aux_t;
 
-static int read_bam(void *data, bam1_t *b) {
+/* Having the filtering done in this function increases performance since
+ * fewer reads get piled-up. Another beneficial effect is we don't reach
+ * the max-depth limit with reads we will not use. However with filtering
+ * done here there is no easy way to keep track of the filtered reads as this
+ * functions seems to be called multiple times per position in bam_plp_auto*/
+static int ase_read_bam(void *data, bam1_t *b) {
 	aux_t * aux = (aux_t*) data;
-	return (aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b));
+	int ret, skip = 0;
+	do{
+		ret =  (aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b));
+		if (ret < 0) break;
+		else if (b->core.tid < 0 || (b->core.flag & aux->fflag) || b->core.qual < aux->mq) {skip = 1; continue;} // unmapped
+		else if(b->core.flag & BAM_FPAIRED){ //paired read
+			if (b->core.flag & BAM_FMUNMAP){ //mate unmapped
+				if (!aux->keep_orphan) { skip = 1;continue;}
+			}else{
+				if (aux->check_orientation && ((b->core.tid != b->core.mtid) ||  //must be on the same chr
+					((b->core.flag & BAM_FREVERSE) && (b->core.flag & BAM_FMREVERSE)) || // read 1 and 2 cannot be on the same strand
+					((b->core.pos < b->core.mpos) && (b->core.flag & BAM_FREVERSE)) || //read 1 must be on the +ve strand
+					((b->core.pos > b->core.mpos) && !(b->core.flag & BAM_FREVERSE)) //read 2 must be on the -ve strand
+				   )) { skip = 1; continue;}
+				if (aux->check_proper_pair && !(b->core.flag & BAM_FPROPER_PAIR)) { skip = 1; continue;} //not properly paired
+			}
+		}
+		unsigned int isize = abs(b->core.isize); // fragment length
+		if(isize > aux->mtlen) aux->mtlen = isize;
+		skip = 0;
+	}while(skip);
+	return ret;
 }
 
-void ase_data::readSequences(string fbam, string fvcf) {
-	aux_t * data = (aux_t *) malloc (sizeof(aux_t));
+static int ase_read_bam_no_filter(void *data, bam1_t *b) {
+	aux_t * aux = (aux_t*) data;
+	int ret = aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b);
+	if (ret >= 0){
+		unsigned int isize = abs(b->core.isize); // fragment length
+		if(isize > aux->mtlen) aux->mtlen = isize;
+	} 
+	return ret;
+}
 
-	vrb.title("Opening BAM file [" + fbam + "] and writing VCF file [" + fvcf + "]");
+
+void ase_data::parseBam(void * d){
+	aux_t * data = (aux_t *) d;
+	//Pile up reads
+	const bam_pileup1_t * v_plp;
+	int n_plp = 0, tid, pos;
+	bam_plp_t s_plp = print_stats ? bam_plp_init(ase_read_bam_no_filter, (void*)data) : bam_plp_init(ase_read_bam, (void*)data) ;
+	bam_plp_set_maxcnt(s_plp, max_depth);
+
+	int beg,end;
+	if (data->iter == NULL){
+		beg = INT_MIN;
+		end = INT_MAX;
+	}else{
+		beg = data->iter->beg;
+		end = data->iter->end;
+	}
+	unsigned long linecount = 0, prevstart = 0, prevend = 0;
+	string prevchr = "";
+	timer local;
+	unsigned int max_depth_limit = max_depth * depth_fraction;
+	while((v_plp = bam_plp_auto(s_plp, &tid, &pos, &n_plp)) != 0){
+		linecount++;
+		if (linecount % 50000000 == 0) vrb.bullet(stb.str(linecount) + " positions read, " + stb.str((double) linecount / (double) local.high_res_abs_time()) + " per second.");
+		if (pos < beg || pos > end) continue;
+		bool depth_prb = false;
+		string chr = data->hdr->target_name[tid];
+
+		//Check for position exceeding max depth
+		if (chr != prevchr){
+			if (region_length == 0 && !bam_region.isSet( ) && ase_chrs == bam_chrs){
+				vrb.bullet("Processing chromosome [" + chr + "]");
+			}
+			if (prevstart){
+				depth_exceeded.push_back(basic_block(prevchr,prevstart,prevend));
+			}
+			if (n_plp >= max_depth_limit){
+				depth_prb = true;
+				prevstart = prevend = pos+1;
+			}else prevstart = prevend = 0;
+			prevchr = chr;
+		}else if (n_plp >= max_depth_limit){
+			depth_prb = true;
+			if(prevstart){
+				if (pos == prevend){
+					prevend = pos+1;
+				}else{
+					depth_exceeded.push_back(basic_block(prevchr,prevstart,prevend));
+					prevstart = prevend = pos+1;
+				}
+			}else prevstart = prevend = pos+1;
+		}else if (prevstart){
+			depth_exceeded.push_back(basic_block(prevchr,prevstart,prevend ));
+			prevstart = prevend = 0;
+		}
+
+
+		ase_site temp(chr,pos+1); // ase-site positions are 1-based
+		auto av_it = all_variants.find(temp);
+		if (av_it != all_variants.end()){
+			unsigned int b_ref = 0, b_alt = 0, b_dis = 0;
+			double expected_number_of_mistakes = 0.0;
+			mapping_stats_full ms;
+			set <string> as;
+			//STEP1: Parse sequencing reads
+			if (print_warnings && depth_prb) vrb.warning(av_it->sid + " depth " + stb.str(n_plp) + " is >= 90% max-depth, potential data loss!");
+			ms.depth = n_plp;
+			if (print_stats){
+				for (int iread = 0 ; iread < n_plp ; iread ++) {
+					const bam_pileup1_t * p = v_plp + iread;
+
+					int baseq = p->qpos < p->b->core.l_qseq ? bam_get_qual(p->b)[p->qpos] : 0;
+					if (illumina13) baseq = baseq > 31 ? baseq - 31 : 0;
+
+					if(p->b->core.tid >= 0 && !(p->b->core.flag & BAM_FUNMAP)){ // mapped
+						if (p->b->core.flag & BAM_FSECONDARY) ms.secondary++; // secondary alignment
+						else if (remove_supp && (p->b->core.flag & BAM_FSUPPLEMENTARY)) ms.supp++; // supplementary alignment
+						else if (p->b->core.qual < param_min_mapQ) ms.mapq++; // fail mapping quality
+						else if (!keep_failqc && (p->b->core.flag & BAM_FQCFAIL)) ms.fail_qc++; // read failed qc
+						else if (param_dup_rd && (p->b->core.flag & BAM_FDUP)) ms.duplicate++; //duplicate read
+						else if (!keep_orphan && (p->b->core.flag & BAM_FPAIRED) && (p->b->core.flag & BAM_FMUNMAP)) ms.mate_unmapped++; // mate unmapped
+						else if (check_orientation && (p->b->core.flag & BAM_FPAIRED) && !(p->b->core.flag & BAM_FMUNMAP) && ((p->b->core.tid != p->b->core.mtid) || ((p->b->core.flag & BAM_FREVERSE) && (p->b->core.flag & BAM_FMREVERSE)) || ((p->b->core.pos < p->b->core.mpos) && (p->b->core.flag & BAM_FREVERSE)) || ((p->b->core.pos > p->b->core.mpos) && !(p->b->core.flag & BAM_FREVERSE)))) ms.orientation++; // wrong orientation
+						else if (check_proper_pair && (p->b->core.flag & BAM_FPAIRED) && !(p->b->core.flag & BAM_FMUNMAP) && !(p->b->core.flag & BAM_FPROPER_PAIR)) ms.not_pp++; // not properly paired
+						else if (p->is_del || p->is_refskip) ms.skipped++; //skipped read
+						else if (baseq < param_min_baseQ) ms.fail_baseq++; //fail base q
+						else if (param_rm_indel && p->indel != 0) ms.indel++; //read containing an indel
+						else{
+							char base = getBase(bam_seqi(bam_get_seq(p->b), p->qpos));
+							if (!base || base == 'N') continue;
+							as.insert(string(1,base));
+							if (base == av_it->ref) {b_ref++;}
+							else if (base == av_it->alt) {b_alt++;}
+							else {b_dis++;}
+							expected_number_of_mistakes += pow(10.0, (double) baseq / 10.0 * -1.0 ); // expected number of mistakes is the sum of the error probabilities converted from phred scale
+						}
+					}
+				}
+			}else{
+				for (int iread = 0 ; iread < n_plp ; iread ++) {
+					const bam_pileup1_t * p = v_plp + iread;
+
+					int baseq = p->qpos < p->b->core.l_qseq ? bam_get_qual(p->b)[p->qpos] : 0;
+					if (illumina13) baseq = baseq > 31 ? baseq - 31 : 0;
+
+					if (!p->is_del && !p->is_refskip && baseq >= param_min_baseQ && (!param_rm_indel || p->indel==0)){
+						char base = getBase(bam_seqi(bam_get_seq(p->b), p->qpos));
+						if (!base || base == 'N') continue;
+						as.insert(string(1,base));
+						if (base == av_it->ref) {b_ref++;}
+						else if (base == av_it->alt) {b_alt++;}
+						else {b_dis++;}
+						expected_number_of_mistakes += pow(10.0, (double) baseq / 10.0 * -1.0 ); // expected number of mutations is the sum of the error probabilities converted from phred scale
+					}
+				}
+			}
+			ase_site current = *av_it;
+			current.setCounts(b_ref,b_alt,b_dis,as,ms , expected_number_of_mistakes);
+			//check ASE site
+			if (current.other_count && current.ref_count == 0 && current.alt_count == 0) {
+				if (print_warnings) vrb.warning("No ref or alt allele for " + current.getName() + " in " + stb.str(current.other_count) + " sites");
+				current.concern += "NRA,";
+			}else if (current.other_count){
+				current.concern += "DA,";
+				if (current.other_count > current.alt_count) {
+					if (print_warnings) vrb.warning("More discordant alleles than alt alleles for " + current.getName() + " " + stb.str(current.other_count) + " > " + stb.str(current.alt_count));
+					current.concern += "MDTA,";
+				}
+				if (current.other_count > current.ref_count) {
+					if (print_warnings) vrb.warning("More discordant alleles than ref alleles for " + current.getName() + " " + stb.str(current.other_count) + " > " + stb.str(current.ref_count));
+					current.concern += "MDTR,";
+				}
+			}
+			if (!current.ref_count || !current.alt_count) {current.concern += "BANS,";}
+			else if (current.mar < 0.02) {current.concern += "LMAR,";}
+			passing_variants.push_back(current);
+		}
+	}//while end
+
+	if (prevstart){
+		depth_exceeded.push_back(basic_block(prevchr,prevstart , prevend ));
+	}
+	bam_plp_reset(s_plp);
+	bam_plp_destroy(s_plp);
+	vrb.bullet(stb.str(linecount) + " positions read, " + stb.str((double) linecount / local.high_res_abs_time()) + " per second.");
+}
+
+void ase_data::readSequences(string fbam) {
+	timer current_timer;
+	aux_t * data = (aux_t *) malloc (sizeof(aux_t));
+	data->iter = NULL;
+
+	vrb.title("Opening BAM file [" + fbam + "]");
 
 	//BAM OPEN
 	data->fp = sam_open(fbam.c_str(), "r");
@@ -38,143 +226,112 @@ void ase_data::readSequences(string fbam, string fvcf) {
     if (data->hdr == 0) vrb.error("Cannot parse BAM header!");
     hts_idx_t *idx = sam_index_load(data->fp, fbam.c_str());
     if (idx == NULL) vrb.error("Cannot load BAM index!");
+    data->fflag = (BAM_FUNMAP | BAM_FSECONDARY);
+    if (!keep_failqc) data->fflag |= BAM_FQCFAIL;
+    if (param_dup_rd) data->fflag |= BAM_FDUP;
+	if (remove_supp) data->fflag  |= BAM_FSUPPLEMENTARY;
 
-    //VCF OPEN
-	htsFile * bcf_fd = NULL;
-	bool compressed_vcf = fvcf.substr(fvcf.find_last_of(".") + 1) == "gz";
-	if (compressed_vcf) bcf_fd = bcf_open(fvcf.c_str(), "wz");
-	else bcf_fd = bcf_open(fvcf.c_str(), "wu");
-	if (bcf_fd == NULL) vrb.error("Impossible to create VCF file");
-	else if (compressed_vcf) vrb.bullet("BGZIP for VCF compression is ON");
-	else vrb.bullet("BGZIP compression for VCF is OFF (add .gz to filename to activate it)");
-	bcf_hdr_t * bcf_hdr = bcf_hdr_init("w");
-	kstring_t str = {0,0,0};
-	ksprintf(&str, "##QTLtools ase Version=%s\n",QTLTOOLS_VERSION);
-	bcf_hdr_append(bcf_hdr, str.s);
-    free(str.s);
+	data->mq = param_min_mapQ;
+	data->keep_orphan = keep_orphan;
+	data->check_orientation = check_orientation;
+	data->check_proper_pair = check_proper_pair;
+	data->mtlen = 0;
 
-	//VCF INFO
-	vrb.bullet("Writing VCF header [INFO, CONTIG, FORMAT, SAMPLES]");
-	bcf_hdr_append(bcf_hdr,"##INFO=<ID=M_FAI,Number=1,Type=Integer,Description=\"Number of reads failing mapping filters\">");
-	if (!param_dup_rd) bcf_hdr_append(bcf_hdr,"##INFO=<ID=M_DUP,Number=1,Type=Integer,Description=\"Number of duplicate reads removed\">");
-	bcf_hdr_append(bcf_hdr,"##INFO=<ID=M_SUC,Number=1,Type=Integer,Description=\"Number of reads passing mapping filters\">");
-	bcf_hdr_append(bcf_hdr,"##INFO=<ID=B_DEL,Number=1,Type=Integer,Description=\"Number of reads with deletion\">");
-	bcf_hdr_append(bcf_hdr,"##INFO=<ID=B_DIS,Number=1,Type=Integer,Description=\"Number of reads with base discordance\">");
-	bcf_hdr_append(bcf_hdr,"##INFO=<ID=B_QUA,Number=1,Type=Integer,Description=\"Number of reads with low base quality\">");
-	bcf_hdr_append(bcf_hdr,"##INFO=<ID=B_REF,Number=1,Type=Integer,Description=\"Number of reads matching REF allele\">");
-	bcf_hdr_append(bcf_hdr,"##INFO=<ID=B_ALT,Number=1,Type=Integer,Description=\"Number of reads matching ALT allele\">");
 
-	//VCF CONTIG
-	set < string > contig_set (regions.begin(), regions.end());
-	vrb.bullet("Writing " + stb.str(contig_set.size()) + " CONTIG fields");
-	for (set < string > :: iterator it_c = contig_set.begin() ; it_c != contig_set.end() ; ++ it_c) {
-		string tmp_str = "##contig=<ID=" + *it_c + ">";
-		bcf_hdr_append(bcf_hdr, tmp_str.c_str());
-	}
 
-    //VCF FORMAT
-    bcf_hdr_append(bcf_hdr,"##FORMAT=<ID=AS,Number=1,Type=Float,Description=\"Binomial test for ASE (i.e. ref/(ref+alt) != 0.5)\">");
+    if (my_regions.size()){
+    	for (int reg = 0; reg < my_regions.size(); reg++){
+    		data->iter = sam_itr_querys(idx, data->hdr, my_regions[reg].get_string().c_str()); // set the iterator
+    		if (data->iter == NULL) vrb.error("Problem jumping to region [" + my_regions[reg].get_string() + "]");
+    		else vrb.bullet("Scanning region [" + my_regions[reg].get_string() + "] " + stb.str(reg+1) + " / " + stb.str(my_regions.size()));
+    		parseBam((void *) data);
+    	}
+    }else parseBam((void *) data);
 
-    //VCF SAMPLES
-    bcf_hdr_add_sample(bcf_hdr, sample_id[0].c_str());
-    bcf_hdr_add_sample(bcf_hdr, NULL);
+	vrb.bullet(stb.str(passing_variants.size()) + " variant found");
+	vrb.bullet("Largest fragment observed = " + stb.str(data->mtlen) + " bp.");
 
-    //VCF HEADER
-    bcf_hdr_write(bcf_fd, bcf_hdr);
 
-	//Loop across regions
-    bcf1_t * bcf_rec = bcf_init1();
-	for (int reg = 0; reg < regions.size() ; reg ++) {
-
-		//Jump to region
-		data->iter = sam_itr_querys(idx, data->hdr, regions[reg].c_str()); // set the iterator
-		if (data->iter == NULL) vrb.error("Problem jumping to region [" + regions[reg] + "]");
-		else vrb.bullet("Scanning region [" + regions[reg] + "]");
-
-		int beg = data->iter->beg;
-		int end = data->iter->end;
-
-		//Pile up reads
-		const bam_pileup1_t * v_plp;
-		int n_plp = 0, tid, pos, i_site = 0;
-		bam_plp_t s_plp = bam_plp_init(read_bam, (void*)data);
-		while (((v_plp = bam_plp_auto(s_plp, &tid, &pos, &n_plp)) != 0) && i_site < variants[reg].size()) {
-		    int chr = bam_name2id(data->hdr, variants[reg][i_site].chr.c_str());
-			if (pos < beg || pos >= end) continue;
-			while (i_site < variants[reg].size() && (chr != tid || pos > variants[reg][i_site].pos)) { i_site ++; }
-			if (tid == chr && pos == variants[reg][i_site].pos) {
-				int m_fai = 0, m_dup = 0, m_suc = 0;
-				int b_del = 0, b_ref = 0, b_alt = 0, b_dis = 0, b_qua = 0;
-
-				//STEP1: Parse sequencing reads
-				for (int iread = 0 ; iread < n_plp ; iread ++) {
-					bool failed_qc = false;
-					const bam_pileup1_t * p = v_plp + iread;
-
-					if (p->b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL)) failed_qc = true;
-					else if ((int)p->b->core.qual < param_min_mapQ) failed_qc = true;
-					else if (p->b->core.flag & BAM_FPAIRED) {
-						if (!(p->b->core.flag & BAM_FPROPER_PAIR)) failed_qc = true;
-						else if (p->b->core.flag & BAM_FMUNMAP) failed_qc = true;
-						else if ((p->b->core.flag & BAM_FREVERSE) == (p->b->core.flag & BAM_FMREVERSE)) failed_qc = true;
-					}
-
-					if (failed_qc) m_fai ++;
-					else {
-						if (p->b->core.flag & BAM_FDUP) m_dup ++;
-						if (!param_dup_rd || !(p->b->core.flag & BAM_FDUP)) {
-							if (p->is_del || p->is_refskip || p->indel == 1) b_del++;
-							else if (bam_get_qual(p->b)[p->qpos] < param_min_baseQ) b_qua++;
-							else {
-								char base = ase_getBase(bam_seqi(bam_get_seq(p->b), p->qpos));
-								bool isRef = (base == variants[reg][i_site].ref);
-								bool isAlt = (base == variants[reg][i_site].alt);
-								if (isRef) b_ref++;
-								if (isAlt) b_alt++;
-								if (!isRef && !isAlt) b_dis++;
-							}
-							m_suc ++;
-						}
-					}
-				}
-
-				//STEP2: Write VCF record
-				if ((b_ref + b_alt) >= param_min_cov) {
-					bcf_clear1(bcf_rec);
-					bcf_rec->rid = bcf_hdr_name2id(bcf_hdr, variants[reg][i_site].chr.c_str());
-					bcf_rec->pos = variants[reg][i_site].pos;
-					bcf_update_id(bcf_hdr, bcf_rec, variants[reg][i_site].sid.c_str());
-					string str_alleles = "N,N";
-					str_alleles[0] = variants[reg][i_site].ref;
-					str_alleles[2] = variants[reg][i_site].alt;
-					bcf_update_alleles_str(bcf_hdr, bcf_rec, str_alleles.c_str());
-					bcf_rec->qual = 100;
-					int tmpi = bcf_hdr_id2int(bcf_hdr, BCF_DT_ID, "PASS");
-					bcf_update_filter(bcf_hdr, bcf_rec, &tmpi, 1);
-					bcf_update_info_int32(bcf_hdr, bcf_rec, "M_FAI", &m_fai, 1);
-					if (!param_dup_rd) bcf_update_info_int32(bcf_hdr, bcf_rec, "M_DUP", &m_dup, 1);
-					bcf_update_info_int32(bcf_hdr, bcf_rec, "M_SUC", &m_suc, 1);
-					bcf_update_info_int32(bcf_hdr, bcf_rec, "B_DEL", &b_del, 1);
-					bcf_update_info_int32(bcf_hdr, bcf_rec, "B_DIS", &b_dis, 1);
-					bcf_update_info_int32(bcf_hdr, bcf_rec, "B_QUA", &b_qua, 1);
-					bcf_update_info_int32(bcf_hdr, bcf_rec, "B_REF", &b_ref, 1);
-					bcf_update_info_int32(bcf_hdr, bcf_rec, "B_ALT", &b_alt, 1);
-					float tmpf = ase_binomialTest(b_ref, b_ref+b_alt, 0.5);
-					bcf_update_format_float(bcf_hdr, bcf_rec, "AS", &tmpf, 1);
-					bcf_write1(bcf_fd, bcf_hdr, bcf_rec);
-				}
+	if (passing_variants.size() == 0) vrb.leave("Cannot find usable variants in target region!");
+	if (depth_exceeded.size()){
+		if(print_warnings) vrb.title("Pileup depth is > " + stb.str(depth_fraction * 100) + "% of max depth in the following regions:");
+		for (int i = 0 ; i < depth_exceeded.size(); i++) {if(print_warnings) vrb.bullet(depth_exceeded[i].get_string()); depth_exceeded[i] = basic_block(depth_exceeded[i].chr, depth_exceeded[i].start > depth_flag_length + data->mtlen ? depth_exceeded[i].start - depth_flag_length - data->mtlen : 1 , depth_exceeded[i].end  < ULONG_MAX - depth_flag_length - data->mtlen? depth_exceeded[i].end + depth_flag_length + data->mtlen : ULONG_MAX);}
+		vector <basic_block> temp;
+		mergeContiguousBlocks(depth_exceeded, temp);
+		depth_exceeded = temp;
+		//for (int i = 0 ; i < depth_exceeded.size() ; i++) cerr << depth_exceeded[i].get_string() << endl;
+		unsigned int n = 0;
+		for (int i = 0 ; i < passing_variants.size() ; i++){
+			if (basic_block(passing_variants[i]).find_this_in_bool(depth_exceeded)){
+				n++;
+				passing_variants[i].concern += "PD,";
 			}
 		}
-		bam_plp_reset(s_plp);
-		bam_plp_destroy(s_plp);
-    }
+		if (n) vrb.warning("Pileup depth is > " + stb.str(depth_fraction * 100) + "% of max depth in " + stb.str(depth_exceeded.size()) + " non-overlapping regions. Due to intricacies of HTSlib, and to be on the safe side, " + stb.str(n) + " variants within " + stb.str(depth_flag_length + data->mtlen) + " bp (max fragment length + " + stb.str(depth_flag_length) + ") around these regions will be labeled with the PD concern. HIGHLY RECOMMENDED to increase --max-depth and rerun the analysis. However this does not mean that every variant with the PD concern is wrong, but it is not easy to know which ones are without increasing the --max-depth.");
+	}
 
     bam_hdr_destroy(data->hdr);
     hts_idx_destroy(idx);
     if (data->fp) sam_close(data->fp);
     hts_itr_destroy(data->iter);
     free(data);
-    bcf_destroy1(bcf_rec);
-    hts_close(bcf_fd);
-    bcf_hdr_destroy(bcf_hdr);
+	vrb.bullet("Time taken: " + stb.str(current_timer.high_res_abs_time()) + " seconds");
 }
+
+
+/*static int ase_read_bam(void *data, bam1_t *b) {
+	aux_t * aux = (aux_t*) data;
+	int ret, skip = 0;
+	do{
+		ret =  (aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b));
+		if (ret < 0) break;
+		if (b->core.tid < 0 || (b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY ))) { skip = 1; continue;}
+		skip = 0;
+		if (b->core.qual < aux->mq)  {skip = 1;} //having the mapq filter here improves performance drastically
+	}while(skip);
+	return ret;
+}*/
+
+/*static int mplp_func(void *data, bam1_t *b){
+	aux_t * aux = (aux_t*) data;
+	int ret, skip = 0;
+	do{
+		ret =  (aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b));
+		if (ret < 0) break;
+		if (b->core.tid < 0 || (b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL | BAM_FDUP))) { skip = 1; continue;}
+		skip = 0;
+		if (b->core.qual < aux->mq)  {skip = 1;}
+		else if ((b->core.flag&BAM_FPAIRED) && !(b->core.flag&BAM_FPROPER_PAIR)) { skip = 1;}
+
+	}while(skip);
+	return ret;
+}*/
+
+/*static inline void pileup_seq(const bam_pileup1_t * p){
+	if(p->is_head){
+		cerr << "^";
+		cerr << (char) (p->b->core.qual > 93? 126 : p->b->core.qual + 33);
+	}
+	if(!p->is_del){
+		char c = p->qpos < p->b->core.l_qseq ? seq_nt16_str[bam_seqi(bam_get_seq(p->b), p->qpos)] : 'N';
+		if (c == '=') c = bam_is_rev(p->b)? ',' : '.';
+        else c = bam_is_rev(p->b)? tolower(c) : toupper(c);
+		cerr << c;
+	}else cerr << (char) (p->is_refskip ? (bam_is_rev(p->b)? '<' : '>') : '*');
+	if (p->indel > 0) {
+        cerr << '+' << p->indel;
+        for (int j = 1; j <= p->indel; ++j) {
+            int c = seq_nt16_str[bam_seqi(bam_get_seq(p->b), p->qpos + j)];
+            cerr << (char) (bam_is_rev(p->b)? tolower(c) : toupper(c));
+        }
+    } else if (p->indel < 0) {
+        cerr << p->indel;
+        for (int j = 1; j <= -p->indel; ++j) {
+            int c = 'N';
+            cerr << (char) (bam_is_rev(p->b)? tolower(c) : toupper(c));
+        }
+    }
+    if (p->is_tail) cerr << '$';
+}*/
+
+

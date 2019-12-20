@@ -187,8 +187,11 @@ inline double union_data::getCorrelation(vector < float > & vec1, vector < float
 
 	switch (left) {
 	case 3:	sum0 += vec1[i+2] * vec2[i+2];
+	// fall through
 	case 2:	sum0 += vec1[i+1] * vec2[i+1];
+	// fall through
 	case 1:	sum0 += vec1[i+0] * vec2[i+0];
+	// fall through
 	case 0: ;
 	}
 
@@ -211,8 +214,11 @@ inline double union_data::getCorrelation(vector < float > & vec1, vector < float
 
     switch (left) {
         case 3:	sum0 += vec1[i+2] * vec2[i+2];
+        // fall through
         case 2:	sum0 += vec1[i+1] * vec2[i+1];
+        // fall through
         case 1:	sum0 += vec1[i+0] * vec2[i+0];
+        // fall through
         case 0: ;
     }
 

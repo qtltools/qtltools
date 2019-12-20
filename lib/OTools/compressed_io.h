@@ -74,6 +74,30 @@ public:
 		if (!file_descriptor.fail()) push(file_descriptor);
 	}
 
+	output_file(){}
+
+	void open(string filename){
+		if (filename.substr(filename.find_last_of(".") + 1) == "gz") {
+			file_descriptor.open(filename.c_str(), ios::out | ios::binary);
+			push(boost::iostreams::gzip_compressor());
+		} else if (filename.substr(filename.find_last_of(".") + 1) == "bz2") {
+			file_descriptor.open(filename.c_str(), ios::out | ios::binary);
+			push(boost::iostreams::bzip2_compressor());
+		} else file_descriptor.open(filename.c_str());
+		if (!file_descriptor.fail()) push(file_descriptor);
+	}
+
+	void append(string filename){
+		if (filename.substr(filename.find_last_of(".") + 1) == "gz") {
+			file_descriptor.open(filename.c_str(), ios::app | ios::binary);
+			push(boost::iostreams::gzip_compressor());
+		} else if (filename.substr(filename.find_last_of(".") + 1) == "bz2") {
+			file_descriptor.open(filename.c_str(), ios::app | ios::binary);
+			push(boost::iostreams::bzip2_compressor());
+		} else file_descriptor.open(filename.c_str(), ios::app);
+		if (!file_descriptor.fail()) push(file_descriptor);
+	}
+
 	~output_file() {
 		close();
 	}

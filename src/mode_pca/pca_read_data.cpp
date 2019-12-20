@@ -45,8 +45,11 @@ void pca_data::readDataVCF(string fvcf) {
     if(!(bcf_sr_add_reader (sr, fvcf.c_str()))) {
         switch (sr->errnum) {
             case not_bgzf: vrb.error("File not compressed with bgzip!");
+            // fall through
             case idx_load_failed: vrb.error("Impossible to load index file!");
+            // fall through
             case file_type_error: vrb.error("File format not detected by htslib!");
+            // fall through
             default : vrb.error("Unknown error!");
         }
     }

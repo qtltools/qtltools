@@ -38,7 +38,7 @@ public:
     double se;
     vector < float > residuals,X,Y;
     linReg(){pval=1;corr=0;beta=0; yIntercept = 0; residuals = vector < float> (0);X = vector < float> (0);Y = vector < float> (0); se = 0;r=0;}
-    linReg(double p ,double c, double b, double y , vector <float> &res){pval=p;corr=c;beta=b; yIntercept = y; residuals = res; r = beta < 0.0 ? sqrt(corr) * -1.0 : sqrt(corr);}
+    //linReg(double p ,double c, double b, double y , vector <float> &res){pval=p;corr=c;beta=b; yIntercept = y; residuals = res; r = beta < 0.0 ? sqrt(corr) * -1.0 : sqrt(corr);}
     friend ostream& operator<<(ostream& out, const linReg& l){
         out << "X";
         for (int i =0 ; i < l.X.size(); i++) out << "\t" << l.X[i];

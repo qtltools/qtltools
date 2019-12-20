@@ -17,6 +17,7 @@
 #define _CIS_DATA_H
 
 //ANALYSIS MODES
+#define CIS_NONE	0
 #define CIS_PERM	1
 #define CIS_NOMI	2
 #define CIS_COND	3
@@ -147,8 +148,11 @@ inline double cis_data::getCorrelation(vector < float > & vec1, vector < float >
 
 	switch (left) {
 	case 3:	sum0 += vec1[i+2] * vec2[i+2];
+	// fall through
 	case 2:	sum0 += vec1[i+1] * vec2[i+1];
+	// fall through
 	case 1:	sum0 += vec1[i+0] * vec2[i+0];
+	// fall through
 	case 0: ;
 	}
 
