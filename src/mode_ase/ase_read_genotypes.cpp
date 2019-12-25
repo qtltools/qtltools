@@ -35,6 +35,7 @@ void ase_data::readGenotypes(string filename ,string olog) {
 	unsigned int n_excludedG_dupl = 0;
 	unsigned int n_excludedG_nir = 0;
 	unsigned int n_excludedG_wr = 0;
+	unsigned int n_excludedG_cnib = 0;
 	unsigned int n_fixed_flipped = 0;
 	unsigned int n_fixed_swapped = 0;
 
@@ -113,6 +114,8 @@ void ase_data::readGenotypes(string filename ,string olog) {
 		}
 		ppos = pos;
 		prev_chr = curr_chr;
+		//skip chrs missing from bam
+		if (!bam_chrs.count(curr_chr)){n_excludedG_cnib++; if (olog != "") fdo << "VCNIB " << sid << endl; continue;}
 		//filter blacklisted regions
 		if(basic_block(curr_chr,pos1based,pos1based).find_this_in_bool(blacklisted_regions)){n_excludedG_blkl++; if (olog != "") fdo << "VB " << sid << endl; continue;}
 		string ref = string(line->d.allele[0]);	//ref
@@ -193,7 +196,7 @@ void ase_data::readGenotypes(string filename ,string olog) {
 			n_includedG ++;
 		}
 		if (linecount >= next_update){
-			vrb.bullet(stb.str(linecount) + " lines read, " + stb.str(n_includedG) + " heterozygous genotypes included, " + stb.str(n_excludedG_user + n_excludedG_blkl + n_excludedG_mult + n_excludedG_snpv + n_excludedG_snpN + n_excludedG_impq + n_excludedG_impp + n_excludedG_void + n_excludedG_miss + n_excludedG_homo + n_excludedG_dupl + n_excludedG_nir + n_excludedG_wr) + " genotypes excluded. Current chromosome [" + curr_chr + "]. " + stb.str((double) linecount / (double) current_timer.high_res_abs_time()) + " per second.");
+			vrb.bullet(stb.str(linecount) + " lines read, " + stb.str(n_includedG) + " heterozygous genotypes included, " + stb.str(n_excludedG_user + n_excludedG_blkl + n_excludedG_mult + n_excludedG_snpv + n_excludedG_snpN + n_excludedG_impq + n_excludedG_impp + n_excludedG_void + n_excludedG_miss + n_excludedG_homo + n_excludedG_dupl + n_excludedG_nir + n_excludedG_wr + n_excludedG_cnib) + " genotypes excluded. Current chromosome [" + curr_chr + "]. " + stb.str((double) linecount / (double) current_timer.high_res_abs_time()) + " per second.");
 			next_update = linecount + update_interval;
 		}
 	}
@@ -201,6 +204,7 @@ void ase_data::readGenotypes(string filename ,string olog) {
 	vrb.bullet(stb.str(n_includedG) + " heterozygous genotypes included");
 	if (n_excludedG_mult > 0) vrb.bullet(stb.str(n_excludedG_mult) + " multi-allelic variants excluded");
 	if (n_excludedG_user > 0) vrb.bullet(stb.str(n_excludedG_user) + " variants excluded by user");
+	if (n_excludedG_cnib > 0) vrb.bullet(stb.str(n_excludedG_cnib) + " variants excluded since they aren't on BAM chromosomes");
 	if (n_excludedG_blkl > 0) vrb.bullet(stb.str(n_excludedG_blkl) + " variants in blacklisted regions excluded");
 	if (n_excludedG_snpv > 0) vrb.bullet(stb.str(n_excludedG_snpv) + " indels excluded");
 	if (n_excludedG_snpN > 0) vrb.bullet(stb.str(n_excludedG_snpN) + " variants with missing ref/alt excluded");

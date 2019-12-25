@@ -28,7 +28,7 @@ void ase_data::readGTF(string fgtf){
     while(getline(fd, buffer)) {
         linecount++;
         if (linecount % 500000 == 0) vrb.bullet(stb.str(linecount) + " lines read");
-        if (buffer[0] == '#') continue;
+        if (buffer == "" || buffer[0] == '#') continue;
         stb.split(buffer, str, " \t;");
         if (str.size() < 10) vrb.error("Incorrect number of columns: " + stb.str(str.size()));
         if (str.size() % 2 ) vrb.error("Unmatched attributes: " + buffer);
@@ -43,6 +43,7 @@ void ase_data::readGTF(string fgtf){
 				found_c.insert(chr);
 			}else{
 				missed_c.insert(chr);
+				continue;
 			}
 		}else{
 			found_c.insert(chr);

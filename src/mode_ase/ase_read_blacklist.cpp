@@ -44,6 +44,7 @@ void ase_data::readBlacklist(string fgtf) {
 				found_c.insert(chr);
 			}else{
 				missed_c.insert(chr);
+				continue;
 			}
 		}else found_c.insert(chr);
         unsigned int start = atoi(str[1].c_str());
