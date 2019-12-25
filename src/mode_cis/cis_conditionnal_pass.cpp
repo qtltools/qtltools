@@ -61,7 +61,7 @@ void cis_data::runConditionalPass(string fout) {
 			unsigned int fhits = 0, fsignals = 0;
 			vector < int > fbest_idx;
 			vector < double > fbest_pvalue;
-			vector < vector < double > > fpvalue, fslope;
+			vector < vector < double > > fpvalue, fslope,fse,fr2;
 			vector < vector < float > > phenotype_curr = vector < vector < float > > (group_idx[i_group].size());
 			for (unsigned int p = 0 ; p < group_idx[i_group].size() ; p ++) phenotype_curr[p] = phenotype_val[group_idx[i_group][p]];
 
@@ -81,11 +81,14 @@ void cis_data::runConditionalPass(string fout) {
 				fbest_pvalue.push_back(1.0);
 				fpvalue.push_back(vector < double > (group_idx[i_group].size() * variant_indexes.size(), 1.0));
 				fslope.push_back(vector < double > (group_idx[i_group].size() * variant_indexes.size(), 0.0));
+				fr2.push_back(vector < double > (group_idx[i_group].size() * variant_indexes.size(), 0.0));
+				if (std_err) fse.push_back(vector < double > (group_idx[i_group].size() * variant_indexes.size(), 0.0));
 
 				for (unsigned int p = 0 ; p < group_idx[i_group].size() ; p ++) {
 					for (unsigned int v = 0 ; v < variant_indexes.size() ; v ++) {
 						unsigned int rel_idx = v * group_idx[i_group].size() + p;
-						regression(genotype_val[variant_indexes[v]], phenotype_curr[p], fpvalue.back()[rel_idx], fslope.back()[rel_idx]);
+						if (std_err) regression(genotype_val[variant_indexes[v]], phenotype_curr[p], fpvalue.back()[rel_idx], fslope.back()[rel_idx], fr2.back()[rel_idx], fse.back()[rel_idx] );
+						else regression(genotype_val[variant_indexes[v]], phenotype_curr[p], fpvalue.back()[rel_idx], fslope.back()[rel_idx], fr2.back()[rel_idx]);
 						if (fpvalue.back()[rel_idx] <= phenotype_threshold[group_idx[i_group][p]]) {
 							if (fdone) fsignals ++;
 							fdone = false;
@@ -101,6 +104,8 @@ void cis_data::runConditionalPass(string fout) {
 
 			fpvalue.pop_back();
 			fslope.pop_back();
+			if (std_err) fse.pop_back();
+			fr2.pop_back();
 			fbest_idx.pop_back();
 			fbest_pvalue.pop_back();
 
@@ -116,6 +121,9 @@ void cis_data::runConditionalPass(string fout) {
 				vector < double > bbest_pvalue = vector < double > (fsignals, 1.0);
 				vector < vector < double > > bpvalue = vector < vector < double > > (fsignals, vector < double > (group_idx[i_group].size() * variant_indexes.size(), 1.0));
 				vector < vector < double > > bslope = vector < vector < double > > (fsignals, vector < double > (group_idx[i_group].size() * variant_indexes.size(), 0.0));
+				vector < vector < double > > br2 = vector < vector < double > > (fsignals, vector < double > (group_idx[i_group].size() * variant_indexes.size(), 0.0));
+				vector < vector < double > > bse;
+				if (std_err) bse = vector < vector < double > > (fsignals, vector < double > (group_idx[i_group].size() * variant_indexes.size(), 0.0));
 
 				for (unsigned int i_sig = 0 ; i_sig < fsignals ; i_sig ++) {
 
@@ -140,7 +148,8 @@ void cis_data::runConditionalPass(string fout) {
 					for (unsigned int p = 0 ; p < group_idx[i_group].size() ; p ++) {
 						for (unsigned int v = 0 ; v < variant_indexes.size() ; v ++) {
 							unsigned int rel_idx = v*group_idx[i_group].size() + p;
-							regression(genotype_val[variant_indexes[v]], phenotype_curr[p], bpvalue[i_sig][rel_idx], bslope[i_sig][rel_idx]);
+							if (std_err) regression(genotype_val[variant_indexes[v]], phenotype_curr[p], bpvalue[i_sig][rel_idx], bslope[i_sig][rel_idx], br2[i_sig][rel_idx]);
+							else regression(genotype_val[variant_indexes[v]], phenotype_curr[p], bpvalue[i_sig][rel_idx], bslope[i_sig][rel_idx], br2[i_sig][rel_idx], bse[i_sig][rel_idx]);
 							if (bpvalue[i_sig][rel_idx] <= phenotype_threshold[group_idx[i_group][p]]) {
 								if (bdone) bsignals ++;
 								bdone = false;
@@ -188,11 +197,15 @@ void cis_data::runConditionalPass(string fout) {
 								fdo << " " << genotype_end[variant_indexes[v]];
 								fdo << " " << i_sig;
 								fdo << " " << fpvalue[i_sig][rel_idx];
+								fdo << " " << fr2[i_sig][rel_idx];
 								fdo << " " << fslope[i_sig][rel_idx];
+								if(std_err) fdo << " " << fse[i_sig][rel_idx];
 								fdo << " " << ((rel_idx == fbest_region[0])?"1":"0");
 								fdo << " " << ((fpvalue[i_sig][rel_idx] <= phenotype_threshold[group_idx[i_group][p]])?"1":"0");
 								fdo << " " << bpvalue[i_sig][rel_idx];
+								fdo << " " << br2[i_sig][rel_idx];
 								fdo << " " << bslope[i_sig][rel_idx];
+								if(std_err) fdo << " " << bse[i_sig][rel_idx];
 								fdo << " " << ((rel_idx == bbest_region[0])?"1":"0");
 								fdo << " " << ((bpvalue[i_sig][rel_idx] <= phenotype_threshold[group_idx[i_group][p]])?"1":"0");
 								fdo << endl;

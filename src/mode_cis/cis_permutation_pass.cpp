@@ -122,6 +122,9 @@ void cis_data::runPermutationPass(string fout) {
 			double dof_true = sample_count - 2;
 			double pval_nom = getPvalue(best_nominal_correlation, dof_true);
 			double pval_slope = getSlope(best_nominal_correlation, genotype_sd[best_nominal_variant_abs], phenotype_sd[best_nominal_phenotype_abs]);
+			double pval_r2 = best_nominal_correlation * best_nominal_correlation;
+			double pval_se = 0.0;
+			if(std_err) pval_se = getSE(pval_r2, genotype_sd[best_nominal_variant_abs], phenotype_sd[best_nominal_phenotype_abs]);
 
 			//STEP12: VERBOSE BEST HIT
 			if (grp_mode == GRP_BEST)
@@ -185,7 +188,9 @@ void cis_data::runPermutationPass(string fout) {
 			fdo << " " << beta_ml1;
 			fdo << " " << beta_ml2;
 			fdo << " " << pval_nom;
+			fdo << " " << pval_r2;
 			fdo << " " << pval_slope;
+			if(std_err) fdo << " " << pval_se;
 			fdo << " " << pval_emp;
 			fdo << " " << pval_bml;
 			fdo << endl;

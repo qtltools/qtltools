@@ -77,14 +77,21 @@ void cis_data::runNominalPass(string fout) {
 			int best_nominal_distance = cis_window;
 			vector < double > pval_nom = vector < double > (variant_indexes.size() * group_idx[i_group].size(), 0.0);
 			vector < double > pval_slope = vector < double > (variant_indexes.size() * group_idx[i_group].size(), 0.0);
+			vector < double > pval_r2 = vector < double > (variant_indexes.size() * group_idx[i_group].size(), 0.0);
+			vector < double > pval_se ;
+			if(std_err) pval_se = vector < double > (variant_indexes.size() * group_idx[i_group].size(), 0.0);
 
 			//STEP8: ASSOCIATION TESTING
 			dof_true = sample_count - 2;
 			for (unsigned int p = 0 ; p < group_idx[i_group].size() ; p ++) {
 				for (unsigned int v = 0 ; v < variant_indexes.size() ; v ++) {
 					double curr_correlation = getCorrelation(genotype_val[variant_indexes[v]], phenotype_val[group_idx[i_group][p]]);
+					double r2 = curr_correlation * curr_correlation;
+					pval_r2[v*group_idx[i_group].size()+p] = r2;
 					pval_nom[v*group_idx[i_group].size()+p] = getPvalue(curr_correlation, dof_true);
 					pval_slope[v*group_idx[i_group].size()+p] = getSlope(curr_correlation, genotype_sd[variant_indexes[v]], phenotype_sd[group_idx[i_group][p]]);
+					//cerr << genotype_id[variant_indexes[v]] << " " << phenotype_id[group_idx[i_group][p]] << " ";
+					if (std_err) pval_se[v*group_idx[i_group].size()+p] = getSE(r2, genotype_sd[variant_indexes[v]], phenotype_sd[group_idx[i_group][p]]);
 					if (abs(curr_correlation) > abs(best_nominal_correlation) || (abs(curr_correlation) == abs(best_nominal_correlation) && abs(variant_distances[v]) < abs(best_nominal_distance))) {
 						best_nominal_correlation = curr_correlation;
 						best_nominal_variant_rel = v;
@@ -126,7 +133,9 @@ void cis_data::runNominalPass(string fout) {
 						fdo << " " << genotype_start[variant_indexes[v]];
 						fdo << " " << genotype_end[variant_indexes[v]];
 						fdo << " " << pval_nom[v * group_idx[i_group].size() + p];
+						fdo << " " << pval_r2[v * group_idx[i_group].size() + p];
 						fdo << " " << pval_slope[v * group_idx[i_group].size() + p];
+						if (std_err) fdo << " " << pval_se[v * group_idx[i_group].size() + p];
 						fdo << " " << ((v == best_nominal_variant_rel && p == best_nominal_phenotype_rel)?"1":"0");
 						fdo << endl;
 					}

@@ -44,7 +44,7 @@ public:
 	//REGIONS
 	genomic_region regionPhenotype;
 	genomic_region regionGenotype;
-	bool full_test;
+	bool full_test,std_err;
 
 	//GENOTYPES
 	int genotype_count;									//variant site number
@@ -114,7 +114,9 @@ public:
 	double getPvalue(double, double);
 	double getPvalue(double, vector < double > &);
 	double getSlope(double, double, double);
-	void regression(vector < float > & X, vector < float > & Y, double & pvalue, double & slope);
+	double getSE(double, double, double);
+	void regression(vector < float > & X, vector < float > & Y, double & pvalue, double & slope, double & r2);
+	void regression(vector < float > & X, vector < float > & Y, double & pvalue, double & slope, double & r2, double & se);
 
 	//ANALYSIS
 	void writeHeader(string);
@@ -176,7 +178,18 @@ inline double cis_data::getSlope(double nominal_correlation, double gsd, double 
 	else return nominal_correlation * psd / gsd;
 }
 
-inline void cis_data::regression(vector < float > & X, vector < float > & Y, double & pvalue, double & slope) {
+inline double cis_data::getSE(double r_squared, double gsd, double psd) {
+	if (gsd < 1e-16 || psd < 1e-16) return 0;
+	else{
+		double adjusted_r_squared = 1.0 - ((((double) sample_count - 1.0) / ((double) sample_count - 2.0)) * (1.0 - r_squared));
+		double std_err_of_the_regression =  sqrt(1.0 - adjusted_r_squared) * psd;
+		double population_sd_of_genotypes = sqrt((gsd * gsd * ((double) sample_count - 1.0)) / (double) sample_count);
+		//cerr << r_squared << " " << gsd << " " << psd << " " << adjusted_r_squared << " " << std_err_of_the_regression << " " << population_sd_of_genotypes << " " << (std_err_of_the_regression / sqrt(sample_count)) * (1.0 / population_sd_of_genotypes) << endl;
+		return (std_err_of_the_regression / sqrt(sample_count)) * (1.0 / population_sd_of_genotypes);
+	}
+}
+
+inline void cis_data::regression(vector < float > & X, vector < float > & Y, double & pvalue, double & slope, double & r2) {
 	vector < float > Xtmp = X;
 	vector < float > Ytmp = Y;
 	double sdXtmp = basic_stats(Xtmp).sd();
@@ -184,8 +197,23 @@ inline void cis_data::regression(vector < float > & X, vector < float > & Y, dou
 	normalize(Xtmp);
 	normalize(Ytmp);
 	double correlation = getCorrelation(Xtmp, Ytmp);
+	r2 = correlation * correlation;
 	pvalue = getPvalue(correlation, sample_count - 2);
 	slope = getSlope(correlation, sdXtmp, sdYtmp);
+}
+
+inline void cis_data::regression(vector < float > & X, vector < float > & Y, double & pvalue, double & slope, double & r2, double & se) {
+	vector < float > Xtmp = X;
+	vector < float > Ytmp = Y;
+	double sdXtmp = basic_stats(Xtmp).sd();
+	double sdYtmp = basic_stats(Ytmp).sd();
+	normalize(Xtmp);
+	normalize(Ytmp);
+	double correlation = getCorrelation(Xtmp, Ytmp);
+	r2 = correlation * correlation;
+	pvalue = getPvalue(correlation, sample_count - 2);
+	slope = getSlope(correlation, sdXtmp, sdYtmp);
+	se = getSE(r2, sdXtmp, sdYtmp);
 }
 
 #endif

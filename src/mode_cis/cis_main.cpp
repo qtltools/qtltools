@@ -34,6 +34,7 @@ void cis_main(vector < string > & argv) {
 	boost::program_options::options_description opt_parameters ("\x1B[32mParameters\33[0m");
 	opt_parameters.add_options()
 		("normal", "Normal transform the phenotypes.")
+		("std-err", "Calculate the standard error of the beta (slope).")
 		("window", boost::program_options::value< unsigned int >()->default_value(1000000), "Size of the cis-window.");
 
 	boost::program_options::options_description opt_modes ("\x1B[32mAnalysis type\33[0m");
@@ -134,6 +135,7 @@ void cis_main(vector < string > & argv) {
 		vrb.bullet("Region for phenotypes = [" + regions[1] +"]");
 		D.full_test = true;
 	}
+	if(D.options.count("std-err")) D.std_err = true;
 
 	//---------------------------
 	// 7. SET AGGREGATION METHODS

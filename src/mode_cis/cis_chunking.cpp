@@ -28,7 +28,9 @@ void cis_data::writeHeader(string fout) {
 		case GRP_PCA1: fdo << " ve_by_pc1 n_phe_in_grp"; break;
 		case GRP_MEAN: fdo << " n_phe_in_grp"; break;
 		}
-		fdo << " n_var_in_cis dist_phe_var var_id var_chr var_from var_to dof1 dof2 bml1 bml2 nom_pval slope adj_emp_pval adj_beta_pval" << endl;
+		fdo << " n_var_in_cis dist_phe_var var_id var_chr var_from var_to dof1 dof2 bml1 bml2 nom_pval r_squared slope ";
+		if (std_err) fdo<<"slope_se ";
+		fdo << "adj_emp_pval adj_beta_pval" << endl;
 	}
 	if (mode == CIS_NOMI) {
 		if (grp_mode == GRP_NONE) fdo << "phe_id";
@@ -39,7 +41,9 @@ void cis_data::writeHeader(string fout) {
 		case GRP_PCA1: fdo << " ve_by_pc1 n_phe_in_grp"; break;
 		case GRP_MEAN: fdo << " n_phe_in_grp"; break;
 		}
-		fdo << " n_var_in_cis dist_phe_var var_id var_chr var_from var_to nom_pval slope best_hit" << endl;
+		fdo << " n_var_in_cis dist_phe_var var_id var_chr var_from var_to nom_pval r_squared slope ";
+		if(std_err) fdo << "slope_se ";
+		fdo << "best_hit" << endl;
 	}
 	if (mode == CIS_COND) {
 		if (grp_mode == GRP_NONE) fdo << "phe_id";
@@ -50,7 +54,11 @@ void cis_data::writeHeader(string fout) {
 		case GRP_PCA1: fdo << " ve_by_pc1 n_phe_in_grp"; break;
 		case GRP_MEAN: fdo << " n_phe_in_grp"; break;
 		}
-		fdo << " n_var_in_cis dist_phe_var var_id var_chr var_from var_to rank fwd_pval fwd_slope fwd_best_hit fwd_sig bwd_pval bwd_slope bwd_best_hit bwd_sig" << endl;
+		fdo << " n_var_in_cis dist_phe_var var_id var_chr var_from var_to rank fwd_pval fwd_r_squared fwd_slope ";
+		if(std_err) fdo << "fwd_slope_se ";
+		fdo << "fwd_best_hit fwd_sig bwd_pval bwd_r_squared ";
+		if(std_err) fdo << "bwd_slope_se ";
+		fdo << "bwd_slope bwd_best_hit bwd_sig" << endl;
 	}
 	fdo.close();
 }
