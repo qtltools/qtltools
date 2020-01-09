@@ -653,6 +653,7 @@ void quan2_data::readBam(string fbam){
     }//BAM loop
     vrb.bullet("DONE: " + stb.str(line_count) + " lines read");
     if (read_sink.size() && !region.isSet()) vrb.warning(stb.str(read_sink.size()) + " unmatched mate pairs found");
+    stats.unmatched = read_sink.size();
     if (stats.checkedNM && stats.noNM) vrb.warning("Checked " + stb.str(stats.checkedNM) + " reads for number of mismatches (NM tag) and " + stb.str(stats.noNM) + " reads did NOT have a proper NM tag. These reads are treated as if they had no mismatches and hence included in the quantifications.");
     if (stats.checkedNM && stats.nonIntNM) vrb.warning("Checked " + stb.str(stats.checkedNM) + " reads for number of mismatches (NM tag) and " + stb.str(stats.nonIntNM) + " reads did NOT have an integer NM tag.");
     if (stats.checkedNM && stats.multiNM) vrb.warning("Checked " + stb.str(stats.checkedNM) + " reads for number of mismatches (NM tag) and " + stb.str(stats.multiNM) + " reads had multiple NM tags");

@@ -188,14 +188,15 @@ void quan2_data::printStats(string fout){
 	fdo.precision(16);
 	fdo << "sample\t" << sample << endl;
 	fdo << "total_reads\t" << stats.total << endl;
-	fdo << "total_secondary_alingments\t" << stats.secondary << endl;
+	fdo << "total_secondary_alingments_(does_not_count_towards_total_reads)\t" << stats.secondary << endl;
 	fdo << "total_unmapped\t" << stats.unmapped << endl;
 	fdo << "total_failqc\t" << stats.failqc << endl;
 	fdo << "total_duplicate\t" << stats.dup << endl;
 	fdo << "total_mapQ_less_than_" << filter.min_mapQ << "\t" << stats.mapQ << endl;
 	fdo << "total_notpaired\t" << stats.unpaired << endl;
 	fdo << "total_mismatches_greater_than_" << filter.max_mismatch_count << "_" << filter.max_mismatch_count_total << "\t" << stats.mismatch << endl;
-	fdo << "total_merged_reads\t" << stats.merged << endl;
+	fdo << "total_unmatched_mate_pairs\t" << stats.unmatched << endl;
+	fdo << "total_merged_reads_(not_filtered)\t" << stats.merged << endl;
 	fdo << "total_good\t" << stats.good << endl;
 	fdo << "total_exonic\t" << stats.exonicint << endl;
 	//fdo << "total_exonic_after_merge\t" << stats.exonic << endl;

@@ -36,9 +36,9 @@ public:
 
 class my_stats{
 public:
-	unsigned long int mapQ,mismatch,unmapped,unpaired,dup,notexon,good,total,exonicint,exonicint_multi,secondary,failqc,merged,noNM,checkedNM,nonIntNM,multiNM;
+	unsigned long int mapQ,mismatch,unmapped,unpaired,dup,notexon,good,total,exonicint,exonicint_multi,secondary,failqc,merged,noNM,checkedNM,nonIntNM,multiNM,unmatched;
     double exonic,exonic_multi;
-    my_stats(){mapQ=0;mismatch=0;unmapped=0;dup=0;unpaired=0;notexon=0;exonic=0.0;total=0;good=0;exonicint=0;secondary=0;failqc=0;exonic_multi=0.0;exonicint_multi=0;merged=0;checkedNM=noNM=nonIntNM=multiNM=0;}
+    my_stats(){mapQ=0;mismatch=0;unmapped=0;dup=0;unpaired=0;notexon=0;exonic=0.0;total=0;good=0;exonicint=0;secondary=0;failqc=0;exonic_multi=0.0;exonicint_multi=0;merged=0;checkedNM=noNM=nonIntNM=multiNM=unmatched=0;}
 };
 
 
