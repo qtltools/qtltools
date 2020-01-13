@@ -77,16 +77,9 @@ my_cont_blocks quan2_data::keep_read(bam1_t *b) {
 #endif
 		return block;
 	}
-	//If paired check basic orientation and if the mate is mapped
+	//If paired check whether the mate is mapped and properly paired (if we are checking for this)
 	if (b->core.flag & BAM_FPAIRED) {
-		if ((b->core.flag & BAM_FREVERSE) == (b->core.flag & BAM_FMREVERSE) || (b->core.flag & BAM_FMUNMAP) ){
-			block.filter = NPP;
-#ifdef DEBUG
-			cerr << "NPP\t" << block.name << endl;
-#endif
-			return block;
-		}
-		if (filter.proper_pair && !(b->core.flag & BAM_FPROPER_PAIR)){
+		if ((b->core.flag & BAM_FMUNMAP) || (filter.proper_pair && !(b->core.flag & BAM_FPROPER_PAIR))){
 			block.filter = NPP;
 #ifdef DEBUG
 			cerr << "NPP\t" << block.name << endl;
@@ -321,6 +314,9 @@ void quan2_data::readBam(string fbam){
     if (!region.isSet()) vrb.bullet("Expecting " + stb.str(totr) + " lines");
     //while (sam_read1(fd, header, b) >= 0) {
     int ret;
+    int ppos = -1;
+    string pchr = "";
+    set <string> found_chrs;
     while (1){
 		ret = iter ? sam_itr_next(fd, iter, b) : sam_read1(fd, header, b);
 		if (ret < 0) break;
@@ -338,6 +334,16 @@ void quan2_data::readBam(string fbam){
         if (b->core.tid >= 0){ //if this is less than 0 it means it is unmapped
         	if(b->core.tid >= header->n_targets) vrb.error("Chromosome for [" + B.name + "] is not found in the BAM header");
         	B.chr = string(header->target_name[b->core.tid]);
+        	if (pchr != B.chr) {
+        		if (found_chrs.count(B.chr)) vrb.error("BAM file is not sorted by chromosome at " + B.chr + " " + stb.str(b->core.pos) + " " + B.name);
+        		found_chrs.insert(B.chr);
+        		ppos = b->core.pos;
+        		pchr = B.chr;
+        	}else if (b->core.pos < ppos){
+        		vrb.error("BAM file is not sorted by position at " + B.chr + " " + stb.str(b->core.pos) + " " + B.name);
+        	}else{
+        		ppos = b->core.pos;
+        	}
         }
     	stats.total++;
     	//Check if paired end
@@ -379,7 +385,7 @@ void quan2_data::readBam(string fbam){
                 	stats.mismatch+=2;
                 	continue;
                 }
-                //We are good so far, let's check if we are truly correctly orientated
+                //We are good so far, let's check if we are truly correctly orientated                                                                                   in a sorted bam the expression below should never be true
                 if(A.core.tid != B.core.tid || (A.core.flag & BAM_FREVERSE) || !(B.core.flag & BAM_FREVERSE) || ( filter.old_wrong_split && B.core.pos <= A.core.pos) || ( !filter.old_wrong_split && B.core.pos < A.core.pos)){
 #ifdef DEBUG
                 	cerr << "NPPP\t" << B.name << "\tc:" << (A.core.tid != B.core.tid) << "\t1s:" << (A.core.flag & BAM_FREVERSE) << "\t2s:" << !(B.core.flag & BAM_FREVERSE) << "\to:" << ( filter.old_wrong_split && B.core.pos <= A.core.pos) << "\tn:" << ( !filter.old_wrong_split && B.core.pos < A.core.pos) << "\t" << A.core.flag << "\t" << B.core.flag << endl;
