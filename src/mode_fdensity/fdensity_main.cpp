@@ -49,7 +49,7 @@ void fdensity_main(vector < string > & argv) {
 	//---------------------
 	// 3. PRINT HELP/HEADER
 	//---------------------
-	vrb.ctitle("ANNOTATION DENSITY ARROUND QTLs");
+	vrb.ctitle("ANNOTATION DENSITY AROUND QTLs");
 	if (D.options.count("help")) {
 		cout << D.option_descriptions << endl;
 		exit(EXIT_SUCCESS);
