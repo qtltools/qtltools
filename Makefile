@@ -1,5 +1,5 @@
 ##########################################
-# SET CORRECTLY THESE 6 PATHS TO COMPILE #
+# SET THESE 6 PATHS CORRECTLY TO COMPILE #
 ##########################################
 BOOST_INC=
 BOOST_LIB=
@@ -7,6 +7,15 @@ RMATH_INC=
 RMATH_LIB=
 HTSLD_INC=
 HTSLD_LIB=
+#########################################################
+# EXAMPLES:                                             #
+# BOOST_INC=/usr/include/                               #
+# BOOST_LIB=/usr/lib/x86_64-linux-gnu/                  #
+# RMATH_INC=$(HOME)/Tools/R-3.6.1/src/include           #
+# RMATH_LIB=$(HOME)/Tools/R-3.6.1/src/nmath/standalone  #
+# HTSLD_INC=$(HOME)/Tools/htslib-1.9                    #
+# HTSLD_LIB=$(HOME)/Tools/htslib-1.9                    #
+#########################################################
 
 #COMPILER MODE C++11
 CXX=g++ -std=c++0x
@@ -23,111 +32,51 @@ LIB_FLAGS=-lz -lgsl -lblas -lbz2 -llzma -lgslcblas -lm -lpthread
 BFILE=bin/QTLtools
 HFILE=$(shell find src -name *.h)
 TFILE=$(shell find lib -name *.h)
-CFILE=$(shell find src -name *.cpp)
-OFILE=$(shell for file in `find src -name *.cpp`; do echo obj/$$(basename $$file .cpp).o; done)
-VPATH=$(shell for file in `find src -name *.cpp`; do echo $$(dirname $$file); done)
+CFILE=$(shell find src -name *.cpp | LC_ALL=C sort)
+OFILE=$(shell for file in `find src -name *.cpp | LC_ALL=C sort`; do echo obj/$$(basename $$file .cpp).o; done)
+VPATH=$(shell for file in `find src -name *.cpp | LC_ALL=C sort`; do echo $$(dirname $$file); done)
+
+#STATICLY LINKED LIBS
+LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
+#INCLUDE DIRS
+IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
+
+#SHELL
+UNAME := $(shell uname)
+ifeq ($(UNAME),Darwin)
+ CXXFLAG_REL+= -fvisibility=hidden -fvisibility-inlines-hidden
+ CXXFLAG_DBG+= -fvisibility=hidden -fvisibility-inlines-hidden
+endif
 
 #DEFAULT VERSION (SET UP THE VARIABLES IN THE BEGINING OF THE MAKEFILE)
 all: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
-all: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
-all: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
 all: LDFLAG=$(CXXFLAG_REL)
 all: $(BFILE)
 
-#DEFAULT DEBUG VERSION (SET UP THE VARIABLES IN THE BEGINING OF THE MAKEFILE)
-all-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
-all-dbg: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
-all-dbg: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
-all-dbg: LDFLAG=$(CXXFLAG_DBG)
-all-dbg: $(BFILE)
+#DEBUG VERSION (SET UP THE VARIABLES IN THE BEGINING OF THE MAKEFILE)
+debug: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
+debug: LDFLAG=$(CXXFLAG_DBG)
+debug: $(BFILE)
 
-#DEFAULT VERSION (SET UP THE VARIABLES IN THE BEGINING OF THE MAKEFILE)
-all-static: LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lblas -lbz2 -llzma -lgslcblas -Wl,-Bdynamic -lm -lpthread 
-all-static: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
-all-static: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
-all-static: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
-all-static: LDFLAG=$(CXXFLAG_REL)
-all-static: $(BFILE)
+#STATIC VERSION (SET UP THE VARIABLES IN THE BEGINING OF THE MAKEFILE)
+static: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
+static: LDFLAG=$(CXXFLAG_REL)
+ifeq ($(UNAME),Darwin)
+#ASSUMES YOU INSTALLED REQUIRED LIBRARIES WITH BREW, IF YOU HAVE THESE IN OTHER LOCATIONS MODIFY THE NEXT LINE
+static: LIB_FILES+= /usr/local/opt/zlib/lib/libz.a /usr/local/lib/libgslcblas.a /usr/local/lib/libgsl.a /usr/local/opt/bzip2/lib/libbz2.a /usr/local/lib/liblzma.a
+static: LIB_FLAGS=-lm -lpthread
+else
+static: LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lblas -lbz2 -llzma -lgslcblas -Wl,-Bdynamic -lm -lpthread
+endif
+static: $(BFILE)
 
-#UNIGE DESKTOP RELEASE VERSION
-desktop: RMATH_INC=$(HOME)/Tools/R-3.2.2/src/include
-desktop: RMATH_LIB=$(HOME)/Tools/R-3.2.2/src/nmath/standalone
-desktop: HTSLD_INC=$(HOME)/Tools/htslib-1.3
-desktop: HTSLD_LIB=$(HOME)/Tools/htslib-1.3
-desktop: BOOST_INC=/usr/include
-desktop: BOOST_LIB=/usr/lib/x86_64-linux-gnu
-desktop: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
-desktop: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
-desktop: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
-desktop: LDFLAG=$(CXXFLAG_REL)
-desktop: $(BFILE)
-
-#UNIGE DESKTOP DEBUG VERSION
-desktop-dbg: RMATH_INC=$(HOME)/Tools/R-3.2.2/src/include
-desktop-dbg: RMATH_LIB=$(HOME)/Tools/R-3.2.2/src/nmath/standalone
-desktop-dbg: HTSLD_INC=$(HOME)/Tools/htslib-1.3
-desktop-dbg: HTSLD_LIB=$(HOME)/Tools/htslib-1.3
-desktop-dbg: BOOST_INC=/usr/include
-desktop-dbg: BOOST_LIB=/usr/lib/x86_64-linux-gnu
-desktop-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
-desktop-dbg: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
-desktop-dbg: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
-desktop-dbg: LDFLAG=$(CXXFLAG_DBG)
-desktop-dbg: $(BFILE)
-
-#VITAL-IT RELEASE VERSION
-cluster: LIB_FLAGS=-lz -lgsl -lblas -lbz2 -lm -lpthread -lgslcblas -llzma
-cluster: RMATH_INC=/software/R/3.4.2/include
-cluster: RMATH_LIB=/software/R/3.4.2/lib64
-cluster: HTSLD_INC=/software/UHTS/Analysis/samtools/1.4/include
-cluster: HTSLD_LIB=/software/UHTS/Analysis/samtools/1.4/lib64
-cluster: BOOST_INC=/software/include
-cluster: BOOST_LIB=/software/lib64
-cluster: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
-cluster: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
-cluster: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
-cluster: LDFLAG=$(CXXFLAG_REL)
-cluster: $(BFILE)
-
-#VITAL-IT DEBUG VERSION
-cluster-dbg: LIB_FLAGS=-lz -lgsl -lblas -lbz2 -lm -lpthread -lgslcblas -llzma
-cluster-dbg: RMATH_INC=/software/R/3.4.2/include
-cluster-dbg: RMATH_LIB=/software/R/3.4.2/lib64
-cluster-dbg: HTSLD_INC=/software/UHTS/Analysis/samtools/1.4/include
-cluster-dbg: HTSLD_LIB=/software/UHTS/Analysis/samtools/1.4/lib64
-cluster-dbg: BOOST_INC=/software/include
-cluster-dbg: BOOST_LIB=/software/lib64
-cluster-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
-cluster-dbg: LDFLAG=$(CXXFLAG_DBG)
-cluster-dbg: IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
-cluster-dbg: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
-cluster-dbg: $(BFILE)
-
-#MAC RELEASE VERSION
-mac: RMATH_INC=$(HOME)/Libraries/R-3.2.2/src/include
-mac: RMATH_LIB=$(HOME)/Libraries/R-3.2.2/src/nmath/standalone
-mac: HTSLD_INC=$(HOME)/Libraries/htslib-1.2.1
-mac: HTSLD_LIB=$(HOME)/Libraries/htslib-1.2.1
-mac: BOOST_INC=/opt/local/include
-mac: BOOST_LIB=/opt/local/lib
-mac: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
-mac: IFLAG=-Ilib/OTools -Ilib/ -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
-mac: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams-mt.a $(BOOST_LIB)/libboost_program_options-mt.a
-mac: LDFLAG=$(CXXFLAG_REL) -L /opt/local/lib
-mac: $(BFILE)
-
-#MAC DEBUG VERSION
-mac-dbg: RMATH_INC=$(HOME)/Libraries/R-3.2.2/src/include
-mac-dbg: RMATH_LIB=$(HOME)/Libraries/R-3.2.2/src/nmath/standalone
-mac-dbg: HTSLD_INC=$(HOME)/Libraries/htslib-1.2.1
-mac-dbg: HTSLD_LIB=$(HOME)/Libraries/htslib-1.2.1
-mac-dbg: BOOST_INC=/opt/local/include
-mac-dbg: BOOST_LIB=/opt/local/lib
-mac-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
-mac-dbg: IFLAG=-Ilib/OTools -Ilib/ -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
-mac-dbg: LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams-mt.a $(BOOST_LIB)/libboost_program_options-mt.a
-mac-dbg: LDFLAG=$(CXXFLAG_DBG) -L /opt/local/lib
-mac-dbg: $(BFILE)
+personal: BOOST_INC=/usr/include/
+personal: BOOST_LIB=/usr/lib/x86_64-linux-gnu/
+personal: RMATH_INC=$(HOME)/Tools/R-3.6.1/src/include
+personal: RMATH_LIB=$(HOME)/Tools/R-3.6.1/src/nmath/standalone
+personal: HTSLD_INC=$(HOME)/Tools/htslib-1.9
+personal: HTSLD_LIB=$(HOME)/Tools/htslib-1.9
+personal: all
 
 #COMPILATION RULES
 $(BFILE): $(OFILE)
