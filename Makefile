@@ -54,7 +54,7 @@ MLZMA=/usr/local/lib/liblzma.a
 
 #MAC SPECIFIC STUFF
 UNAME := $(shell uname)
-ifneq ($(UNAME),Darwin)
+ifeq ($(UNAME),Darwin)
  CXXFLAG_REL+= -fvisibility=hidden -fvisibility-inlines-hidden
  CXXFLAG_DBG+= -fvisibility=hidden -fvisibility-inlines-hidden
  ifeq ($(MAKECMDGOALS),static)
