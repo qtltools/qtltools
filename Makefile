@@ -16,6 +16,10 @@ HTSLD_LIB=
 # HTSLD_INC=$(HOME)/Tools/htslib-1.9                    #
 # HTSLD_LIB=$(HOME)/Tools/htslib-1.9                    #
 #########################################################
+define n
+
+
+endef
 
 #COMPILER MODE C++11
 CXX=g++ -std=c++0x
@@ -41,11 +45,35 @@ LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_io
 #INCLUDE DIRS
 IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
 
-#SHELL
+#ONLY FOR MAC STATIC LINKING, ARCHIVES ASSUMED TO BE INSTALLED WITH BREW
+MZ=/usr/local/opt/zlib/lib/libz.a
+MCBLAS=/usr/local/lib/libgslcblas.a
+MGSL=/usr/local/lib/libgsl.a
+MBZ2=/usr/local/opt/bzip2/lib/libbz2.a
+MLZMA=/usr/local/lib/liblzma.a
+
+#MAC SPECIFIC STUFF
 UNAME := $(shell uname)
-ifeq ($(UNAME),Darwin)
+ifneq ($(UNAME),Darwin)
  CXXFLAG_REL+= -fvisibility=hidden -fvisibility-inlines-hidden
  CXXFLAG_DBG+= -fvisibility=hidden -fvisibility-inlines-hidden
+ ifeq ($(MAKECMDGOALS),static)
+   ifeq ("$(wildcard  $(MZ))","")
+     $(error Cannot find $(MZ)! $nTry:	brew install zlib$nOr edit the makefile with the correct location of libz.a)
+   endif
+   ifeq ("$(wildcard  $(MCBLAS))","")
+     $(error Cannot find $(MCBLAS)! $nTry:	brew install gsl$nOr edit the makefile with the correct location of libgslcblas.a)
+   endif
+   ifeq ("$(wildcard  $(MGSL))","")
+     $(error Cannot find $(MGSL)! $nTry:	brew install gsl$nOr edit the makefile with the correct location of libgsl.a)
+   endif
+   ifeq ("$(wildcard  $(MBZ2))","")
+     $(error Cannot find $(MBZ2)! $nTry:	brew install bzip2$nOr edit the makefile with the correct location of libbz2.a)
+   endif
+   ifeq ("$(wildcard  $(MLZMA))","")
+     $(error Cannot find $(MLZMA)! $nTry:	brew install xz$nOr edit the makefile with the correct location of liblzma.a)
+   endif        
+ endif
 endif
 
 #DEFAULT VERSION (SET UP THE VARIABLES IN THE BEGINING OF THE MAKEFILE)
