@@ -30,7 +30,7 @@ CXXFLAG_DBG=-g
 CXXFLAG_WRN=-Wall -Wextra -Wno-sign-compare -Wno-unused-local-typedefs -Wno-deprecated -Wno-unused-parameter
 
 #BASE LIBRARIES
-LIB_FLAGS=-lz -lgsl -lblas -lbz2 -llzma -lgslcblas -lm -lpthread
+LIB_FLAGS=-lz -lgsl -lbz2 -llzma -lgslcblas -lm -lpthread
 
 #FILE LISTS
 BFILE=bin/QTLtools
@@ -94,7 +94,7 @@ ifeq ($(UNAME),Darwin)
 static: LIB_FILES+= /usr/local/opt/zlib/lib/libz.a /usr/local/lib/libgslcblas.a /usr/local/lib/libgsl.a /usr/local/opt/bzip2/lib/libbz2.a /usr/local/lib/liblzma.a
 static: LIB_FLAGS=-lm -lpthread
 else
-static: LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lblas -lbz2 -llzma -lgslcblas -Wl,-Bdynamic -lm -lpthread
+static: LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lbz2 -llzma -lgslcblas -Wl,-Bdynamic -lm -lpthread
 endif
 static: $(BFILE)
 
