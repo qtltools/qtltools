@@ -22,10 +22,13 @@ void fenrich_data::readQTL(string fqtl) {
 	vrb.title("Reading QTL in [" + fqtl + "]");
 	input_file fdq(fqtl);
 	if (fdq.fail()) vrb.error("Cannot open file!");
+	unordered_set <string> phenos;
 	while (getline(fdq, buffer)) {
 		if (buffer[0] != '#') {
 			stb.split(buffer, str);
 			if (str.size() < 6) vrb.error("Incorrect number of columns, observed = " + stb.str(str.size())  + " expected = 5");
+			if (phenos.count(str[4])) vrb.error("Multiple variants for [" + str[4] + "], use the best variant for a given phenotype. If you have independent QTLs for phenotypes then split them by rank.");
+			phenos.insert(str[4]);
 			int idx_tss = findTSS(str[4]);
 			if (idx_tss < 0) vrb.error("Unknown phenotype id!");
 			qtl_pos.push_back(atoi(str[1].c_str()) - tss_pos[idx_tss]);
