@@ -79,7 +79,9 @@ void cis_data::runPermutationPass(string fout) {
 			case GRP_PCA1: fdo << " " << stb.str(group_var[i_group], 3) << " " << stb.str(group_size[i_group]); break;
 			case GRP_MEAN: fdo << " " << stb.str(group_size[i_group]); break;
 			}
-			fdo << " " << variant_indexes.size() << " NA NA NA NA NA NA NA NA NA NA NA NA NA" << endl;
+			fdo << " " << variant_indexes.size() << " NA NA NA NA NA NA NA NA NA NA NA NA NA NA";
+			if(std_err) fdo << " NA";
+			fdo << endl;
 		}
 
 		//STEP8: VARIANTS IN CIS FOUND: FULL COMPUTATIONS
