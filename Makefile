@@ -106,12 +106,12 @@ personal: HTSLD_INC=$(HOME)/Tools/htslib-1.9
 personal: HTSLD_LIB=$(HOME)/Tools/htslib-1.9
 personal: all
 
-baobab: BOOST_INC=/home/users/o/ongen/src/boost_1_71_0/
-baobab: BOOST_LIB=/home/users/o/ongen/src/boost_1_71_0/stage/lib/
-baobab: RMATH_INC=/home/users/o/ongen/src/R-3.6.1/src/include/
-baobab: RMATH_LIB=/home/users/o/ongen/src/R-3.6.1/src/nmath/standalone/
-baobab: HTSLD_INC=/home/users/o/ongen/src/htslib-1.9/
-baobab: HTSLD_LIB=/home/users/o/ongen/src/htslib-1.9/
+baobab: BOOST_INC=/srv/beegfs/scratch/groups/funpopgen/Tools/boost_1_71_0/
+baobab: BOOST_LIB=/srv/beegfs/scratch/groups/funpopgen/Tools/boost_1_71_0/stage/lib/
+baobab: RMATH_INC=/srv/beegfs/scratch/groups/funpopgen/Tools/R-3.6.1/src/include/
+baobab: RMATH_LIB=/srv/beegfs/scratch/groups/funpopgen/Tools/R-3.6.1/src/nmath/standalone/
+baobab: HTSLD_INC=/srv/beegfs/scratch/groups/funpopgen/Tools/htslib-1.9/
+baobab: HTSLD_LIB=/srv/beegfs/scratch/groups/funpopgen/Tools/htslib-1.9/
 baobab: all
 
 #COMPILATION RULES
