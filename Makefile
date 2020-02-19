@@ -99,7 +99,7 @@ static: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
 static: LDFLAG=$(CXXFLAG_REL)
 ifeq ($(UNAME),Darwin)
 #ASSUMES YOU INSTALLED REQUIRED LIBRARIES WITH BREW, IF YOU HAVE THESE IN OTHER LOCATIONS MODIFY THE NEXT LINE
-static: LIB_FILES+= /usr/local/opt/zlib/lib/libz.a /usr/local/lib/libgslcblas.a /usr/local/lib/libgsl.a /usr/local/opt/bzip2/lib/libbz2.a /usr/local/lib/liblzma.a
+static: LIB_FILES+= $(MZ) $(MCBLAS) $(MGSL) $(MBZ2) $(MLZMA)
 static: LIB_FLAGS=-lm -lpthread
 else
 static: LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lbz2 -llzma -lgslcblas -Wl,-Bdynamic -lm -lpthread
