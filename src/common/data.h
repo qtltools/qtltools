@@ -19,7 +19,9 @@
 #include "otools.h"
 #include "filter.h"
 
+#ifndef QTLTOOLS_VERSION
 #define QTLTOOLS_VERSION "1.3"
+#endif
 
 class data {
 public:

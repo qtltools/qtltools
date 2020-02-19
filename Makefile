@@ -39,6 +39,14 @@ TFILE=$(shell find lib -name *.h)
 CFILE=$(shell find src -name *.cpp | LC_ALL=C sort)
 OFILE=$(shell for file in `find src -name *.cpp | LC_ALL=C sort`; do echo obj/$$(basename $$file .cpp).o; done)
 VPATH=$(shell for file in `find src -name *.cpp | LC_ALL=C sort`; do echo $$(dirname $$file); done)
+ifneq (, $(shell which git))
+ GITVS=$(shell git describe --tags --long --abbrev=10 2>/dev/null)
+ ifneq (, $(GITVS))
+  $(info Compiling version $(GITVS))
+  CXXFLAG_REL+= -DQTLTOOLS_VERSION=\"$(GITVS)\"
+  CXXFLAG_DBG+= -DQTLTOOLS_VERSION=\"$(GITVS)\"
+ endif
+endif
 
 #STATICLY LINKED LIBS
 LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_iostreams.a $(BOOST_LIB)/libboost_program_options.a
