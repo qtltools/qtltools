@@ -148,7 +148,7 @@ void cis_data::runConditionalPass(string fout) {
 					for (unsigned int p = 0 ; p < group_idx[i_group].size() ; p ++) {
 						for (unsigned int v = 0 ; v < variant_indexes.size() ; v ++) {
 							unsigned int rel_idx = v*group_idx[i_group].size() + p;
-							if (std_err) regression(genotype_val[variant_indexes[v]], phenotype_curr[p], bpvalue[i_sig][rel_idx], bslope[i_sig][rel_idx], br2[i_sig][rel_idx]);
+							if (!std_err) regression(genotype_val[variant_indexes[v]], phenotype_curr[p], bpvalue[i_sig][rel_idx], bslope[i_sig][rel_idx], br2[i_sig][rel_idx]);
 							else regression(genotype_val[variant_indexes[v]], phenotype_curr[p], bpvalue[i_sig][rel_idx], bslope[i_sig][rel_idx], br2[i_sig][rel_idx], bse[i_sig][rel_idx]);
 							if (bpvalue[i_sig][rel_idx] <= phenotype_threshold[group_idx[i_group][p]]) {
 								if (bdone) bsignals ++;
