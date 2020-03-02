@@ -56,9 +56,9 @@ void cis_data::writeHeader(string fout) {
 		}
 		fdo << " n_var_in_cis dist_phe_var var_id var_chr var_from var_to rank fwd_pval fwd_r_squared fwd_slope ";
 		if(std_err) fdo << "fwd_slope_se ";
-		fdo << "fwd_best_hit fwd_sig bwd_pval bwd_r_squared ";
+		fdo << "fwd_best_hit fwd_sig bwd_pval bwd_r_squared bwd_slope ";
 		if(std_err) fdo << "bwd_slope_se ";
-		fdo << "bwd_slope bwd_best_hit bwd_sig" << endl;
+		fdo << "bwd_best_hit bwd_sig" << endl;
 	}
 	fdo.close();
 }
