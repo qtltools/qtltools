@@ -126,7 +126,7 @@ baobab: static
 $(BFILE): $(OFILE)
 	$(CXX) $^ $(LIB_FILES) -o $@ $(LIB_FLAGS) $(LDFLAG)
 
-obj/QTLtools.o: src/QTLtools.cpp $(HFILE) $(TFILE)
+obj/QTLtools.o: src/QTLtools.cpp $(HFILE) $(TFILE) $(CFILE)
 	$(CXX) -o $@ -c $< $(CXXFLAG) $(IFLAG)
 
 obj/data.o: src/common/data.cpp src/common/data.h src/common/filter.h $(TFILE)
