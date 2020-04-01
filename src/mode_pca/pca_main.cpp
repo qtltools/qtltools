@@ -33,6 +33,7 @@ void pca_main(vector < string > & argv) {
     ("center", "Center the quantifications or genotypes before PCA.")
     ("scale", "Scale the quantifications or genotypes to unit variance before PCA.")
     //("use-cor", "Use correlation rather than SVD in PCA (Valid only when number of samples is greater than number of phenotypes or genotypes.")
+	("region", boost::program_options::value< string >(), "Region of interest.")
     ("maf", boost::program_options::value< double >()->default_value(0.0, "0"), "Exclude sites with MAF less than this.")
     ("distance", boost::program_options::value< unsigned int >()->default_value(0,"0"), "Only include sites separated with this many bp");
     
@@ -75,6 +76,10 @@ void pca_main(vector < string > & argv) {
         vrb.bullet("MAF greater than " + stb.str(D.maf_cutoff));
         D.distance_separator = D.options["distance"].as < unsigned int > ();
         vrb.bullet("Sites every " + stb.str(D.distance_separator) + " bp");
+    }
+    if(D.options.count("region")){
+    	if (!D.region.parse(D.options["region"].as < string > ())) vrb.error("Impossible to interpret region [" + D.options["region"].as < string > () + "]");
+    	vrb.bullet("Region = [" + D.options["region"].as < string > () +"]");
     }
     string outFile = D.options["out"].as < string > ();
     

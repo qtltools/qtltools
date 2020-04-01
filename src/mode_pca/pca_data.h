@@ -28,6 +28,7 @@ public:
     double maf_cutoff;
     int distance_separator;
     Pca PCA;
+    genomic_region region;
     
     int data_count;								//data number
     MatrixXf data_val;			//data values

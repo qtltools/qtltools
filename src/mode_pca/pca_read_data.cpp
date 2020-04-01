@@ -42,6 +42,12 @@ void pca_data::readDataVCF(string fvcf) {
     
     //Opening files
     bcf_srs_t * sr =  bcf_sr_init();
+
+    if ( region.chr != "NA"){
+        vrb.bullet("target region [" + region.get() + "]");
+        if (bcf_sr_set_regions(sr, region.get().c_str(), 0) == -1) vrb.error("Cannot jump to region!");
+    }
+
     if(!(bcf_sr_add_reader (sr, fvcf.c_str()))) {
         switch (sr->errnum) {
             case not_bgzf: vrb.error("File not compressed with bgzip!");
@@ -110,13 +116,6 @@ void pca_data::readDataVCF(string fvcf) {
         			}
                     pChr = chr;
                     pPos = pos;
-                    //data_id.push_back(sid);
-                    //data_chr.push_back(chr);
-                    //string genotype_ref = string(line->d.allele[0]);
-                    //data_start.push_back(pos);
-                    //nsl = bcf_get_info_int32(sr->readers[0].header, line, "END", &sl_arr, &nsl_arr);
-                    //if (nsl >= 0 && nsl_arr == 1) data_end.push_back(sl_arr[0]);
-                    //else data_end.push_back(data_start.back() + genotype_ref.size() - 1);
                     if (n_includedG >= PCA._xXf.cols()) resizeData();
                     for (int i = 0 ; i < temp.size(); i++) PCA._xXf(i,n_includedG) = temp[i];
                     n_includedG++;
@@ -180,41 +179,74 @@ void pca_data::readDataBED(string fbed) {
     unsigned int linecount = 0;
     string pChr = "";
     int pPos = 0;
-	while (hts_getline(fp, KS_SEP_LINE, &str) >= 0) {
-		linecount ++;
-		if (linecount % 100000 == 0) vrb.bullet("Read " + stb.str(linecount) + " lines");
-		stb.split(string(str.s), tokens);
-		if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
-        string chr  = tokens[0];
-        int pos = atoi(tokens[1].c_str()) + 1;
-		if (filter_genotype.check(tokens[3]) && ((pChr == chr && abs(pos - pPos) >= distance_separator) || pChr != chr)) {
-			vector < float > temp(sample_count, 0.0);
-            int total = 0 ;
-            int count = 0;
-			for (int t = 6 ; t < tokens.size() ; t ++) {
-				if (mappingS[t-6] >= 0) {
-					if (tokens[t] == "NA") temp[mappingS[t-6]] = bcf_float_missing;
-					else {
-						temp[mappingS[t-6]] = stof(tokens[t]);
-						count+=2;
-						total+=temp[mappingS[t-6]];
+    if (region.chr != "NA"){
+        hts_itr_t *itr = tbx_itr_querys(tbx, region.get().c_str());
+        vrb.bullet("target region [" + region.get() + "]");
+        if (!itr) vrb.error("Cannot jump to region!");
+        while (tbx_itr_next(fp, tbx, itr, &str) >= 0) {
+			linecount ++;
+			if (linecount % 100000 == 0) vrb.bullet("Read " + stb.str(linecount) + " lines");
+			stb.split(string(str.s), tokens);
+			if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
+			string chr  = tokens[0];
+			int pos = atoi(tokens[1].c_str()) + 1;
+			if (filter_genotype.check(tokens[3]) && ((pChr == chr && abs(pos - pPos) >= distance_separator) || pChr != chr)) {
+				vector < float > temp(sample_count, 0.0);
+				int total = 0 ;
+				int count = 0;
+				for (int t = 6 ; t < tokens.size() ; t ++) {
+					if (mappingS[t-6] >= 0) {
+						if (tokens[t] == "NA") temp[mappingS[t-6]] = bcf_float_missing;
+						else {
+							temp[mappingS[t-6]] = stof(tokens[t]);
+							count+=2;
+							total+=temp[mappingS[t-6]];
+						}
 					}
 				}
-			}
-			double af = (double) total / (double) count;
-			if (maf_cutoff > af || 1.0-maf_cutoff < af){
-				n_excludedG_user ++;
-				continue;
-			}
-			//data_id.push_back(tokens[3]);
-			//data_chr.push_back(chr);
-			//data_start.push_back(pos);
-			//data_end.push_back(atoi(tokens[2].c_str()));
-            if (n_includedG >= PCA._xXf.cols()) resizeData();
-            for (int i = 0 ; i < temp.size(); i++) PCA._xXf(i,n_includedG) = temp[i];
-			n_includedG++;
-		} else n_excludedG_user ++;
-	}
+				double af = (double) total / (double) count;
+				if (maf_cutoff > af || 1.0-maf_cutoff < af){
+					n_excludedG_user ++;
+					continue;
+				}
+				if (n_includedG >= PCA._xXf.cols()) resizeData();
+				for (int i = 0 ; i < temp.size(); i++) PCA._xXf(i,n_includedG) = temp[i];
+				n_includedG++;
+			} else n_excludedG_user ++;
+        }
+    }else{
+		while (hts_getline(fp, KS_SEP_LINE, &str) >= 0) {
+			linecount ++;
+			if (linecount % 100000 == 0) vrb.bullet("Read " + stb.str(linecount) + " lines");
+			stb.split(string(str.s), tokens);
+			if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
+			string chr  = tokens[0];
+			int pos = atoi(tokens[1].c_str()) + 1;
+			if (filter_genotype.check(tokens[3]) && ((pChr == chr && abs(pos - pPos) >= distance_separator) || pChr != chr)) {
+				vector < float > temp(sample_count, 0.0);
+				int total = 0 ;
+				int count = 0;
+				for (int t = 6 ; t < tokens.size() ; t ++) {
+					if (mappingS[t-6] >= 0) {
+						if (tokens[t] == "NA") temp[mappingS[t-6]] = bcf_float_missing;
+						else {
+							temp[mappingS[t-6]] = stof(tokens[t]);
+							count+=2;
+							total+=temp[mappingS[t-6]];
+						}
+					}
+				}
+				double af = (double) total / (double) count;
+				if (maf_cutoff > af || 1.0-maf_cutoff < af){
+					n_excludedG_user ++;
+					continue;
+				}
+				if (n_includedG >= PCA._xXf.cols()) resizeData();
+				for (int i = 0 ; i < temp.size(); i++) PCA._xXf(i,n_includedG) = temp[i];
+				n_includedG++;
+			} else n_excludedG_user ++;
+		}
+    }
 
 
 	//Finalize & verbose
@@ -258,23 +290,39 @@ void pca_data::readDataPhenoBED(string fbed) {
     PCA._xXf.resize(sample_count, __RESIZE_CHUNK__);
     unsigned long int linecount = 1;
     //Read phenotypes
-    while (hts_getline(fp, KS_SEP_LINE, &str) >= 0) {
-        if (str.l && str.s[0] != tbx->conf.meta_char) {
-            stb.split(string(str.s), tokens);
-            if (filter_phenotype.check(tokens[3])) {
-				//data_id.push_back(tokens[3]);
-				//data_chr.push_back(tokens[0]);
-				//data_start.push_back(atoi(tokens[1].c_str()) + 1);
-				//data_end.push_back(atoi(tokens[2].c_str()));
-                if (n_includedP >= PCA._xXf.cols()) resizeData();
-				for (int t = 6 ; t < tokens.size() ; t ++) if (mappingS[t-6] >= 0) {
-					if (tokens[t] == "NA") PCA._xXf(mappingS[t-6],n_includedP) = bcf_float_missing;
-					else PCA._xXf(mappingS[t-6],n_includedP) = stof(tokens[t]);
-				}
-                linecount++;
-                n_includedP++;
-            } else n_excludedP ++;
+    if (region.chr != "NA"){
+        hts_itr_t *itr = tbx_itr_querys(tbx, region.get().c_str());
+        vrb.bullet("target region [" + region.get() + "]");
+        if (!itr) vrb.error("Cannot jump to region!");
+        while (tbx_itr_next(fp, tbx, itr, &str) >= 0) {
+			if (str.l && str.s[0] != tbx->conf.meta_char) {
+				stb.split(string(str.s), tokens);
+				if (filter_phenotype.check(tokens[3])) {
+					if (n_includedP >= PCA._xXf.cols()) resizeData();
+					for (int t = 6 ; t < tokens.size() ; t ++) if (mappingS[t-6] >= 0) {
+						if (tokens[t] == "NA") PCA._xXf(mappingS[t-6],n_includedP) = bcf_float_missing;
+						else PCA._xXf(mappingS[t-6],n_includedP) = stof(tokens[t]);
+					}
+					linecount++;
+					n_includedP++;
+				} else n_excludedP ++;
+			}
         }
+    }else{
+		while (hts_getline(fp, KS_SEP_LINE, &str) >= 0) {
+			if (str.l && str.s[0] != tbx->conf.meta_char) {
+				stb.split(string(str.s), tokens);
+				if (filter_phenotype.check(tokens[3])) {
+					if (n_includedP >= PCA._xXf.cols()) resizeData();
+					for (int t = 6 ; t < tokens.size() ; t ++) if (mappingS[t-6] >= 0) {
+						if (tokens[t] == "NA") PCA._xXf(mappingS[t-6],n_includedP) = bcf_float_missing;
+						else PCA._xXf(mappingS[t-6],n_includedP) = stof(tokens[t]);
+					}
+					linecount++;
+					n_includedP++;
+				} else n_excludedP ++;
+			}
+		}
     }
 
     //Finalize & verbose
