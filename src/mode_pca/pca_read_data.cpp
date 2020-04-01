@@ -37,6 +37,8 @@ void pca_data::readDataVCF(string fvcf) {
     int n_excludedG_mult = 0;
     int n_excludedG_void = 0;
     int n_excludedG_user = 0;
+    int n_excludedG_maf = 0;
+    int n_excludedG_dist = 0;
     int n_includedS = 0;
     vector < int > mappingS;
     
@@ -89,36 +91,38 @@ void pca_data::readDataVCF(string fvcf) {
                 string sid = string(line->d.id);
                 string chr  = string(bcf_hdr_id2name(sr->readers[0].header, line->rid));
                 int pos = line->pos + 1;
-                if (filter_genotype.check(sid) && ((pChr == chr && abs(pos - pPos) >= distance_separator) || pChr != chr)) {
-                    vector < float > temp(sample_count, 0.0);
-                    int total = 0 ;
-                    int count = 0;
-                    for(int i = 0 ; i < n_samples ; i ++) {
-                        if (mappingS[i] >= 0) {
-                            if (nds > 0) {
-                            	temp[mappingS[i]] = ds_arr[i];
-        						count+=2;
-        						total+=temp[mappingS[i]];
-                            } else {
-                                if (gt_arr[2*i+0] == bcf_gt_missing || gt_arr[2*i+1] == bcf_gt_missing) temp[mappingS[i]] = bcf_float_missing;
-                                else {
-                                	temp[mappingS[i]] = bcf_gt_allele(gt_arr[2*i+0]) + bcf_gt_allele(gt_arr[2*i+1]);
+                if (filter_genotype.check(sid)){
+                	if((pChr == chr && abs(pos - pPos) >= distance_separator) || pChr != chr) {
+                        vector < float > temp(sample_count, 0.0);
+                        int total = 0 ;
+                        int count = 0;
+                        for(int i = 0 ; i < n_samples ; i ++) {
+                            if (mappingS[i] >= 0) {
+                                if (nds > 0) {
+                                	temp[mappingS[i]] = ds_arr[i];
             						count+=2;
             						total+=temp[mappingS[i]];
+                                } else {
+                                    if (gt_arr[2*i+0] == bcf_gt_missing || gt_arr[2*i+1] == bcf_gt_missing) temp[mappingS[i]] = bcf_float_missing;
+                                    else {
+                                    	temp[mappingS[i]] = bcf_gt_allele(gt_arr[2*i+0]) + bcf_gt_allele(gt_arr[2*i+1]);
+                						count+=2;
+                						total+=temp[mappingS[i]];
+                                    }
                                 }
                             }
                         }
-                    }
-        			double af = (double) total / (double) count;
-        			if (maf_cutoff > af || 1.0-maf_cutoff < af){
-        				n_excludedG_user ++;
-        				continue;
-        			}
-                    pChr = chr;
-                    pPos = pos;
-                    if (n_includedG >= PCA._xXf.cols()) resizeData();
-                    for (int i = 0 ; i < temp.size(); i++) PCA._xXf(i,n_includedG) = temp[i];
-                    n_includedG++;
+            			double af = (double) total / (double) count;
+            			if (maf_cutoff > af || 1.0-maf_cutoff < af){
+            				n_excludedG_maf ++;
+            				continue;
+            			}
+                        pChr = chr;
+                        pPos = pos;
+                        if (n_includedG >= PCA._xXf.cols()) resizeData();
+                        for (int i = 0 ; i < temp.size(); i++) PCA._xXf(i,n_includedG) = temp[i];
+                        n_includedG++;
+                	} else n_excludedG_dist++;
                 } else n_excludedG_user ++;
             } else n_excludedG_void ++;
         } else n_excludedG_mult ++;
@@ -130,9 +134,11 @@ void pca_data::readDataVCF(string fvcf) {
     bcf_sr_destroy(sr);
     data_count = n_includedG;
     vrb.bullet(stb.str(n_includedG) + " variants included");
-    if (n_excludedG_user > 0) vrb.bullet(stb.str(n_excludedG_user) + " variants excluded by user");
     if (n_excludedG_mult > 0) vrb.bullet(stb.str(n_excludedG_mult) + " multi-allelic variants excluded");
     if (n_excludedG_void > 0) vrb.bullet(stb.str(n_excludedG_void) + " uninformative variants excluded [no GT/DS]");
+    if (n_excludedG_user > 0) vrb.bullet(stb.str(n_excludedG_user) + " variants excluded by user");
+    if (n_excludedG_dist > 0) vrb.bullet(stb.str(n_excludedG_dist) + " variants excluded due to distance");
+    if (n_excludedG_maf > 0) vrb.bullet(stb.str(n_excludedG_maf) + " variants excluded due to MAF");
     if (data_count == 0) vrb.leave("Cannot find genotypes in target region!");
     finalizeData(n_includedG);
 }
