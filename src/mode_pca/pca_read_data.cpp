@@ -90,11 +90,15 @@ void pca_data::readDataVCF(string fvcf) {
                 bcf_unpack(line, BCF_UN_STR);
                 string sid = string(line->d.id);
                 string chr  = string(bcf_hdr_id2name(sr->readers[0].header, line->rid));
+                if (excluded_chrs.count(chr)){
+                	n_excludedG_user++;
+                	continue;
+                }
                 int pos = line->pos + 1;
                 if (filter_genotype.check(sid)){
                 	if((pChr == chr && abs(pos - pPos) >= distance_separator) || pChr != chr) {
                         vector < float > temp(sample_count, 0.0);
-                        int total = 0 ;
+                        int total = 0;
                         int count = 0;
                         for(int i = 0 ; i < n_samples ; i ++) {
                             if (mappingS[i] >= 0) {
@@ -172,6 +176,10 @@ void pca_data::readDataBED(string fbed) {
 	vector < string > tokens;
 	stb.split(string(str.s), tokens);
 	if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
+    if (excluded_chrs.count(tokens[0])){
+    	n_excludedG_user++;
+    	continue;
+    }
 	for (int i0 = 6 ; i0 < tokens.size() ; i0 ++) {
 		string sid = tokens[i0];
 		if (filter_sample.check(sid)) {

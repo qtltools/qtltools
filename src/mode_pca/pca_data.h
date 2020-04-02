@@ -29,6 +29,7 @@ public:
     int distance_separator;
     Pca PCA;
     genomic_region region;
+    set <string> excluded_chrs;
     
     int data_count;								//data number
     MatrixXf data_val;			//data values

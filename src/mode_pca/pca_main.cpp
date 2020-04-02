@@ -34,6 +34,7 @@ void pca_main(vector < string > & argv) {
     ("scale", "Scale the quantifications or genotypes to unit variance before PCA.")
     //("use-cor", "Use correlation rather than SVD in PCA (Valid only when number of samples is greater than number of phenotypes or genotypes.")
 	("region", boost::program_options::value< string >(), "Region of interest.")
+	("exclude-chrs", boost::program_options::value< vector < string > >()->multitoken()->default_value(vector <string> {"X","Y","M","MT", "XY","chrX","chrY","chrM","chrMT", "chrXY"}, "X Y M MT XY chrX chrY chrM chrMT chrXY"), "Excluded chromosomes")
     ("maf", boost::program_options::value< double >()->default_value(0.0, "0"), "Exclude sites with MAF less than this.")
     ("distance", boost::program_options::value< unsigned int >()->default_value(0,"0"), "Only include sites separated with this many bp");
     
@@ -82,7 +83,8 @@ void pca_main(vector < string > & argv) {
     	vrb.bullet("Region = [" + D.options["region"].as < string > () +"]");
     }
     string outFile = D.options["out"].as < string > ();
-    
+    vector <string > temp_ex_chr = D.options["exclude-chrs"].as < vector <string> > ();
+    D.excluded_chrs = set <string>(temp_ex_chr.begin(),temp_ex_chr.end());
     //--------------
     // 6. READ FILES
     //--------------
