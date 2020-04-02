@@ -40,6 +40,7 @@ void pca_data::readDataVCF(string fvcf) {
     int n_excludedG_maf = 0;
     int n_excludedG_dist = 0;
     int n_includedS = 0;
+    int n_mixed_ploidy = 0;
     vector < int > mappingS;
     
     //Opening files
@@ -100,6 +101,7 @@ void pca_data::readDataVCF(string fvcf) {
                         vector < float > temp(sample_count, 0.0);
                         int total = 0;
                         int count = 0;
+                        bool mixed_ploidy = false;
                         for(int i = 0 ; i < n_samples ; i ++) {
                             if (mappingS[i] >= 0) {
                                 if (nds > 0) {
@@ -114,6 +116,7 @@ void pca_data::readDataVCF(string fvcf) {
                                     	if (gt_arr[2*i+1] == bcf_int32_vector_end){
                                     		temp[mappingS[i]] = bcf_gt_allele(gt_arr[2*i+0]);
                                     		count+=1;
+                                    		mixed_ploidy = true;
                                     	}else{
                                     		temp[mappingS[i]] = bcf_gt_allele(gt_arr[2*i+0]) + bcf_gt_allele(gt_arr[2*i+1]);
                                     		count+=2;
@@ -131,6 +134,7 @@ void pca_data::readDataVCF(string fvcf) {
             			}
                         pChr = chr;
                         pPos = pos;
+                        if (mixed_ploidy) n_mixed_ploidy ++;
                         if (n_includedG >= PCA._xXf.cols()) resizeData();
                         for (int i = 0 ; i < temp.size(); i++) PCA._xXf(i,n_includedG) = temp[i];
                         n_includedG++;
@@ -151,6 +155,7 @@ void pca_data::readDataVCF(string fvcf) {
     if (n_excludedG_user > 0) vrb.bullet(stb.str(n_excludedG_user) + " variants excluded by user");
     if (n_excludedG_dist > 0) vrb.bullet(stb.str(n_excludedG_dist) + " variants excluded due to distance");
     if (n_excludedG_maf > 0) vrb.bullet(stb.str(n_excludedG_maf) + " variants excluded due to MAF");
+    if (n_mixed_ploidy > 0) vrb.warning(stb.str(n_mixed_ploidy) + " variants with haploid samples");
     if (data_count == 0) vrb.leave("Cannot find genotypes in target region!");
     finalizeData(n_includedG);
 }
