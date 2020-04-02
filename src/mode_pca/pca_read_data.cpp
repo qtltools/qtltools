@@ -176,10 +176,7 @@ void pca_data::readDataBED(string fbed) {
 	vector < string > tokens;
 	stb.split(string(str.s), tokens);
 	if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
-    if (excluded_chrs.count(tokens[0])){
-    	n_excludedG_user++;
-    	continue;
-    }
+
 	for (int i0 = 6 ; i0 < tokens.size() ; i0 ++) {
 		string sid = tokens[i0];
 		if (filter_sample.check(sid)) {
@@ -211,6 +208,10 @@ void pca_data::readDataBED(string fbed) {
 			stb.split(string(str.s), tokens);
 			if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
 			string chr  = tokens[0];
+		    if (excluded_chrs.count(chr)){
+		    	n_excludedG_user++;
+		    	continue;
+		    }
 			int pos = atoi(tokens[1].c_str()) + 1;
 			if (filter_genotype.check(tokens[3]) && ((pChr == chr && abs(pos - pPos) >= distance_separator) || pChr != chr)) {
 				vector < float > temp(sample_count, 0.0);
