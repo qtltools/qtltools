@@ -100,8 +100,10 @@ void pca_data::readDataVCF(string fvcf) {
                             if (mappingS[i] >= 0) {
                                 if (nds > 0) {
                                 	temp[mappingS[i]] = ds_arr[i];
-            						count+=2;
-            						total+=temp[mappingS[i]];
+                                	if (ds_arr[i] != bcf_float_missing){
+										count+=2;
+										total+=temp[mappingS[i]];
+                                	}
                                 } else {
                                     if (gt_arr[2*i+0] == bcf_gt_missing || gt_arr[2*i+1] == bcf_gt_missing) temp[mappingS[i]] = bcf_float_missing;
                                     else {
@@ -113,6 +115,7 @@ void pca_data::readDataVCF(string fvcf) {
                             }
                         }
             			double af = (double) total / (double) count;
+            			if (af < 0.0 || af > 1.0) vrb.warning("AF calculation failed for " + sid + " at " + chr + ":" + stb.str(pos) + " af: " + stb.str(af));
             			if (maf_cutoff > af || 1.0-maf_cutoff < af){
             				n_excludedG_maf ++;
             				continue;
@@ -211,6 +214,7 @@ void pca_data::readDataBED(string fbed) {
 					}
 				}
 				double af = (double) total / (double) count;
+    			if (af < 0.0 || af > 1.0) vrb.warning("AF calculation failed for " + tokens[3] + " at " + chr + ":" + stb.str(pos) + " af: " + stb.str(af));
 				if (maf_cutoff > af || 1.0-maf_cutoff < af){
 					n_excludedG_user ++;
 					continue;
@@ -243,6 +247,7 @@ void pca_data::readDataBED(string fbed) {
 					}
 				}
 				double af = (double) total / (double) count;
+    			if (af < 0.0 || af > 1.0) vrb.warning("AF calculation failed for " + tokens[3] + " at " + chr + ":" + stb.str(pos) + " af: " + stb.str(af));
 				if (maf_cutoff > af || 1.0-maf_cutoff < af){
 					n_excludedG_user ++;
 					continue;
