@@ -107,8 +107,13 @@ void pca_data::readDataVCF(string fvcf) {
                                 } else {
                                     if (gt_arr[2*i+0] == bcf_gt_missing || gt_arr[2*i+1] == bcf_gt_missing) temp[mappingS[i]] = bcf_float_missing;
                                     else {
-                                    	temp[mappingS[i]] = bcf_gt_allele(gt_arr[2*i+0]) + bcf_gt_allele(gt_arr[2*i+1]);
-                						count+=2;
+                                    	if (gt_arr[2*i+1] == bcf_int32_vector_end){
+                                    		temp[mappingS[i]] = bcf_gt_allele(gt_arr[2*i+0]);
+                                    		count+=1;
+                                    	}else{
+                                    		temp[mappingS[i]] = bcf_gt_allele(gt_arr[2*i+0]) + bcf_gt_allele(gt_arr[2*i+1]);
+                                    		count+=2;
+                                    	}
                 						total+=temp[mappingS[i]];
                                     }
                                 }
