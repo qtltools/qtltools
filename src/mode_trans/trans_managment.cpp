@@ -26,13 +26,13 @@ void trans_data::imputeGenotypes(float * G) {
 	double mean = 0.0;
 	int c_mean= 0;
 	for (int s = 0; s < sample_count; s ++) {
-		if (G[s] != bcf_float_missing) {
+		if (G[s] != bcf_float_missing && !std::isnan(G[s])) {
 			mean += G[s];
 			c_mean ++;
 		}
 	}
 	mean /= c_mean;
-	for (int s = 0; s < sample_count ; s ++) if (G[s] == bcf_float_missing) G[s] = mean;
+	for (int s = 0; s < sample_count ; s ++) if (G[s] == bcf_float_missing || std::isnan(G[s])) G[s] = mean;
 }
 
 void trans_data::imputePhenotypes() {

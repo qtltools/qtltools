@@ -39,9 +39,9 @@ correct_data::~correct_data() {
 void correct_data::imputeMissing(vector < float > & V) {
 	double mean = 0.0;
 	int c_mean = 0;
-	for (int s = 0; s < V.size() ; s ++) if (V[s] != bcf_float_missing) { mean += V[s]; c_mean ++; }
+	for (int s = 0; s < V.size() ; s ++) if (V[s] != bcf_float_missing && !std::isnan(V[s])) { mean += V[s]; c_mean ++; }
 	mean /= c_mean;
-	for (int s = 0; s < V.size() ; s ++) if (V[s] == bcf_float_missing) V[s] = mean;
+	for (int s = 0; s < V.size() ; s ++) if (V[s] == bcf_float_missing || std::isnan(V[s])) V[s] = mean;
 }
 
 void correct_data::normalTransform(vector < float > & V) {
@@ -62,9 +62,9 @@ void correct_data::normalTransform(vector < float > & V) {
 void correct_data::imputeMissing(float * V) {
 	double mean = 0.0;
 	int c_mean = 0;
-	for (int s = 0; s < sample_count ; s ++) if (V[s] != bcf_float_missing) { mean += V[s]; c_mean ++; }
+	for (int s = 0; s < sample_count ; s ++) if (V[s] != bcf_float_missing && !std::isnan(V[s])) { mean += V[s]; c_mean ++; }
 	mean /= c_mean;
-	for (int s = 0; s < sample_count ; s ++) if (V[s] == bcf_float_missing) V[s] = mean;
+	for (int s = 0; s < sample_count ; s ++) if (V[s] == bcf_float_missing || std::isnan(V[s])) V[s] = mean;
 }
 
 void correct_data::normalTransform(float * V) {

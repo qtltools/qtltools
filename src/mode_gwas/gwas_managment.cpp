@@ -26,13 +26,13 @@ void gwas_data::imputeGenotypes(float * G) {
 	double mean = 0.0;
 	int c_mean= 0;
 	for (int s = 0; s < sample_count; s ++) {
-		if (G[s] != bcf_float_missing) {
+		if (G[s] != bcf_float_missing && !std::isnan(G[s])) {
 			mean += G[s];
 			c_mean ++;
 		}
 	}
 	mean /= c_mean;
-	for (int s = 0; s < sample_count ; s ++) if (G[s] == bcf_float_missing) G[s] = mean;
+	for (int s = 0; s < sample_count ; s ++) if (G[s] == bcf_float_missing || std::isnan(G[s])) G[s] = mean;
 }
 
 void gwas_data::imputePhenotypes() {
@@ -54,13 +54,13 @@ void gwas_data::imputeValues(vector < float > & V) {
 	double mean = 0.0;
 	int c_mean= 0;
 	for (int s = 0; s < sample_count; s ++) {
-		if (V[s] != bcf_float_missing) {
+		if (V[s] != bcf_float_missing && !std::isnan(V[s])) {
 			mean += V[s];
 			c_mean ++;
 		}
 	}
 	mean /= c_mean;
-	for (int s = 0; s < sample_count ; s ++) if (V[s] == bcf_float_missing) V[s] = mean;
+	for (int s = 0; s < sample_count ; s ++) if (V[s] == bcf_float_missing || std::isnan(V[s])) V[s] = mean;
 }
 
 void gwas_data::normalize(float * G) {
