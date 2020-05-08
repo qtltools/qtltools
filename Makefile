@@ -106,13 +106,25 @@ static: LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lbz2 -llzma -lgslcblas -Wl,-Bdynamic -
 endif
 static: $(BFILE)
 
+#STATIC DEBUG VERSION (SET UP THE VARIABLES IN THE BEGINING OF THE MAKEFILE)
+static-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
+static-dbg: LDFLAG=$(CXXFLAG_DBG)
+ifeq ($(UNAME),Darwin)
+#ASSUMES YOU INSTALLED REQUIRED LIBRARIES WITH BREW, IF YOU HAVE THESE IN OTHER LOCATIONS MODIFY THE NEXT LINE
+static-dbg: LIB_FILES+= $(MZ) $(MCBLAS) $(MGSL) $(MBZ2) $(MLZMA)
+static-dbg: LIB_FLAGS=-lm -lpthread
+else
+static-dbg: LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lbz2 -llzma -lgslcblas -Wl,-Bdynamic -lm -lpthread
+endif
+static-dbg: $(BFILE)
+
 personal: BOOST_INC=/usr/include/
 personal: BOOST_LIB=/usr/lib/x86_64-linux-gnu/
 personal: RMATH_INC=$(HOME)/Tools/R-3.6.1/src/include
 personal: RMATH_LIB=$(HOME)/Tools/R-3.6.1/src/nmath/standalone
 personal: HTSLD_INC=$(HOME)/Tools/htslib-1.9
 personal: HTSLD_LIB=$(HOME)/Tools/htslib-1.9
-personal: all
+personal: debug
 
 baobab: BOOST_INC=/srv/beegfs/scratch/groups/funpopgen/Tools/boost_1_71_0/
 baobab: BOOST_LIB=/srv/beegfs/scratch/groups/funpopgen/Tools/boost_1_71_0/stage/lib/
@@ -121,6 +133,14 @@ baobab: RMATH_LIB=/srv/beegfs/scratch/groups/funpopgen/Tools/R-3.6.1/src/nmath/s
 baobab: HTSLD_INC=/srv/beegfs/scratch/groups/funpopgen/Tools/htslib-1.9/
 baobab: HTSLD_LIB=/srv/beegfs/scratch/groups/funpopgen/Tools/htslib-1.9/
 baobab: static
+
+baobab-dbg: BOOST_INC=/srv/beegfs/scratch/groups/funpopgen/Tools/boost_1_71_0/
+baobab-dbg: BOOST_LIB=/srv/beegfs/scratch/groups/funpopgen/Tools/boost_1_71_0/stage/lib/
+baobab-dbg: RMATH_INC=/srv/beegfs/scratch/groups/funpopgen/Tools/R-3.6.1/src/include/
+baobab-dbg: RMATH_LIB=/srv/beegfs/scratch/groups/funpopgen/Tools/R-3.6.1/src/nmath/standalone/
+baobab-dbg: HTSLD_INC=/srv/beegfs/scratch/groups/funpopgen/Tools/htslib-1.9/
+baobab-dbg: HTSLD_LIB=/srv/beegfs/scratch/groups/funpopgen/Tools/htslib-1.9/
+baobab-dbg: static-dbg
 
 #COMPILATION RULES
 $(BFILE): $(OFILE)
