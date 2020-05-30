@@ -99,7 +99,7 @@ void match_data::readGenotypes(string filename, string str_regions) {
 							if (mappingS[i] >= 0) {
 								bool miss = false;
 								if (gt_arr[2*i+0] == bcf_gt_missing || gt_arr[2*i+1] == bcf_gt_missing) miss = true;
-								else if (ngp == 3 * n_samples_in_file && gp_arr[3*i+0] != bcf_float_missing && gp_arr[3*i+1] != bcf_float_missing && gp_arr[3*i+2] != bcf_float_missing && gp_arr[3*i+0] < param_min_gp && gp_arr[3*i+1] < param_min_gp && gp_arr[3*i+2] < param_min_gp) miss = true;
+								else if (ngp == 3 * n_samples_in_file && !bcf_float_is_missing(gp_arr[3*i+0]) && !bcf_float_is_missing(gp_arr[3*i+1]) && !bcf_float_is_missing(gp_arr[3*i+2]) && gp_arr[3*i+0] < param_min_gp && gp_arr[3*i+1] < param_min_gp && gp_arr[3*i+2] < param_min_gp) miss = true;
 								if (!miss) {
 									gen_ref[region_idx].back()[mappingS[i]] = !(bcf_gt_allele(gt_arr[2*i+0]) && bcf_gt_allele(gt_arr[2*i+1]));
 									gen_alt[region_idx].back()[mappingS[i]] = (bcf_gt_allele(gt_arr[2*i+0]) || bcf_gt_allele(gt_arr[2*i+1]));

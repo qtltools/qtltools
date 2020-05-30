@@ -120,7 +120,7 @@ void union_data::readGenotypesVCF(string fvcf,string region) {
 						if (mappingS[i] >= 0) {
 							if (nds > 0) genotype_val.back()[mappingS[i]] = ds_arr[i];
 							else {
-								if (gt_arr[2*i+0] == bcf_gt_missing || gt_arr[2*i+1] == bcf_gt_missing) genotype_val.back()[mappingS[i]] = bcf_float_missing;
+								if (gt_arr[2*i+0] == bcf_gt_missing || gt_arr[2*i+1] == bcf_gt_missing) bcf_float_set_missing(genotype_val.back()[mappingS[i]]);
 								else genotype_val.back()[mappingS[i]] = bcf_gt_allele(gt_arr[2*i+0]) + bcf_gt_allele(gt_arr[2*i+1]);
 							}
 						}
@@ -208,7 +208,7 @@ void union_data::readGenotypesBED(string fbed,string region) {
 			genotype_val.push_back(vector < float > (sample_count, 0.0));
 			for (int t = 6 ; t < tokens.size() ; t ++) {
 				if (mappingS[t-6] >= 0) {
-					if (tokens[t] == "NA") genotype_val.back()[mappingS[t-6]] = bcf_float_missing;
+					if (tokens[t] == "NA") bcf_float_set_missing(genotype_val.back()[mappingS[t-6]]);
 					else genotype_val.back()[mappingS[t-6]] = stof(tokens[t]);
 				}
 			}

@@ -107,7 +107,7 @@ void gwas_data::runGwasPassOnBED(string fbed, string fout) {
 			if (filter_genotype.check(vid)) {
 				for (int t = 6 ; t < tokens.size() ; t ++) {
 					if (mappingS[t-6] >= 0) {
-						if (tokens[t] == "NA") values[mappingS[t-6]] = bcf_float_missing;
+						if (tokens[t] == "NA") bcf_float_set_missing(values[mappingS[t-6]]);
 						else values[mappingS[t-6]] = stof(tokens[t]);
 					}
 				}

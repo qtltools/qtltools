@@ -64,7 +64,7 @@ void union_data::readPhenotypes(string fbed, string region) {
 			phenotype_val.push_back(vector < float > (sample_count, 0.0));
 			for (int t = 6 ; t < tokens.size() ; t ++) {
 				if (mappingS[t-6] >= 0) {
-					if (tokens[t] == "NA") phenotype_val.back()[mappingS[t-6]] = bcf_float_missing;
+					if (tokens[t] == "NA") bcf_float_set_missing(phenotype_val.back()[mappingS[t-6]]);
 					else phenotype_val.back()[mappingS[t-6]] = stof(tokens[t]);
 				}
 			}

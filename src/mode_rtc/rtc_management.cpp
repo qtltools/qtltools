@@ -21,13 +21,13 @@ void rtc_data::imputeGenotypes() {
 		double mean = 0.0;
 		int c_mean = 0;
 		for (int s = 0; s < sample_count ; s ++) {
-			if (genotype_val[g][s] != bcf_float_missing && !std::isnan(genotype_val[g][s])) {
+			if (!bcf_float_is_missing(genotype_val[g][s])) {
 				mean += genotype_val[g][s];
 				c_mean ++;
 			}
 		}
 		mean /= c_mean;
-		for (int s = 0; s < sample_count ; s ++) if (genotype_val[g][s] == bcf_float_missing || std::isnan(genotype_val[g][s])) genotype_val[g][s] = mean;
+		for (int s = 0; s < sample_count ; s ++) if (bcf_float_is_missing(genotype_val[g][s])) genotype_val[g][s] = mean;
 	}
 }
 
@@ -37,13 +37,13 @@ void rtc_data::imputePhenotypes() {
 		double mean = 0.0;
 		int c_mean= 0;
 		for (int s = 0; s < sample_count; s ++) {
-			if (phenotype_val[p][s] != bcf_float_missing && !std::isnan(phenotype_val[p][s])) {
+			if (!bcf_float_is_missing(phenotype_val[p][s])) {
 				mean += phenotype_val [p][s];
 				c_mean ++;
 			}
 		}
 		mean /= c_mean;
-		for (int s = 0; s < sample_count ; s ++) if (phenotype_val[p][s] == bcf_float_missing || std::isnan(phenotype_val[p][s])) phenotype_val[p][s] = mean;
+		for (int s = 0; s < sample_count ; s ++) if (bcf_float_is_missing(phenotype_val[p][s])) phenotype_val[p][s] = mean;
 	}
 }
 

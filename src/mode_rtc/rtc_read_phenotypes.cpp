@@ -60,7 +60,7 @@ void rtc_data::readPhenotypes(string fbed) {
                 if (grp_mode > 0) phenotype_grp.push_back(tokens[4]);
                 for (int t = 6 ; t < tokens.size() ; t ++) {
                     if (mappingS[t-6] >= 0) {
-                        if (tokens[t] == "NA") phenotype_val.back()[mappingS[t-6]] = bcf_float_missing;
+                        if (tokens[t] == "NA") bcf_float_set_missing(phenotype_val.back()[mappingS[t-6]]);
                         else phenotype_val.back()[mappingS[t-6]] = stof(tokens[t]);
                     }
                 }
@@ -86,7 +86,7 @@ void rtc_data::readPhenotypes(string fbed) {
                     if (grp_mode > 0) phenotype_grp.push_back(tokens[4]);
                     for (int t = 6 ; t < tokens.size() ; t ++) {
                         if (mappingS[t-6] >= 0) {
-                            if (tokens[t] == "NA") phenotype_val.back()[mappingS[t-6]] = bcf_float_missing;
+                            if (tokens[t] == "NA") bcf_float_set_missing(phenotype_val.back()[mappingS[t-6]]);
                             else phenotype_val.back()[mappingS[t-6]] = stof(tokens[t]);
                         }
                     }

@@ -106,12 +106,12 @@ void pca_data::readDataVCF(string fvcf) {
                             if (mappingS[i] >= 0) {
                                 if (nds > 0) {
                                 	temp[mappingS[i]] = ds_arr[i];
-                                	if (ds_arr[i] != bcf_float_missing){
+                                	if (!bcf_float_is_missing(ds_arr[i])){
 										count+=2;
 										total+=temp[mappingS[i]];
                                 	}
                                 } else {
-                                    if (gt_arr[2*i+0] == bcf_gt_missing || gt_arr[2*i+1] == bcf_gt_missing) temp[mappingS[i]] = bcf_float_missing;
+                                    if (gt_arr[2*i+0] == bcf_gt_missing || gt_arr[2*i+1] == bcf_gt_missing) bcf_float_set_missing(temp[mappingS[i]]);
                                     else {
                                     	if (gt_arr[2*i+1] == bcf_int32_vector_end){
                                     		temp[mappingS[i]] = bcf_gt_allele(gt_arr[2*i+0]);
@@ -127,7 +127,7 @@ void pca_data::readDataVCF(string fvcf) {
                             }
                         }
             			double af = (double) total / (double) count;
-            			if (af < 0.0 || af > 1.0) vrb.warning("AF calculation failed for " + sid + " at " + chr + ":" + stb.str(pos) + " af: " + stb.str(af));
+            			if (std::isnan(af) || af < 0.0 || af > 1.0) vrb.warning("AF calculation failed for " + sid + " at " + chr + ":" + stb.str(pos) + " af: " + stb.str(af));
             			if (maf_cutoff > af || 1.0-maf_cutoff < af){
             				n_excludedG_maf ++;
             				continue;
@@ -224,7 +224,7 @@ void pca_data::readDataBED(string fbed) {
 				int count = 0;
 				for (int t = 6 ; t < tokens.size() ; t ++) {
 					if (mappingS[t-6] >= 0) {
-						if (tokens[t] == "NA") temp[mappingS[t-6]] = bcf_float_missing;
+						if (tokens[t] == "NA") bcf_float_set_missing(temp[mappingS[t-6]]);
 						else {
 							temp[mappingS[t-6]] = stof(tokens[t]);
 							count+=2;
@@ -233,7 +233,7 @@ void pca_data::readDataBED(string fbed) {
 					}
 				}
 				double af = (double) total / (double) count;
-    			if (af < 0.0 || af > 1.0) vrb.warning("AF calculation failed for " + tokens[3] + " at " + chr + ":" + stb.str(pos) + " af: " + stb.str(af));
+    			if (std::isnan(af) || af < 0.0 || af > 1.0) vrb.warning("AF calculation failed for " + tokens[3] + " at " + chr + ":" + stb.str(pos) + " af: " + stb.str(af));
 				if (maf_cutoff > af || 1.0-maf_cutoff < af){
 					n_excludedG_user ++;
 					continue;
@@ -257,7 +257,7 @@ void pca_data::readDataBED(string fbed) {
 				int count = 0;
 				for (int t = 6 ; t < tokens.size() ; t ++) {
 					if (mappingS[t-6] >= 0) {
-						if (tokens[t] == "NA") temp[mappingS[t-6]] = bcf_float_missing;
+						if (tokens[t] == "NA") bcf_float_set_missing(temp[mappingS[t-6]]);
 						else {
 							temp[mappingS[t-6]] = stof(tokens[t]);
 							count+=2;
@@ -266,7 +266,7 @@ void pca_data::readDataBED(string fbed) {
 					}
 				}
 				double af = (double) total / (double) count;
-    			if (af < 0.0 || af > 1.0) vrb.warning("AF calculation failed for " + tokens[3] + " at " + chr + ":" + stb.str(pos) + " af: " + stb.str(af));
+    			if (std::isnan(af) || af < 0.0 || af > 1.0) vrb.warning("AF calculation failed for " + tokens[3] + " at " + chr + ":" + stb.str(pos) + " af: " + stb.str(af));
 				if (maf_cutoff > af || 1.0-maf_cutoff < af){
 					n_excludedG_user ++;
 					continue;
@@ -330,7 +330,7 @@ void pca_data::readDataPhenoBED(string fbed) {
 				if (filter_phenotype.check(tokens[3])) {
 					if (n_includedP >= PCA._xXf.cols()) resizeData();
 					for (int t = 6 ; t < tokens.size() ; t ++) if (mappingS[t-6] >= 0) {
-						if (tokens[t] == "NA") PCA._xXf(mappingS[t-6],n_includedP) = bcf_float_missing;
+						if (tokens[t] == "NA") bcf_float_set_missing(PCA._xXf(mappingS[t-6],n_includedP));
 						else PCA._xXf(mappingS[t-6],n_includedP) = stof(tokens[t]);
 					}
 					linecount++;
@@ -345,7 +345,7 @@ void pca_data::readDataPhenoBED(string fbed) {
 				if (filter_phenotype.check(tokens[3])) {
 					if (n_includedP >= PCA._xXf.cols()) resizeData();
 					for (int t = 6 ; t < tokens.size() ; t ++) if (mappingS[t-6] >= 0) {
-						if (tokens[t] == "NA") PCA._xXf(mappingS[t-6],n_includedP) = bcf_float_missing;
+						if (tokens[t] == "NA") bcf_float_set_missing(PCA._xXf(mappingS[t-6],n_includedP));
 						else PCA._xXf(mappingS[t-6],n_includedP) = stof(tokens[t]);
 					}
 					linecount++;

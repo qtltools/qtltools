@@ -87,7 +87,7 @@ void rep_data::readGenotypesVCF(string fvcf) {
 						if (mappingS[i] >= 0) {
 							if (nds > 0) genotype_val.back()[mappingS[i]] = ds_arr[i];
 							else {
-								if (gt_arr[2*i+0] == bcf_gt_missing || gt_arr[2*i+1] == bcf_gt_missing) genotype_val.back()[mappingS[i]] = bcf_float_missing;
+								if (gt_arr[2*i+0] == bcf_gt_missing || gt_arr[2*i+1] == bcf_gt_missing) bcf_float_set_missing(genotype_val.back()[mappingS[i]]);
 								else genotype_val.back()[mappingS[i]] = bcf_gt_allele(gt_arr[2*i+0]) + bcf_gt_allele(gt_arr[2*i+1]);
 							}
 						}
@@ -164,7 +164,7 @@ void rep_data::readGenotypesBED(string fbed) {
 			genotype_val.push_back(vector < float > (sample_count, 0.0));
 			for (int t = 4 ; t < tokens.size() ; t ++) {
 				if (mappingS[t-4] >= 0) {
-					if (tokens[t] == "NA") genotype_val.back()[mappingS[t-4]] = bcf_float_missing;
+					if (tokens[t] == "NA") bcf_float_set_missing(genotype_val.back()[mappingS[t-4]]);
 					else genotype_val.back()[mappingS[t-4]] = atof(tokens[t].c_str());
 				}
 			}

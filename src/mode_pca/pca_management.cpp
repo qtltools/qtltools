@@ -29,13 +29,13 @@ void pca_data::imputeData() {
         double mean = 0.0;
         int c_mean = 0;
         for (int s = 0; s < sample_count ; s ++) {
-            if (PCA._xXf(s,g) != bcf_float_missing && !std::isnan(PCA._xXf(s,g))) {
+            if (!bcf_float_is_missing(PCA._xXf(s,g))) {
                 mean += PCA._xXf(s,g);
                 c_mean ++;
             }
         }
         mean /= c_mean;
-        for (int s = 0; s < sample_count ; s ++) if (PCA._xXf(s,g) == bcf_float_missing || std::isnan(PCA._xXf(s,g))) PCA._xXf(s,g) = mean;
+        for (int s = 0; s < sample_count ; s ++) if (bcf_float_is_missing(PCA._xXf(s,g))) PCA._xXf(s,g) = mean;
     }
 }
 

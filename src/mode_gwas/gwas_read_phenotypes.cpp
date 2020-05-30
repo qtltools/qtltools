@@ -40,7 +40,7 @@ void gwas_data::readPhenotypes(string ftxt) {
 			phenotype_val.push_back(vector < float > (sample_count, 0.0));
 			for (int t = 1 ; t < tokens.size() ; t ++) {
 				if (mappingS[t-1] >= 0) {
-					if (tokens[t] == "NA") phenotype_val.back()[mappingS[t-1]] = bcf_float_missing;
+					if (tokens[t] == "NA") bcf_float_set_missing(phenotype_val.back()[mappingS[t-1]]);
 					else phenotype_val.back()[mappingS[t-1]] = stof(tokens[t]);
 				}
 			}

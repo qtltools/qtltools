@@ -17,7 +17,7 @@
 
 void gwas_data::computeDosages(int * vGT, float * vDS) {
 	for (int s = 0; s < sample_count; s ++) {
-		if (vGT[2*s+0] == bcf_gt_missing || vGT[2*s+1] == bcf_gt_missing) vDS[s] = bcf_float_missing;
+		if (vGT[2*s+0] == bcf_gt_missing || vGT[2*s+1] == bcf_gt_missing) bcf_float_set_missing(vDS[s]);
 		else vDS[s] = bcf_gt_allele(vGT[2*s+0]) + bcf_gt_allele(vGT[2*s+1]);
 	}
 }
@@ -26,13 +26,13 @@ void gwas_data::imputeGenotypes(float * G) {
 	double mean = 0.0;
 	int c_mean= 0;
 	for (int s = 0; s < sample_count; s ++) {
-		if (G[s] != bcf_float_missing && !std::isnan(G[s])) {
+		if (!bcf_float_is_missing(G[s])) {
 			mean += G[s];
 			c_mean ++;
 		}
 	}
 	mean /= c_mean;
-	for (int s = 0; s < sample_count ; s ++) if (G[s] == bcf_float_missing || std::isnan(G[s])) G[s] = mean;
+	for (int s = 0; s < sample_count ; s ++) if (bcf_float_is_missing(G[s])) G[s] = mean;
 }
 
 void gwas_data::imputePhenotypes() {
@@ -40,13 +40,13 @@ void gwas_data::imputePhenotypes() {
 		double mean = 0.0;
 		int c_mean= 0;
 		for (int s = 0; s < sample_count; s ++) {
-			if (phenotype_val[p][s] != bcf_float_missing) {
+			if (!bcf_float_is_missing(phenotype_val[p][s])) {
 				mean += phenotype_val [p][s];
 				c_mean ++;
 			}
 		}
 		mean /= c_mean;
-		for (int s = 0; s < sample_count ; s ++) if (phenotype_val[p][s] == bcf_float_missing) phenotype_val[p][s] = mean;
+		for (int s = 0; s < sample_count ; s ++) if (bcf_float_is_missing(phenotype_val[p][s])) phenotype_val[p][s] = mean;
 	}
 }
 
@@ -54,13 +54,13 @@ void gwas_data::imputeValues(vector < float > & V) {
 	double mean = 0.0;
 	int c_mean= 0;
 	for (int s = 0; s < sample_count; s ++) {
-		if (V[s] != bcf_float_missing && !std::isnan(V[s])) {
+		if (!bcf_float_is_missing(V[s])) {
 			mean += V[s];
 			c_mean ++;
 		}
 	}
 	mean /= c_mean;
-	for (int s = 0; s < sample_count ; s ++) if (V[s] == bcf_float_missing || std::isnan(V[s])) V[s] = mean;
+	for (int s = 0; s < sample_count ; s ++) if (bcf_float_is_missing(V[s])) V[s] = mean;
 }
 
 void gwas_data::normalize(float * G) {

@@ -146,23 +146,27 @@ void cis_data::runPermutationPass(string fout) {
 			mean_best_permuted_pvalues = basic_stats(best_permuted_pvalues).mean();
 			variance_best_permuted_pvalues = basic_stats(best_permuted_pvalues).variance();
 
-			//STEP15: LEARN BETA PARAMETERS
-			double beta_mm1 = mean_best_permuted_pvalues * (mean_best_permuted_pvalues * (1 - mean_best_permuted_pvalues ) / variance_best_permuted_pvalues - 1);
-			double beta_mm2 = beta_mm1 * (1 / mean_best_permuted_pvalues - 1);
-			double beta_ml1 = beta_mm1;
-			double beta_ml2 = beta_mm2;
-			try {
-				learnBetaParameters(best_permuted_pvalues, beta_ml1, beta_ml2);
-			} catch (const std::exception & e) {
-				vrb.bullet("Maximum Likelihood estimation failed, use Moment Matching instead!");
+			double pval_emp = 1.0 , pval_bml = 1.0;
+			double beta_ml1 = 0.0/0.0, beta_ml2 = 0.0/0.0;
+			if (variance_best_permuted_pvalues != 0.0 && mean_best_permuted_pvalues != 1.0){
+				//STEP15: LEARN BETA PARAMETERS
+				double beta_mm1 = mean_best_permuted_pvalues * (mean_best_permuted_pvalues * (1 - mean_best_permuted_pvalues ) / variance_best_permuted_pvalues - 1);
+				double beta_mm2 = beta_mm1 * (1 / mean_best_permuted_pvalues - 1);
 				beta_ml1 = beta_mm1;
 				beta_ml2 = beta_mm2;
-			}
-			vrb.bullet("Beta parameters: [s1=" + stb.str(beta_ml1) + ", s2=" + stb.str(beta_ml2) +"]");
+				try {
+					learnBetaParameters(best_permuted_pvalues, beta_ml1, beta_ml2);
+				} catch (const std::exception & e) {
+					vrb.bullet("Maximum Likelihood estimation failed, use Moment Matching instead!");
+					beta_ml1 = beta_mm1;
+					beta_ml2 = beta_mm2;
+				}
+				vrb.bullet("Beta parameters: [s1=" + stb.str(beta_ml1) + ", s2=" + stb.str(beta_ml2) +"]");
 
-			//STEP16: COMPUTE ADJUSTED PVALUES
-			double pval_emp = getPvalue(best_nominal_correlation, best_permuted_correlations);
-			double pval_bml = pbeta(getPvalue(best_nominal_correlation, dof_esti), beta_ml1, beta_ml2, 1, 0);
+				//STEP16: COMPUTE ADJUSTED PVALUES
+				pval_emp = getPvalue(best_nominal_correlation, best_permuted_correlations);
+				pval_bml = pbeta(getPvalue(best_nominal_correlation, dof_esti), beta_ml1, beta_ml2, 1, 0);
+			}else vrb.bullet("Permutation p-values have no variance or have a mean of 1.0");
 
 			//STEP17: VERBOSE ADJUSTED PVALUES
 			vrb.bullet("Adjusted p-values: [emp=" + stb.str(pval_emp) + ", beta=" + stb.str(pval_bml) + "]");

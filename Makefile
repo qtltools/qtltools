@@ -53,7 +53,7 @@ LIB_FILES=$(RMATH_LIB)/libRmath.a $(HTSLD_LIB)/libhts.a $(BOOST_LIB)/libboost_io
 #INCLUDE DIRS
 IFLAG=-Ilib/OTools -Ilib -I$(RMATH_INC) -I$(HTSLD_INC) -I$(BOOST_INC)
 
-#ONLY FOR MAC STATIC LINKING, ARCHIVES ASSUMED TO BE INSTALLED WITH BREW
+#ONLY FOR MAC STATIC LINKING, ARCHIVES ASSUMED TO BE INSTALLED WITH BREW.IF YOU HAVE THESE IN OTHER LOCATIONS MODIFY THE NEXT 5 LINES 
 MZ=/usr/local/opt/zlib/lib/libz.a
 MCBLAS=/usr/local/lib/libgslcblas.a
 MGSL=/usr/local/lib/libgsl.a
@@ -98,7 +98,7 @@ debug: $(BFILE)
 static: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
 static: LDFLAG=$(CXXFLAG_REL)
 ifeq ($(UNAME),Darwin)
-#ASSUMES YOU INSTALLED REQUIRED LIBRARIES WITH BREW, IF YOU HAVE THESE IN OTHER LOCATIONS MODIFY THE NEXT LINE
+#ASSUMES YOU INSTALLED REQUIRED LIBRARIES WITH BREW. SEE ABOVE WHERE THESE VARIABLES ARE SET
 static: LIB_FILES+= $(MZ) $(MCBLAS) $(MGSL) $(MBZ2) $(MLZMA)
 static: LIB_FLAGS=-lm -lpthread
 else
@@ -110,7 +110,7 @@ static: $(BFILE)
 static-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
 static-dbg: LDFLAG=$(CXXFLAG_DBG)
 ifeq ($(UNAME),Darwin)
-#ASSUMES YOU INSTALLED REQUIRED LIBRARIES WITH BREW, IF YOU HAVE THESE IN OTHER LOCATIONS MODIFY THE NEXT LINE
+#ASSUMES YOU INSTALLED REQUIRED LIBRARIES WITH BREW, SEE ABOVE WHERE THESE VARIABLES ARE SET
 static-dbg: LIB_FILES+= $(MZ) $(MCBLAS) $(MGSL) $(MBZ2) $(MLZMA)
 static-dbg: LIB_FLAGS=-lm -lpthread
 else
@@ -124,7 +124,7 @@ personal: RMATH_INC=$(HOME)/Tools/R-3.6.1/src/include
 personal: RMATH_LIB=$(HOME)/Tools/R-3.6.1/src/nmath/standalone
 personal: HTSLD_INC=$(HOME)/Tools/htslib-1.9
 personal: HTSLD_LIB=$(HOME)/Tools/htslib-1.9
-personal: debug
+personal: all
 
 baobab: BOOST_INC=/srv/beegfs/scratch/groups/funpopgen/Tools/boost_1_71_0/
 baobab: BOOST_LIB=/srv/beegfs/scratch/groups/funpopgen/Tools/boost_1_71_0/stage/lib/

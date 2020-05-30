@@ -55,7 +55,10 @@ void correct_data::processBED(string fin, string fout) {
 		if (filter_phenotype.check(tokens[3])) {
 			vector < float > values = vector < float > (sample_count, 0.0);
 			fdo << tokens[0] << "\t" << tokens[1] << "\t" << tokens[2] << "\t" << tokens[3] << "\t" << tokens[4] << "\t" << tokens[5];
-			for (int t = 6 ; t < tokens.size() ; t ++) if (mappingS[t-6] >= 0) values[mappingS[t-6]] = ((tokens[t] != "NA")?stof(tokens[t]):bcf_float_missing);
+			for (int t = 6 ; t < tokens.size() ; t ++) if (mappingS[t-6] >= 0) {
+				if (tokens[t] != "NA") values[mappingS[t-6]] = stof(tokens[t]);
+				else bcf_float_set_missing(values[mappingS[t-6]]);
+			}
 			imputeMissing(values);
 			if (residualize) {
 				if (covariate_target.size() > 0) {
