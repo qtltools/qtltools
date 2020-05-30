@@ -2,3 +2,9 @@
 .cproject
 .project
 /test_set/
+/releases/
+Makefile.*
+GPATH
+GRTAGS
+GTAGS
+
