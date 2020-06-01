@@ -126,6 +126,15 @@ personal: HTSLD_INC=$(HOME)/Tools/htslib-1.9
 personal: HTSLD_LIB=$(HOME)/Tools/htslib-1.9
 personal: all
 
+personal: BOOST_INC=/usr/include/
+personal: BOOST_LIB=/usr/lib/x86_64-linux-gnu/
+personal: RMATH_INC=$(HOME)/Tools/R-3.6.1/src/include
+personal: RMATH_LIB=$(HOME)/Tools/R-3.6.1/src/nmath/standalone
+personal: HTSLD_INC=$(HOME)/Tools/htslib-1.9
+personal: HTSLD_LIB=$(HOME)/Tools/htslib-1.9
+personal: debug
+
+
 baobab: BOOST_INC=/srv/beegfs/scratch/groups/funpopgen/Tools/boost_1_71_0/
 baobab: BOOST_LIB=/srv/beegfs/scratch/groups/funpopgen/Tools/boost_1_71_0/stage/lib/
 baobab: RMATH_INC=/srv/beegfs/scratch/groups/funpopgen/Tools/R-3.6.1/src/include/
