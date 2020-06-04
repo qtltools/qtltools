@@ -26,7 +26,7 @@ void trans_data::runTransPass(string fvcf, string fout) {
 	bcf_hdr_t * hdr  = bcf_sweep_hdr(sw);
 	if (!hdr) vrb.error("Cannot read header!");
 
-	unsigned long n_pos_tests = 0, n_variants = 0, n_curr_tests = 0, n_prev_tests = 0;
+	unsigned long n_pos_tests = 0, n_variants = 0, n_curr_tests = 0, n_prev_tests = 0, n_multi = 0 , n_not_processed = 0;
 	vector < double > best_hits = vector < double > (phenotype_count, 0);
 	vector < string > best_var = vector < string > (phenotype_count, "");
 	vector < unsigned long > bins_hits = vector < unsigned long > (n_bins, 0);
@@ -50,7 +50,7 @@ void trans_data::runTransPass(string fvcf, string fout) {
 		int pos = rec->pos + 1;
 		if (rec->n_allele == 2) {
 			bool variant_is_to_be_processed = false;
-			if (mode_GT_DS != 0 && (bcf_get_genotypes(hdr, rec, &vGT, &mGT) == (2 * sample_count))) {
+			/*if (mode_GT_DS != 0 && (bcf_get_genotypes(hdr, rec, &vGT, &mGT) == (2 * sample_count))) {
 				if (vDS == NULL) vDS = (float*)malloc(sample_count*sizeof(float));
 				computeDosages(vGT, vDS);
 				variant_is_to_be_processed = true;
@@ -58,6 +58,15 @@ void trans_data::runTransPass(string fvcf, string fout) {
 			} else if (mode_GT_DS != 1 && (bcf_get_format_float(hdr, rec, "DS", &vDS, &mDS) == sample_count)) {
 				variant_is_to_be_processed = true;
 				mode_GT_DS = 0;
+			}*/
+			if (mode_GT_DS != 1 && (bcf_get_format_float(hdr, rec, "DS", &vDS, &mDS) == sample_count)) {
+				variant_is_to_be_processed = true;
+				mode_GT_DS = 0;
+			} else if (mode_GT_DS != 0 && (bcf_get_genotypes(hdr, rec, &vGT, &mGT) == (2 * sample_count))) {
+				if (vDS == NULL) vDS = (float*)malloc(sample_count*sizeof(float));
+				computeDosages(vGT, vDS);
+				variant_is_to_be_processed = true;
+				mode_GT_DS = 1;
 			}
 
 			if (variant_is_to_be_processed) {
@@ -85,18 +94,18 @@ void trans_data::runTransPass(string fvcf, string fout) {
 
 						if (n_curr_tests % 1000000 == 0) {
 							unsigned int elapsed_msecs = testing_speed_timer.rel_time();
-							vrb.bullet("#variants=" + stb.str(n_variants) + "\t#hits=" + stb.str(n_pos_tests) + "/" + stb.str(n_curr_tests) + "\tspeed=" + stb.str((n_curr_tests - n_prev_tests) * 1.0 / (elapsed_msecs * 1000), 2) + "MT/s");
+							vrb.bullet("#variants=" + stb.str(n_variants) + "\t#multi_allelic=" + stb.str(n_multi) + "\t#not_processed=" + stb.str(n_not_processed)  + "\t#hits=" + stb.str(n_pos_tests) + "/" + stb.str(n_curr_tests) + "\tspeed=" + stb.str((n_curr_tests - n_prev_tests) * 1.0 / (elapsed_msecs * 1000), 2) + "MT/s");
 							testing_speed_timer.clock();
 							n_prev_tests = n_curr_tests;
 						}
 					}
 				}
-			}
-		}
+			}else n_not_processed ++;
+		}else n_multi ++;
 		n_variants ++;
 	}
 	unsigned int elapsed_msecs = testing_speed_timer.rel_time();
-	vrb.bullet("#variants=" + stb.str(n_variants) + "\t#hits=" + stb.str(n_pos_tests) + "/" + stb.str(n_curr_tests) + "\tspeed=" + stb.str((n_curr_tests - n_prev_tests) * 1.0 / (elapsed_msecs * 1000), 2) + "MT/s");
+	vrb.bullet("#variants=" + stb.str(n_variants) + "\t#multi_allelic=" + stb.str(n_multi) + "\t#not_processed=" + stb.str(n_not_processed)  + "\t#hits=" + stb.str(n_pos_tests) + "/" + stb.str(n_curr_tests) + "\tspeed=" + stb.str((n_curr_tests - n_prev_tests) * 1.0 / (elapsed_msecs * 1000), 2) + "MT/s");
 	n_prev_tests = n_curr_tests;
 	bcf_sweep_destroy(sw);
 	fdhits.close();
