@@ -26,7 +26,7 @@ void trans_data::buildNullDistribution(string fnull) {
 	if (fd.fail()) vrb.error("Cannot open file!");
 	while (getline(fd, buffer)) {
 		stb.split(buffer, tokens);
-		if (tokens.size() != 4) vrb.error("Expecting 4 columns");
+		if (tokens.size() < 3) vrb.error("Expecting minimum 3 columns with the 3rd column containing null p-values");
 		if (!stb.numeric(tokens[2])) vrb.error("3rd column is not numeric in [" + buffer + "]");
 		null_pvalues.push_back(stof(tokens[2]));
 		if (null_pvalues.back() < 0.0 || null_pvalues.back() > 1.0) vrb.error("3rd column is not a p-value in [" + buffer + "]");
