@@ -20,7 +20,7 @@
 #include "filter.h"
 
 #ifndef QTLTOOLS_VERSION
-#define QTLTOOLS_VERSION "1.3"
+#define QTLTOOLS_VERSION "1.3.1"
 #endif
 
 class data {

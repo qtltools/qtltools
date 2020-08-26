@@ -59,8 +59,8 @@ void rtc_main(vector < string > & argv) {
 		("pheno-col", boost::program_options::value< unsigned int >()->default_value(1, "1 or 5 when --grp-best"), "Phenotype column")
 		("geno-col", boost::program_options::value< unsigned int >()->default_value(8,"8 or 9 when --grp-best"), "Genotype column")
 		("grp-col", boost::program_options::value< unsigned int >()->default_value(1), "Phenotype group column")
-		("rank-col", boost::program_options::value< unsigned int >()->default_value(12,"12 or 13 when --grp-best"), "Conditional analysis rank column")
-		("best-col", boost::program_options::value< unsigned int >()->default_value(19,"19 or 20 when --grp-best"), "Conditional analysis best variant column");
+		("rank-col", boost::program_options::value< unsigned int >()->default_value(12,"12 or 14 when --grp-best"), "Conditional analysis rank column")
+		("best-col", boost::program_options::value< unsigned int >()->default_value(21,"21 or 23 when --grp-best"), "Conditional analysis best variant column");
 
 	boost::program_options::options_description opt_modes ("\x1B[32mAnalysis type\33[0m");
 	opt_modes.add_options()
@@ -195,10 +195,10 @@ void rtc_main(vector < string > & argv) {
     else D.calculate_Dprime_R2 = false;
     D.DprimeR2inMem = D.options["mem"].as < unsigned int > ();
     if (D.grp_mode == GRP_BEST){
-    	D.phenotype_column = D.options["pheno-col"].defaulted() ? 5 : D.options["pheno-col"].as < unsigned int > () - 1;
-    	D.variant_column = D.options["geno-col"].defaulted() ? 8 :  D.options["geno-col"].as < unsigned int > () - 1;
-    	D.rank_column = D.options["rank-col"].defaulted() ? 12 : D.options["rank-col"].as < unsigned int > () - 1;
-    	D.best_column = D.options["best-col"].defaulted() ? 19 : D.options["best-col"].as < unsigned int > () - 1;
+    	D.phenotype_column = D.options["pheno-col"].defaulted() ? 4 : D.options["pheno-col"].as < unsigned int > () - 1;
+    	D.variant_column = D.options["geno-col"].defaulted() ? 9 :  D.options["geno-col"].as < unsigned int > () - 1;
+    	D.rank_column = D.options["rank-col"].defaulted() ? 13 : D.options["rank-col"].as < unsigned int > () - 1;
+    	D.best_column = D.options["best-col"].defaulted() ? 22 : D.options["best-col"].as < unsigned int > () - 1;
     	D.group_column = D.options["grp-col"].defaulted() ? 0 : D.options["grp-col"].as < unsigned int > () - 1;
     }else{
 		D.phenotype_column = D.options["pheno-col"].as < unsigned int > () - 1;

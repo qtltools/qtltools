@@ -31,12 +31,12 @@ void match_main(vector < string > & argv) {
 
 	boost::program_options::options_description opt_parameters ("\x1B[32mFilters\33[0m");
 	opt_parameters.add_options()
-		("filter-mapping-quality", boost::program_options::value< unsigned int >()->default_value(10), "Minimal phred mapping quality for a read to be considered.")
-		("filter-base-quality", boost::program_options::value< unsigned int >()->default_value(5), "Minimal phred quality for a base to be considered.")
+		("filter-mapping-quality", boost::program_options::value< unsigned int >()->default_value(10), "Minimum phred mapping quality for a read to be considered.")
+		("filter-base-quality", boost::program_options::value< unsigned int >()->default_value(5), "Minimum phred quality for a base to be considered.")
 		("filter-binomial-pvalue", boost::program_options::value< double >()->default_value(0.05, "0.05"), "Binomial p-value threshold below which a het genotype is considered as exhibiting allelic imbalance.")
-		("filter-minimal-coverage", boost::program_options::value< unsigned int >()->default_value(10), "Minimal coverage for a genotype to be considered.")
-		("filter-imputation-qual", boost::program_options::value< double >()->default_value(0.90, "0.90"), "Minimal imputation information score for a variant to be considered.")
-		("filter-imputation-prob", boost::program_options::value< double >()->default_value(0.99, "0.99"), "Minimal posterior probability for a genotype to be considered.")
+		("filter-minimal-coverage", boost::program_options::value< unsigned int >()->default_value(10), "Minimum coverage for a genotype to be considered.")
+		("filter-imputation-qual", boost::program_options::value< double >()->default_value(0.90, "0.90"), "Minimum imputation information score for a variant to be considered.")
+		("filter-imputation-prob", boost::program_options::value< double >()->default_value(0.99, "0.99"), "Minimum posterior probability for a genotype to be considered.")
 		("filter-keep-duplicates", "Keep duplicate sequencing reads in the process.");
 
 	D.option_descriptions.add(opt_files).add(opt_parameters);

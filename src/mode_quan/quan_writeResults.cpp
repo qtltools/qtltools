@@ -187,7 +187,7 @@ void quan2_data::printStats(string fout){
 	if (fdo.fail()) vrb.error("Cannot open file [" + prefix + ".stats" + ext + "]");
 	fdo.precision(16);
 	fdo << "sample\t" << sample << endl;
-	fdo << "filtered_secondary_alingments_(does_not_count_towards_total_reads)\t" << stats.secondary << endl;
+	fdo << "filtered_secondary_alignments_(does_not_count_towards_total_reads)\t" << stats.secondary << endl;
 	fdo << "total_reads\t" << stats.total << endl;
 	fdo << "filtered_unmapped\t" << stats.unmapped << endl;
 	fdo << "filtered_failqc\t" << stats.failqc << endl;

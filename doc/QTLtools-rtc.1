@@ -1,0 +1,373 @@
+.\" Manpage for QTLtools rtc.
+.\" Contact halitongen@gmail.com to correct errors or typos.
+.TH QTLtools-rtc 1 "06 May 2020" "QTLtools-v1.3" "Bioinformatics tools"
+.SH NAME
+QTLtools rtc \- Regulatory Trait Concordance score analysis 
+.SH SYNOPSIS
+.B QTLtools rtc  \-\-vcf
+.IR [in.vcf | in.vcf.gz | in.bcf | in.bed.gz] 
+.B \-\-bed
+.IR quantifications.bed.gz
+.B \-\-hotspots
+.IR hotspots_b37_hg19.bed
+.B [\-\-gwas-cis | \-\-gwas-trans | \-\-mergeQTL-cis | \-\-mergeQTL-trans]
+.I variants_external.txt qtls_in_this_dataset.txt
+.B \-\-out 
+.IR output.txt
+.I [OPTIONS]
+.SH DESCRIPTION
+The RTC algorithm assesses the likelihood of a shared functional effect between a GWAS variant and an molQTL by quantifying the change in the statistical significance of the molQTL after correcting the molQTL phenotype for the genetic effect of the GWAS variant and comparing its correction impact to that of all other SNPs in the interval.
+The method is detailed in <https://www.nature.com/articles/ng.3981>.
+When assessing tissue specificity of molQTLs we use the same method, however in that case the GWAS variant becomes an molQTL in a different tissue.
+The RTC method is as follows: for a GWAS variant falling into the same region flanked by recombination hotspots (coldspot) with an molQTL, with N number of variants in a given coldspot:
+.IP 1
+Correct the phenotype for each of the variants in the region separately by linear regression, resulting in N number of pseudo-phenotypes (residuals).
+.IP 2
+Redo the molQTL variant association with all of these pseudo\-phenotypes.
+.IP 3
+Sort (decreasing) the resulting p\-values and find the rank of the molQTL to GWAS-pseudo-phenotype among all molQTL to pseudo\-phenotype associations.
+.IP 4
+RTC = (N \- Rank of GWAS) / N
+.PP
+This results in the RTC score which ranges from 0 to 1 where higher values indicate a more likely shared functional effect between the GWAS and the molQTL variants.
+An RTC score greater than or equal to 0.9 is considered a shared functional effect.
+If there are multiple independent molQTLs for a given phenotype, RTC for each independent molQTL is assessed after correcting the phenotype with all the other molQTL variants for that phenotype.
+This correction is done using linear regression and taking the residuals after regressing the phenotype with the other molQTLs.
+.PP
+In order to convert RTC score into a probability of sharing, we employ two simulations per coldspot region, H0 and H1.
+The H0 scenario is when two variants in a coldspot are tagging different functional effects.
+For a coldspot that harbours colocalized GWAS and molQTL variants, we pick two random hidden causal variants. 
+We then find two variants (GWAS and molQTL) that are linked (default r-squared ≥ 0.5) to the hidden causal variants.
+We generate a pseudo phenotype for molQTL based on the slope and intercept of the observed molQTL and randomly distributed residuals of the observed molQTL.
+Subsequently we rerun the RTC analysis with this new pseudo-phenotype and using the GWAS and molQTL variants.
+.PP
+The H1 scenario is when the two variants are tagging the same functional variant. 
+The scheme here is exactly the same as the H0 scheme, except there is only one hidden causal variant and both GWAS and molQTL variants are randomly selected from variants that are linked to the same hidden causal variant. 
+.SH OPTIONS
+.TP
+.B \-\-vcf [\fIin.vcf\fR|\fIin.bcf\fR|\fIin.vcf.gz\fB|\fIin.bed.gz\fB]
+Genotypes in VCF/BCF format, or another molecular phenotype in BED format.
+If there is a DS field in the genotype FORMAT of a variant (dosage of the genotype calculated from genotype probabilities, e.g. after imputation), then this is used as the genotype.
+If there is only the GT field in the genotype FORMAT then this is used and it is converted to a dosage.
+REQUIRED.
+.TP
+.B \-\-bed \fIquantifications.bed.gz\fR
+Molecular phenotype quantifications in BED format.
+REQUIRED.
+.TP
+.B \-\-out \fIoutput.txt\fR
+Output file. 
+REQUIRED.
+.TP
+.B \-\-hotspots \fIrecombination_hotspots.bed\fR
+Recombination hotspots in BED format.
+REQUIRED.
+.TP
+.B \-\-cov \fIcovariates.txt\fR
+Covariates to correct the phenotype data with.
+.TP
+.B \-\-stats\-vcf [\fIin.vcf\fR|\fIin.bcf\fR|\fIin.vcf.gz\fB]
+Calculate D' and r\-squared from this file.
+Defaults to the \-\-vcf file.
+Needs to have phased genotypes for D' calculations.
+.TP
+.B \-\-stats\-vcf\-include\-samples \fIsamples.txt\fR
+Samples to include from the \-\-stats\-vcf file.
+One sample ID per line.
+.TP
+.B \-\-stats\-vcf\-exclude\-samples \fIsamples.txt\fR
+Samples to exclude from the \-\-stats\-vcf file.
+One sample ID per line.
+.TP
+.B \-\-normal
+Rank normal transform the phenotype data so that each phenotype is normally distributed.
+RECOMMENDED.
+.TP
+.B \-\-conditional
+molQTLs contain independent signals so execute the conditional analysis.
+.TP
+.B \-\-debug
+Print out debugging info to stderr.
+DON'T USE.
+.TP
+.B \-\-warnings
+Print all encountered individual warnings to stdout.
+.TP
+.B \-\-header
+Add a header to the output file when \-\-chunk or \-\-region is provided.
+.TP
+.B \-\-individual-Dprime
+Calculate D' on an individual variant basis.
+If not provided D' will not be calculated after first unphased genotype is encountered.
+.TP
+.B \-\-mem-est
+Estimate memory usage and exit.
+.TP
+.B \-\-mem [\fI0\fR|\fI1\fR|\fI2\fR|\fI3\fB]
+Keep results of calculations that may be used multiple times in memory. 0 = nothing in mem, 1 = only basic, 2 = all in mem but clean after unlikely to be reused, 3 = all in mem no cleaning.
+DEFAULT=0. 
+RECOMMENDED=2.
+.TP
+.B \-\-window \fIinteger\fR
+Size of the cis window flanking each phenotype's start position.
+DEFAULT=1000000. 
+RECOMMENDED=1000000.
+.TP
+.B \-\-sample \fIinteger\fR
+Number of simulated RTC values to try to achieve for each coldspot, for converting RTC to a probability.
+At each iteration we try to pick a unique combination of variants, thus the actual number of sample iterations may be less than this value, due to the number variants in a region.
+If you want to run this analysis, please provide at least 100.
+DEFAULT=0.
+.TP
+.B \-\-max\-sample \fIinteger\fR
+Max number of sample iterations trying to reach \-\-sample before quitting. 
+Provide the actual number not the multiplier.
+DEFAULT=\-\-sample * 50.
+.TP
+.B \-\-R2\-threshold \fIfloat\fR
+The minimum r-squared required when picking a variant that is linked to the hidden causal variant(s) when running simulations using \-\-sample. 
+DEFAULT=0.5.
+.TP
+.B \-\-D\-prime\-threshold \fIfloat\fR
+If the pairs of variants fall into different coldspots and have a D' greater than this, the RTC calculation is extended to multiple coldspot regions including both variants. 
+Assumes D' can be calculated.
+DEFAULT=OFF.
+NOT RECOMMENDED.
+.TP
+.B \-\-grp\-best
+Correct for multiple phenotypes within a phenotype group.
+.TP
+.B \-\-pheno\-col \fIinteger\fR
+1-based phenotype id column number.
+DEFAULT=1 or 5 when \-\-grp\-best
+.TP
+.B \-\-geno\-col \fIinteger\fR
+1-based genotype id column number.
+DEFAULT=8 or 10 when \-\-grp\-best
+.TP
+.B \-\-grp\-col \fIinteger\fR
+1-based phenotype group id column number.
+Only relevant if \fB\-\-grp\-best\fR is in effect.
+DEFAULT=1
+.TP
+.B \-\-rank\-col \fIinteger\fR
+1-based conditional analysis rank column number.
+Only relevant if \fB\-\-conditional\fR is in effect.
+DEFAULT=12 or 14 when \-\-grp\-best
+.TP
+.B \-\-best\-col \fIinteger\fR
+1-based phenotype column number
+Only relevant if \fB\-\-conditional\fR is in effect.
+DEFAULT=21 or 23 when \-\-grp\-best
+.TP
+.B \-\-gwas\-cis \fIvariants_external.txt qtls_in_this_dataset.txt\fR
+Run RTC for GWAS and cis-molQTL colocalization analysis.
+Takes two file names as arguments. 
+The first is the file with GWAS variants of interest with one variant ID per line.
+These should match the variants IDs in the \fB\-\-vcf\fR file.
+The second is the QTLtools output for the cis run that was ran using the same \fB\-\-vcf\fR, \fB\-\-bed\fR, and \fB\-\-cov\fR files. 
+REQUIRED unless (and mutually exclusive with) \fB\-\-gwas-trans\fR, \fB\-\-mergeQTL-cis\fR, \fB\-\-mergeQTL-trans\fR.
+.TP
+.B \-\-gwas\-trans \fIvariants_external.txt qtls_in_this_dataset.txt\fR
+Run RTC for GWAS and trans-molQTL colocalization analysis.
+Takes two file names as arguments. 
+The first is the file with GWAS variants of interest with one variant ID per line.
+These should match the variants IDs in the \fB\-\-vcf\fR file.
+The second is the QTLtools output for the trans run that was ran using the same \fB\-\-vcf\fR, \fB\-\-bed\fR, and \fB\-\-cov\fR files.
+You will need to adjust \fB*\-col\fR options. 
+REQUIRED unless (and mutually exclusive with) \fB\-\-gwas-cis\fR, \fB\-\-mergeQTL-cis\fR, \fB\-\-mergeQTL-trans\fR.
+.TP
+.B \-\-mergeQTL\-cis \fIvariants_external.txt qtls_in_this_dataset.txt\fR
+Run RTC for cis-molQTL and cis-molQTL colocalization analysis.
+Takes two file names as arguments. 
+The first is the file with cis-molQTL variants of interest discovered in a different dataset, e.g. different tissue, with one variant ID per line.
+These should match the variants IDs in the \fB\-\-vcf\fR file.
+The second is the QTLtools output for the cis run that was ran using the same \fB\-\-vcf\fR, \fB\-\-bed\fR, and \fB\-\-cov\fR files. 
+REQUIRED unless (and mutually exclusive with) \fB\-\-gwas-trans\fR, \fB\-\-mergeQTL-cis\fR, \fB\-\-mergeQTL-trans\fR.
+.TP
+.B \-\-mergeQTL\-trans \fIvariants_external.txt qtls_in_this_dataset.txt\fR
+Run RTC for trans-molQTL and trans-molQTL colocalization analysis.
+Takes two file names as arguments. 
+The first is the file with trans-molQTL variants of interest discovered in a different dataset, e.g. different tissue, with one variant ID per line.
+These should match the variants IDs in the \fB\-\-vcf\fR file.
+The second is the QTLtools output for the trans run that was ran using the same \fB\-\-vcf\fR, \fB\-\-bed\fR, and \fB\-\-cov\fR files. 
+You will need to adjust \fB*\-col\fR options. 
+REQUIRED unless (and mutually exclusive with) \fB\-\-gwas-trans\fR, \fB\-\-gwas-cis\fR, \fB\-\-mergeQTL-cis\fR.
+.TP
+.B \-\-chunk \fIinteger1\fR \fIinteger2\fR
+For parallelization.
+Divide the data into \fIinteger2\fR number of chunks and process chunk number \fIinteger1\fR.
+Chunk 0 will print a header.
+Mutually exclusive with \-\-region.
+\fBMinimum number of chunks has to be at least the same number of chromosomes in the \-\-bed file.\fR
+.TP
+.B \-\-region \fIchr:start-end\fR
+Genomic region to be processed.
+E.g. chr4:12334456-16334456, or chr5.
+Mutually exclusive with \-\-chunk.
+
+.SH OUTPUT FILE
+.TP 1
+.B \-\-out output file
+Space separated output file with the following columns.
+Columns after the 22nd are only printed if \fB\-\-sample\fR is provided.
+We recommend including chunk 0 to print out a header in order to avoid confusion.
+
+.TS
+n l lx .
+1	other_variant	T{
+The variant ID that is external to this dataset, could be the GWAS variant or another molQTL 
+T}
+2	our_variant	T{
+The molQTL variant ID that is internal to this dataset
+T}
+3	phenotype	T{
+The phenotype ID
+T}
+4	phenotype_group	T{
+The phenotype group ID
+T}
+5	other_variant_chr	T{
+The external variant's chromosome
+T}
+6	other_variant_start	T{
+The external variant's start position
+T}
+7	other_variant_rank	T{
+Rank of the external variant.
+Only relevant if the external variants are part of an conditional analysis
+T}
+8	our_variant_chr	T{
+The internal variant's chromosome
+T}
+9	our_variant_start	T{
+The internal variant's start position
+T}
+10	our_variant_rank	T{
+Rank of the internal variant.
+Only relevant if the internal variants are part of an conditional analysis
+T}
+11	phenotype_chr	T{
+The phenotype's chromosome
+T}
+12	phenotype_start	T{
+The start position of the phenotype
+T}
+13	distance_between_variants	T{
+The distance between the two variants
+T}
+14	distance_between_other_variant_and_pheno	T{
+The distance between the external variant and the phenotype
+T}
+15	other_variant_region_index	T{
+The region index of the external variant
+T}
+16	our_variant_region_index	T{
+The region index of the internal variant
+T}
+17	region_start	T{
+The start position of the region
+T}
+18	region_end	T{
+The end position of the region
+T}
+19	variant_count_in_region	T{
+The number of variants in the region
+T}
+20	RTC	T{
+The RTC score
+T}
+21	D'	T{
+The D' of the two variants.
+Only calculated if there are phased genotypes
+T}
+22	r^2	T{
+The r squared of the two variants
+T}
+22	p_value	T{
+The p-value of the RTC score
+T}
+23	unique_picks_H0	T{
+The number of unique combinations of variants in the H0 simulations
+T}
+24	unique_picks_H1	T{
+The number of unique combinations of variants in the H1 simulations
+T}
+25	rtc_bin_start	T{
+Lower bound of the RTC bin, based on the observed RTC score
+T}
+26	rtc_bin_end	T{
+Upper bound of the RTC bin, based on the observed RTC score
+T}
+27	rtc_bin_H0_proportion	T{
+The proportion of H0 simulated values that are between rtc_bin_start and rtc_bin_end
+T}
+28	rtc_bin_H1_proportion	T{
+The proportion of H1 simulated values that are between rtc_bin_start and rtc_bin_end
+T}
+29	median_r^2	T{
+The median r-squared in the region
+T}
+30	median_H0	T{
+The median RTC score in the H0 simulations
+T}
+31	median_H1	T{
+The median RTC score in the H1 simulations
+T}
+32	H0	T{
+The RTC scores observed in the H0 simulations
+T}
+33	H1	T{
+The RTC scores observed in the H1 simulations
+T}
+.TE
+
+.SH EXAMPLES
+.IP o 2
+Run RTC with GWAS variants and cis-eQTLs correcting for technical covariates and rank normal transforming the phenotype:
+.IP "" 2
+QTLtools rtc \-\-vcf genotypes.chr22.vcf.gz \-\-bed genes.50percent.chr22.bed.gz \-\-cov genes.covariates.pc50.txt.gz \-\-hotspot hotspots_b37_hg19.bed \-\-gwas-cis GWAS.b37.txt permutations_all.significant.txt \-\-normal \-\-out rtc_results.txt 
+.IP o 2
+RTC with GWAS variants and cis-eQTLs and simulations, correcting for technical covariates, rank normal transforming the phenotype, and running conditional analysis while keeping data in memory.
+To facilitate parallelization on compute cluster, we developed an option to run the analysis into chunks of molecular phenotypes.
+For instance, to run analysis on chunk 12 when splitting the example data set into 20 chunks, run:
+.IP "" 2
+QTLtools rtc \-\-vcf genotypes.chr22.vcf.gz \-\-bed genes.50percent.chr22.bed.gz \-\-cov genes.covariates.pc50.txt.gz \-\-hotspot hotspots_b37_hg19.bed \-\-gwas-cis GWAS.b37.txt conditional_all.significant.txt \-\-normal \-\-conditional \-\-mem 2 \-\-chunk 12 20 \-\-sample 200 \-\-out rtc_results_12_20.txt  
+.IP o 2
+If you want to submit the whole analysis with 20 jobs on a compute cluster, just run (qsub needs to be changed to the job submission system used [bsub, psub, etc...]):
+.IP "" 2
+for j in $(seq 0 20); do
+.sp 0
+.in +4
+echo "QTLtools rtc \-\-vcf genotypes.chr22.vcf.gz \-\-bed genes.50percent.chr22.bed.gz \-\-cov genes.covariates.pc50.txt.gz \-\-hotspot hotspots_b37_hg19.bed \-\-gwas-cis GWAS.b37.txt conditional_all.significant.txt \-\-normal \-\-conditional \-\-mem 2 \-\-chunk $j 20 \-\-sample 200 \-\-out rtc_results_$j\_20.txt" | qsub
+.sp 0
+.in -4
+done
+
+.SH SEE ALSO
+.IR QTLtools (1)
+.\".IR QTLtools-bamstat (1),
+.\".IR QTLtools-mbv (1),
+.\".IR QTLtools-pca (1),
+.\".IR QTLtools-correct (1),
+.\".IR QTLtools-cis (1),
+.\".IR QTLtools-trans (1),
+.\".IR QTLtools-fenrich (1),
+.\".IR QTLtools-fdensity (1),
+.\".IR QTLtools-rtc (1),
+.\".IR QTLtools-rtc-union (1),
+.\".IR QTLtools-extract (1),
+.\".IR QTLtools-quan (1),
+.\".IR QTLtools-rep (1),
+.\".IR QTLtools-gwas (1),
+.PP
+QTLtools website: <https://qtltools.github.io/qtltools>
+.SH BUGS
+
+Please submit bugs to <https://github.com/qtltools/qtltools>
+.SH
+CITATION
+Ongen H, Brown AA, Delaneau O, et al. Estimating the causal tissues for complex traits and diseases. \fINat Genet\fR. 2017;\fB49\fR(12):1676-1683. doi:10.1038/ng.3981
+<https://doi.org/10.1038/ng.3981>
+.SH AUTHORS
+Halit Ongen (halitongen@gmail.com), Olivier Delaneau (olivier.delaneau@gmail.com)

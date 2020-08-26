@@ -41,9 +41,9 @@ void union_main(vector < string > & argv) {
 	boost::program_options::options_description opt_columns ("\x1B[32mColumns (1-based)\33[0m");
 	opt_columns.add_options()
 		("pheno-col", boost::program_options::value< unsigned int >()->default_value(1), "Phenotype column")
-		("geno-col", boost::program_options::value< unsigned int >()->default_value(7), "Genotype column")
-		("rank-col", boost::program_options::value< unsigned int >()->default_value(11), "Conditional analysis rank column")
-		("best-col", boost::program_options::value< unsigned int >()->default_value(18), "Conditional analysis best variant column");
+		("geno-col", boost::program_options::value< unsigned int >()->default_value(8), "Genotype column")
+		("rank-col", boost::program_options::value< unsigned int >()->default_value(12), "Conditional analysis rank column")
+		("best-col", boost::program_options::value< unsigned int >()->default_value(21), "Conditional analysis best variant column");
 
 	boost::program_options::options_description opt_parallel ("\x1B[32mParallelization\33[0m");
 	opt_parallel.add_options()

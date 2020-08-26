@@ -1,0 +1,122 @@
+.\" Manpage for QTLtools rtc.
+.\" Contact halitongen@gmail.com to correct errors or typos.
+.TH QTLtools-rep 1 "06 May 2020" "QTLtools-v1.3" "Bioinformatics tools"
+.SH NAME
+QTLtools rep \- Replicate QTL associations in an independent dataset 
+.SH SYNOPSIS
+.B QTLtools rep \-\-bed
+.IR quantifications.bed.gz 
+.B \-\-vcf
+.IR [in.vcf | in.vcf.gz | in.bcf]
+.B \-\-qtl
+.IR qtls_external.txt
+.B \-\-out 
+.IR output.txt
+.I [OPTIONS]
+.SH DESCRIPTION
+This mode reads phenotype-genotype pairs that were identified in another dataset and checks association between the same genotype and phenotype in this dataset. 
+.SH OPTIONS
+.TP
+.B \-\-vcf [\fIin.vcf\fR|\fIin.bcf\fR|\fIin.vcf.gz\fB|\fIin.bed.gz\fB] ...
+Genotypes in VCF/BCF format, or another molecular phenotype in BED format.
+If there is a DS field in the genotype FORMAT of a variant (dosage of the genotype calculated from genotype probabilities, e.g. after imputation), then this is used as the genotype.
+If there is only the GT field in the genotype FORMAT then this is used and it is converted to a dosage.
+REQUIRED.
+.TP
+.B \-\-bed \fIquantifications.bed.gz\fR ...
+Molecular phenotype quantifications in BED format.
+REQUIRED.
+.TP
+.B \-\-qtl \fIexternal_qtls.txt\fR ...
+The file listing the QTLs identified in the external dataset. 
+One phenotype genotype pair (separated by space, phenotype first) per line.
+REQUIRED.
+.TP
+.B \-\-out \fIfilename.txt\fR
+The output file name.
+REQUIRED.
+.TP
+.B \-\-cov \fIcovariates.txt\fR
+Covariates to correct the phenotype data with.
+.TP
+.B \-\-normal
+Rank normal transform the phenotype data so that each phenotype is normally distributed.
+RECOMMENDED.
+
+.SH OUTPUT FILE
+.TP 1
+.B output file
+Space separated output file with the following columns.
+.TS
+n lx .
+1	T{
+The phenotype ID
+T}
+2	T{
+The phenotype's chromosome
+T}
+3	T{
+The phenotype's start position
+T}
+4	T{
+The phenotype's end position
+T}
+5	T{
+The phenotype's strand
+T}
+6	T{
+The genotype ID
+T}
+7	T{
+The genotype's chromosome
+T}
+8	T{
+The genotype's start position
+T}
+9	T{
+The genotype's end position
+T}
+10	T{
+The p-value of the association
+T}
+11	T{
+The slope of the association
+T}
+.TE
+
+.SH EXAMPLE
+.IP o 2
+Replicate the results of dataset1 in dataset2, correcting dataset2 phenotype's with technical covariates and normal transforming them:
+.IP "" 2
+QTLtools rep --bed dataset2.bed.gz --vcf dataset2.bcf --cov dataset2.covariates.txt --qtl significant_qtls_dataset1.txt --normal --out rep_results.txt
+
+
+.SH SEE ALSO
+.IR QTLtools (1)
+.\".IR QTLtools-bamstat (1),
+.\".IR QTLtools-mbv (1),
+.\".IR QTLtools-pca (1),
+.\".IR QTLtools-correct (1),
+.\".IR QTLtools-cis (1),
+.\".IR QTLtools-trans (1),
+.\".IR QTLtools-fenrich (1),
+.\".IR QTLtools-fdensity (1),
+.\".IR QTLtools-rtc (1),
+.\".IR QTLtools-rtc-union (1),
+.\".IR QTLtools-extract (1),
+.\".IR QTLtools-quan (1),
+.\".IR QTLtools-rep (1),
+.\".IR QTLtools-gwas (1),
+.PP
+QTLtools website: <https://qtltools.github.io/qtltools>
+.SH BUGS
+Versions up to and including 1.2, suffer from a bug in reading missing genotypes in VCF/BCF files. 
+This bug affects variants with a DS field in their genotype's FORMAT and have a missing genotype (DS field is .) in one of the samples, in which case genotypes for all the samples are set to missing, effectively removing this variant from the analyses.
+.PP
+Please submit bugs to <https://github.com/qtltools/qtltools>
+.SH
+CITATION
+Delaneau O., Ongen H., Brown A. A., et al. A complete tool set for molecular QTL discovery and analysis. \fINat Commun\fR \fB8\fR, 15452 (2017). 
+<https://doi.org/10.1038/ncomms15452>
+.SH AUTHORS
+Olivier Delaneau (olivier.delaneau@gmail.com), Halit Ongen (halitongen@gmail.com)

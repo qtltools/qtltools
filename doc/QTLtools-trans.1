@@ -1,0 +1,239 @@
+.\" Manpage for QTLtools trans.
+.\" Contact halitongen@gmail.com to correct errors or typos.
+.TH QTLtools-trans 1 "06 May 2020" "QTLtools-v1.3" "Bioinformatics tools"
+.SH NAME
+QTLtools trans \- trans QTL analysis
+.SH SYNOPSIS
+.B QTLtools trans \-\-vcf
+.IR [in.vcf | in.vcf.gz | in.bcf | in.bed.gz] 
+.B \-\-bed
+.IR quantifications.bed.gz
+.B [\-\-nominal
+.B | \-\-permute 
+.B | \-\-sample 
+.IR integer
+.B | \-\-adjust 
+.IR in.txt ]
+.B \-\-out 
+.IR output.txt
+.I [OPTIONS]
+.SH DESCRIPTION
+This mode maps trans (distal) quantitative trait loci (QTLs) that affect the phenotypes, using linear regression. 
+The method is detailed in <https://www.nature.com/articles/ncomms15452>.
+We first regress out the provided covariates from the phenotype data, followed by running the linear regression between the phenotype residuals and the genotype.
+If \fB\-\-normal\fR and \fB\-\-cov\fR are provided at the same time, then the residuals after the covariate correction are rank normal transformed.
+It incorporates an efficient permutation scheme.
+You can run a nominal pass (\fB\-\-nominal\fR) listing all genotype-phenotype associations below a certain threshold, a permutation pass (\fB\-\-permute\fR or \fB\-\-sample\fR \fIno_genes_to_sample\fR) to empirically characterize the null distribution of associations, or adjust the nominal p-values based on permutations (\fB\-\-adjust\fR). 
+.PP
+In the full permutation scheme (\fB\-\-permute\fR) we permute all phenotypes using the same random number sequence to preserve the correlation structure.
+By doing so, the only association we actually break in the data is between the genotype and the phenotype data.
+Then, we proceed with a standard association scan identical to the one used in the nominal pass.
+In practice, we repeat this for 100 permutations of the phenotype data.
+Subsequently, we can proceed with FDR correction by ranking all the nominal p-values in ascending order and by counting how many p-values in the permuted data sets are smaller.
+This provides an FDR estimate: if we have 500 p-values in the permuted data sets that are smaller than the 100th smallest nominal p-value, we can then assume that the FDR for the 100 first associations is around 5% (=500/(100 × 100)).
+.PP
+To enable fast screening in trans, we also designed an approximation of the method described just above based on what we already do in cis.
+To make it possible, we assume that the phenotypes are independent and normally distributed (which can be enforced with \fB\-\-normal\fR).
+The idea is that since all phenotypes are normally distributed, effectively they are the same, and also the cis region removed from each phenotype is so small compared to rest of the genome that its phenotype specific impact is negligible.
+Hence the number of and the correlation amongst variants for each phenotype is approximately the same, and each phenotype is approximately the same; thus we can run permutations with a small number of phenotypes rather then all, which drastically decreases the computational burden and the null distribution generated can be applied to all phenotypes.
+The implementation draws from the null by permuting some randomly chosen phenotypes, testing for associations with all variants in trans and storing the smallest p\-value.
+When we repeat this many times (typically 1000), effectively building a null distribution of the strongest associations for a single phenotype.
+We then make it continuous by fitting a beta distribution as we do in cis and use it to adjust every nominal p\-value coming from the initial pass for the number of variants being tested.
+To correct for the number of phenotypes being tested, we estimate FDR as we do in cis; that is from the best adjusted p\-values per phenotype (one per phenotype).
+This also gives an adjusted p\-value threshold that we use to identify all phenotype-variant pairs that are whole-genome significant.
+In our experiments, this approach gives similar results to the full permutation scheme both in term of FDR estimates and number of discoveries, while running faster.
+.PP
+Since linear regressions assumes normally distributed data, we \fBhighly recommend\fR using the \fB\-\-normal\fR option to rank normal transform the phenotype quantifications in order to avoid false positive associations due to outliers.
+If you are using the approximate permutation scheme (\fB\-\-sample\fR) \fByou MUST use the \-\-normal option or make sure that your phenotypes are normally distributed\fR.  
+.SH OPTIONS
+.TP
+.B \-\-vcf [\fIin.vcf\fR|\fIin.bcf\fR|\fIin.vcf.gz\fB|\fIin.bed.gz\fB]
+Genotypes in VCF/BCF format, or another molecular phenotype in BED format.
+If there is a DS field in the genotype FORMAT of a variant (dosage of the genotype calculated from genotype probabilities, e.g. after imputation), then this is used as the genotype.
+If there is only the GT field in the genotype FORMAT then this is used and it is converted to a dosage.
+REQUIRED.
+.TP
+.B \-\-bed \fIquantifications.bed.gz\fR
+Molecular phenotype quantifications in BED format.
+REQUIRED.
+.TP
+.B \-\-out \fIoutput.txt\fR
+Output file. 
+REQUIRED.
+.TP
+.B \-\-cov \fIcovariates.txt\fR
+Covariates to correct the phenotype data with.
+.TP
+.B \-\-normal
+Rank normal transform the phenotype data so that each phenotype is normally distributed.
+RECOMMENDED.
+.TP
+.B \-\-window \fIinteger\fR
+Size of the cis window to remove flanking each phenotype's start position.
+DEFAULT=5000000.
+.TP
+.B \-\-threshold \fIfloat\fR
+P\-value threshold below which hits are reported.
+Give 1.0 to print everything, which may generate a huge file.
+When \fB\-\-adjust\fR is provided, this threshold applies to the adjusted p-values.
+DEFAULT=1e-5. 
+.TP
+.B \-\-bins \fIinteger\fR
+Number of bins to use to categorize all p\-values above \-\-threshold.
+DEFAULT=1000. 
+.TP
+.B \-\-nominal
+Calculate the nominal p-value for the genotype-phenotype associations and print out the ones that pass the provided threshold.
+Mutually exclusive with \-\-permute, \-\-sample and \-\-adjust.
+.TP
+.B \-\-permute
+Permute all phenotypes together, once.
+For multiple permutations you need to change the random seed using \fB\-\-seed\fR for each permutation.
+Mutually exclusive with \-\-nominal, \-\-sample and \-\-adjust.
+.TP
+.B \-\-sample \fIinteger\fR
+Permute randomly chosen phenotypes \fIinteger\fR times.
+Mutually exclusive with \-\-nominal, \-\-permute, \-\-adjust, and \-\-chunk.
+.TP
+.B \-\-adjust \fIfilename\fR
+Test and adjust p-values using the null distribution in \fIfilename\fR.
+Mutually exclusive with \-\-nominal, \-\-permute, and \-\-sample.
+.TP
+.B \-\-chunk \fIinteger1\fR \fIinteger2\fR
+For parallelization.
+Divide the data into \fIinteger2\fR number of chunks and process chunk number \fIinteger1\fR.
+\fBMinimum number of chunks has to be at least the same number of chromosomes in the \-\-bed file.\fR
+
+.SH OUTPUT FILES
+.TP 1
+.B .hits.txt.gz 
+Space separated results output file detailing the variant-phenotype pairs that pass the threshold with the following columns:
+.TS
+n lx .
+1	T{
+The phenotype ID 
+T}
+2	T{
+The phenotype chromosome
+T}
+3	T{
+Start position of the phenotype
+T}
+4	T{
+The variant ID
+T}
+5	T{
+The variant chromosome
+T}
+6	T{
+The start position of the variant
+T}
+7	T{
+The nominal p-value of the association between the variant and the phenotype.
+T}
+8	T{
+The adjusted p-value of the association between the variant and the phenotype.
+Requires \fB\-\-adjust\fR
+T}
+9	T{
+Correlation coefficient
+T}
+.TE
+
+.TP 1
+.B .best.txt.gz
+Space separated output file listing the most significant variant per phenotype.
+.TS
+n lx .
+1	T{
+The phenotype ID 
+T}
+2	T{
+The adjusted p-value of the association between the variant and the phenotype.
+Requires \fB\-\-adjust\fR
+T}
+3	T{
+The nominal p-value of the association between the variant and the phenotype.
+T}
+4	T{
+The variant ID
+T}
+.TE
+.TP 1
+.B .bins.txt.gz
+Space separated output file containing the binning of all hits with a p\-value below the specified \fB\-\-threshold\fR.
+.TS
+n lx .
+1	T{
+The index of the bin
+T}
+2	T{
+The lower bound of the correlation coefficient for this bin
+T}
+3	T{
+The upper bound of the correlation coefficient for this bin
+T}
+4	T{
+The upper bound of the p\-value for this bin
+T}
+5	T{
+The lower bound of the p\-value for this bin
+T}
+.TE
+
+.SH FULL PERMUTATION ANALYSIS EXAMPLE
+.IP 1 2
+Run a nominal analysis, rank normal transforming the phenotypes and outputting all associations with a p-value below 1e-5:
+.IP "" 2
+QTLtools trans \-\-vcf genotypes.chr22.vcf.gz \-\-bed genes.simulated.chr22.bed.gz \-\-nominal \-\-normal \-\-out trans.nominal
+.IP 2 2
+Run a full permutation analysis with 100 jobs on a compute cluster, run the following \fBmaking sure that you change the seed for each permutation iteration\fR (qsub needs to be changed to the job submission system used [bsub, psub, etc...])
+.IP "" 2
+for j in $(seq 1 100); do
+.sp 0
+.in +4
+echo "QTLtools trans \-\-vcf genotypes.chr22.vcf.gz \-\-bed genes.simulated.chr22.bed.gz \-\-permute --normal \-\-out trans.perm$j.txt \-\-seed $j" | qsub
+.sp 0
+.in -4
+done
+
+.SH APPROXIMATE PERMUTATION ANALYSIS EXAMPLE
+.IP 1 2
+Build the null distribution randomly selecting 1000 phenotypes, and rank normal transforming the phenotypes:
+.IP "" 2
+QTLtools trans \-\-vcf genotypes.chr22.vcf.gz \-\-bed genes.simulated.chr22.bed.gz \-\-sample 1000 \-\-normal \-\-out trans.sample
+.IP 2 2
+Run the nominal pass adjusting the p-values with the given null distribution, rank normal transforming the phenotypes, and printing out associations with an adjusted p-value less than 0.1:
+.IP "" 2
+QTLtools trans \-\-vcf genotypes.chr22.vcf.gz \-\-bed genes.simulated.chr22.bed.gz \-\-adjust trans.sample.best.txt.gz \-\-threshold 0.1 \-\-normal \-\-out trans.adjust
+
+.SH SEE ALSO
+.IR QTLtools (1)
+.\".IR QTLtools-bamstat (1),
+.\".IR QTLtools-mbv (1),
+.\".IR QTLtools-pca (1),
+.\".IR QTLtools-correct (1),
+.\".IR QTLtools-cis (1),
+.\".IR QTLtools-trans (1),
+.\".IR QTLtools-fenrich (1),
+.\".IR QTLtools-fdensity (1),
+.\".IR QTLtools-rtc (1),
+.\".IR QTLtools-rtc-union (1),
+.\".IR QTLtools-extract (1),
+.\".IR QTLtools-quan (1),
+.\".IR QTLtools-rep (1),
+.\".IR QTLtools-gwas (1),
+.PP
+QTLtools website: <https://qtltools.github.io/qtltools>
+.SH BUGS
+.IP o 2
+Versions up to and including 1.2, suffer from a bug in reading missing genotypes in VCF/BCF files. 
+This bug affects variants with a DS field in their genotype's FORMAT and have a missing genotype (DS field is .) in one of the samples, in which case genotypes for all the samples are set to missing, effectively removing this variant from the analyses.
+.PP
+Please submit bugs to <https://github.com/qtltools/qtltools>
+.SH
+CITATION
+Delaneau, O., Ongen, H., Brown, A. et al. A complete tool set for molecular QTL discovery and analysis. \fINat Commun\fR \fB8\fR, 15452 (2017). 
+<https://doi.org/10.1038/ncomms15452>
+.SH AUTHORS
+Halit Ongen (halitongen@gmail.com), Olivier Delaneau (olivier.delaneau@gmail.com)

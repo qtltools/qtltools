@@ -1,0 +1,473 @@
+.\" Manpage for QTLtools.
+.\" Contact halitongen@gmail.com to correct errors or typos.
+.TH QTLtools 1 "06 May 2020" "QTLtools-v1.3" "Bioinformatics tools"
+.SH NAME
+QTLtools \- A complete tool set for molecular QTL discovery and analysis
+.SH SYNOPSIS
+.B QTLtools
+[\fB\fIMODE\fR] [\fB\fIOPTIONS\fR]
+.SH DESCRIPTION
+QTLtools is a complete tool set for molecular QTL discovery and analysis that is fast, user and cluster friendly. 
+QTLtools performs multiple key tasks such as checking the quality of the sequence data, checking that sequence and genotype data match, quantifying and stratifying individuals using molecular phenotypes, discovering proximal or distal molQTLs and integrating them with functional annotations or GWAS data, and analyzing allele specific expression. 
+It utilizes HTSlib <http://www.htslib.org/> to quickly and efficiently handle common genomics files types like VCF, BCF, BAM, SAM, CRAM, BED, and GTF, and the Eigen C++ library <http://eigen.tuxfamily.org/> for fast linear algebra.
+
+.SH MODES
+.TP 13
+.B bamstat 
+.B QTLtools bamstat \-\-bam
+.IR [in.sam | in.bam | in.cram] 
+.B \-\-bed
+.IR annotation.bed.gz
+.B \-\-out 
+.IR output.txt
+.I [OPTIONS]
+
+Calculate basic QC metrics for BAM/SAM.
+.TP
+.B mbv
+.B QTLtools mbv \-\-bam
+.IR [in.sam | in.bam | in.cram] 
+.B \-\-vcf
+.IR [in.vcf | in.vcf.gz | in.bcf]
+.B \-\-out 
+.IR output.txt
+.I [OPTIONS]
+
+Match BAM to VCF
+.TP
+.B pca
+.B QTLtools pca \-\-vcf
+.IR [in.vcf | in.vcf.gz | in.bcf] 
+.B | \-\-bed
+.IR in.bed.gz
+.B \-\-out 
+.IR output.txt
+.I [OPTIONS]
+
+Calculate principal components for a BED/VCF/BCF/CRAM file.
+.TP
+.B correct
+.B QTLtools correct  \-\-vcf
+.IR [in.vcf | in.vcf.gz | in.bcf] 
+.B | \-\-bed
+.IR in.bed.gz
+.B \-\-cov
+.IR covariates.txt
+.B | \-\-normal \-\-out 
+.IR output.txt
+.I [OPTIONS]
+
+Covariate correction of a BED or a VCF file.
+.TP
+.B cis
+.B QTLtools cis \-\-vcf
+.IR [in.vcf | in.vcf.gz | in.bcf | in.bed.gz] 
+.B \-\-bed
+.IR quantifications.bed.gz
+.B [\-\-nominal
+.IR float
+.B | \-\-permute 
+.IR integer
+.B | \-\-mapping 
+.IR in.txt ]
+.B \-\-out 
+.IR output.txt
+.I [OPTIONS]
+
+cis QTL analysis.
+.TP
+.B trans
+.B QTLtools trans \-\-vcf
+.IR [in.vcf | in.vcf.gz | in.bcf | in.bed.gz] 
+.B \-\-bed
+.IR quantifications.bed.gz
+.B [\-\-nominal
+.B | \-\-permute 
+.B | \-\-sample 
+.IR integer
+.B | \-\-adjust 
+.IR in.txt ]
+.B \-\-out 
+.IR output.txt
+.I [OPTIONS]
+
+trans QTL analysis.
+.TP
+.B fenrich
+.B QTLtools fenrich  \-\-qtl
+.IR significanty_genes.bed 
+.B \-\-tss
+.IR gene_tss.bed
+.B \-\-bed
+.IR TFs.encode.bed.gz
+.B \-\-out 
+.IR output.txt
+.I [OPTIONS]
+
+Functional enrichment for QTLs.
+.TP
+.B fdensity
+.B QTLtools fdensity  \-\-qtl
+.IR significanty_genes.bed 
+.B \-\-bed
+.IR TFs.encode.bed.gz
+.B \-\-out 
+.IR output.txt
+.I [OPTIONS]
+
+Functional density around QTLs.
+.TP
+.B genrich
+.B QTLtools genrich  \-\-qtl
+.IR significanty_genes.bed 
+.B \-\-tss
+.IR gene_tss.bed
+.B \-\-vcf
+.IR 1000kg.vcf
+.B \-\-gwas
+.IR gwas_hits.bed
+.B \-\-out 
+.IR output.txt
+.I [OPTIONS]
+
+GWAS enrichment for QTLs. 
+This mode is deprecated and not supported, use rtc instead.  
+.TP
+.B rtc
+.B QTLtools rtc  \-\-vcf
+.IR [in.vcf | in.vcf.gz | in.bcf | in.bed.gz] 
+.B \-\-bed
+.IR quantifications.bed.gz
+.B \-\-hotspots
+.IR hotspots_b37_hg19.bed
+.B [\-\-gwas-cis | \-\-gwas-trans | \-\-mergeQTL-cis | \-\-mergeQTL-trans]
+.I variants_external.txt qtls_in_this_dataset.txt
+.B \-\-out 
+.IR output.txt
+.I [OPTIONS]
+
+Regulatory Trait Concordance score analysis to test if two colocalizing variants are due to the same functional effect.
+.TP
+.B rtc-union
+.B QTLtools rtc-union  \-\-vcf
+[\fIin.vcf\fR|\fIin.vcf.gz\fR|\fIin.bcf\fR|\fIin.bed.gz\fR] ... 
+.B \-\-bed
+\fIquantifications.bed.gz\fR ...
+.B \-\-hotspots
+.IR hotspots_b37_hg19.bed
+.B \-\-results
+\fIqtl_results_files.txt\fR ...
+.I [OPTIONS]
+
+Find the union of QTLs from independent datasets. 
+If there was a QTL in a given recombination interval in one dataset, then find the best QTL (may or may not be genome-wide significant) in the same recombination interval in all other datasets.
+.TP
+.B extract
+.B QTLtools extract [\-\-vcf \-\-bed \-\-cov]
+.IR relevant_file
+.B \-\-out 
+.IR output_prefix
+.I [OPTIONS]
+
+Data extraction mode. 
+Extract all the data from the provided files into one flat file.
+.TP
+.B quan
+.B QTLtools quan \-\-bam
+.IR [in.sam | in.bam | in.cram] 
+.B \-\-gtf
+.IR gene_annotation.gtf
+.B \-\-out-prefix 
+.IR output
+.I [OPTIONS]
+
+Quantify gene and exon expression from RNAseq.
+.TP
+.B ase
+.B QTLtools ase \-\-bam
+.IR [in.sam | in.bam | in.cram] 
+.B \-\-vcf
+.IR [in.vcf | in.vcf.gz | in.bcf]
+.B \-\-ind
+.IR sample_name_in_vcf
+.B \-\-mapq
+.IR integer
+.B \-\-out 
+.IR output.txt
+.I [OPTIONS]
+
+Measure allele specific expression from RNAseq at transcribed heterozygous SNPs
+.TP
+.B rep
+.B QTLtools rep \-\-bed
+.IR quantifications.bed.gz 
+.B \-\-vcf
+.IR [in.vcf | in.vcf.gz | in.bcf]
+.B \-\-qtl
+.IR qtls_external.txt
+.B \-\-out 
+.IR output.txt
+.I [OPTIONS]
+
+Replicate QTL associations in an independent dataset
+.TP
+.B gwas
+.B QTLtools gwas  \-\-vcf
+.IR [in.vcf | in.vcf.gz | in.bcf | in.bed.gz] 
+.B \-\-bed
+.IR quantifications.bed.gz
+.B \-\-out 
+.IR output.txt
+.I [OPTIONS]
+
+GWAS tests. Correlate all genotypes with all phenotypes.
+
+.SH GLOBAL OPTIONS
+QTLtools can read gzip, bgzip, and bzip2 files, and can output gzip and bzip2 files.
+This is dependent on the input and output files' extension. 
+E.g \-\-out output.txt.gz will write a gzipped file.
+.PP
+The following are common options that are used in all of the modes.
+Some of these will not apply to certain modes.
+.TP
+.B \-\-help
+Produces a description of options for a given mode.
+.TP
+.BI \-\-seed " integer
+Random seed for analyses that utilizes randomness.
+Useful for generating replicable results.
+Default=15112011.
+.TP
+.BI \-\-log " file
+Dump screen output to this file.
+.TP
+.B \-\-silent
+Disable screen output.
+.TP
+.BI \-\-exclude\-samples " file
+List of samples to exclude.
+One sample name per line.
+.TP
+.BI \-\-include\-samples " file
+List of samples to include.
+One sample name per line.
+.TP
+.BI \-\-exclude\-sites " file
+List of variants to exclude.
+One variant ID per line.
+.TP
+.BI \-\-include\-sites " file
+List of variants to include.
+One variant ID per line.
+.TP
+.BI \-\-exclude\-positions " file
+List of positions to exclude from genotypes.
+One chr position per line (separated by a space).
+.TP
+.BI \-\-include\-positions " file
+List of positions to include from genotypes.
+One chr position per line (separated by a space).
+.TP
+.BI \-\-exclude\-phenotypes " file
+List of phenotypes to exclude.
+One phenotype ID per line.
+.TP
+.BI \-\-include\-phenotypes " file
+List of phenotypes to include.
+One phenotype ID per line.
+.TP
+.BI \-\-exclude\-covariates " file
+List of covariates to exclude.
+One covariate name per line.
+.TP
+.BI \-\-include\-covariates " file
+List of covariates to include.
+One covariate name per line.
+
+.SH FILE FORMATS
+
+.TP
+.B .bcf|.vcf|.vcf.gz
+These files are used for genotype data.
+The official VCF specification is described at <https://samtools.github.io/hts-specs/VCFv4.2.pdf>.
+The VCF/BCF files used with QTLtools must satisfy this spec's requirements.
+BCF files must be indexed with \fBbcftools index \fI in.bcf\fR <http://samtools.github.io/bcftools/bcftools.html>.
+VCF files should be compressed by \fBbgzip\fR <http://www.htslib.org/doc/bgzip.html> and indexed with \fBtabix -p vcf \fI in.vcf.gz\fR <http://www.htslib.org/doc/tabix.html>.
+
+.TP
+.B .bed|.bed.gz 
+These files are used for phenotype data, and in certain modes they can also be used with the \-\-vcf option, which can be used to correlate two molecular phenotypes.
+The format used for QTLtools is a custom UCSC BED format <https://genome.ucsc.edu/FAQ/FAQformat.html#format1>, which has 6 annotation columns followed by sample columns.
+The header line must exist, and must begin with a # and columns must be tab separated. \fBTHIS IS A DIFFERENT FILE FORMAT THAN THE ONE USED FOR FASTQTL, THUS FASTQTL BED FILES ARE INCOMPATIBLE WITH QTLTOOLS\fR.
+Phenotype BED files must be compressed by \fBbgzip\fR <http://www.htslib.org/doc/bgzip.html> and indexed with \fBtabix -p bed \fI in.bed.gz\fR <http://www.htslib.org/doc/tabix.html>.
+\fBMissing values must be coded as NA\fR.
+Following is an example BED file:
+.sp
+#chr	start	end	pid	gid	strand	sample1	sample2
+.sp 0
+1	9999	10000	exon1	gene1	+	15	234
+.sp 0
+1	9999	10000	exon2	gene1	+	11	134
+.sp 0
+1	19999	20000	exon1	gene2	-	154	284
+.sp 0
+1	19999	20000	exon2	gene2	-	112	301
+.sp
+BED file's annotation columns' descriptions:
+.TS 0
+n lx .
+1	T{
+Phenotype chromosome [\fIstring\fR]
+T}
+2	T{
+Start position of the phenotype [\fIinteger\fR, \fB0-based\fR]
+T}
+3	T{
+End position of the phenotype [\fIinteger\fR, \fB1-based\fR]
+T}
+4	T{
+Phenotype ID [\fIstring\fR]
+T}
+5	T{
+Phenotype group ID or any type of info about the phenotype [\fIstring\fR]
+T}
+6	T{
+Phenotype strand [\fI+/-\fR]
+T}
+.TE
+
+.TP
+.B .bam|.sam|.cram
+These files are used for sequence data.
+The official SAM specification is described at <https://samtools.github.io/hts-specs/SAMv1.pdf>.
+The SAM/BAM/CRAM files used with QTLtools must satisfy this spec's requirements.
+SAM/BAM/CRAM files must be indexed with \fBsamtools index \fI in.bam\fR <http://www.htslib.org/doc/samtools.html>.
+
+.TP
+.B .gtf
+These files are used for gene annotation.
+The file specification is described at <https://www.ensembl.org/info/website/upload/gff.html>.
+The GTF files used must comply with this spec, and should have the gene_id, transcript_id, gene_name, gene_type, and trnascript_type attributes.
+We recommend using gene annotations from GENCODE <https://www.gencodegenes.org/>.
+
+.TP
+.B covariate files
+The covariate file contains the covariate data in simple text format.
+\fBThe missing values should be encoded as NA\fR.
+Both quantitative and qualitative covariates are supported. 
+Quantitative covariates are assumed when only numeric values are provided. 
+Qualitative covariates are assumed when only non-numeric values are provided. 
+In practice, qualitative covariates with F factors are converted in F-1 binary covariates.
+Following is an example a covariate file:
+.sp
+id	sample1	sample2	sample3
+.sp 0
+PC1	-0.02	0.14	0.16
+.sp 0
+PC2	0.01	0.11	0.10
+.sp 0
+PC3	0.03	0.05	0.07
+.sp 0
+COV	A	B	C
+
+.TP
+.B include/exclude files
+The various --{include,exclude}-{sites,samples,phenotypes,covariates} options require a simple text file which lists the IDs of the desired type, one ID per line.
+The include options will result in running the analyses only in this subset of IDs, whereas exclude options will remove these IDs from the analyses. 
+The IDs for --{include,exclude}-sites refer to the 3rd column in VCF/BCF files, --{include,exclude}-covariates refer to the 1st column in COV files, --{include,exclude}-phenotyps refer to the 4th column in BED files and when --grp-best option is used to the 5th column.
+The --include-positions and --exclude-positions options require a text file which lists the chromosomes and positions (separated by a space) of genotypes to be excluded or included. One position per line.
+
+.SH IMPORTANT NOTES
+.IP o 2
+BED files' \fBstart position is 0-based\fR, whereas the \fBend position is 1-based\fR. 
+Positions in all other files used in QTLtools are \fB1-based\fR. 
+All positions provided as option arguments and filters, even the ones referring to BED files, must be \fB1-based\fR.
+1-based means the first base of the sequence has the position 1, whereas in 0-based the first position is 0.
+.IP o 2
+Make sure the chromosome names are the same across all files. 
+If some files have e.g. chr1 and another has 1 as a chromosome name then these will be considered different chromosomes.
+.IP o 2
+BED files used for FastQTL <http://fastqtl.sourceforge.net/> are not directly compatible with QTLtools.
+To convert a FastQTL BED file to the format used in QTLtools you need to add 2 columns after the 4th column.
+.IP o 2
+The quan mode in version 1.2 and above is not compatible with the quantifications generated by the previous versions. 
+This due to bug fixes and slight adjustments to the way we quantify. 
+\fBDo not mix quantifications generated by earlier versions of QTLtools with quantifications from version 1.2 and above\fR, as this will create a bias in your dataset.
+.IP o 2
+Make sure you index all your genotype, phenotype, and sequence files.
+.IP o 2
+Use BCF and BAM files for the best performance.
+
+.SH EXAMPLE FILES
+exons.50percent.chr22.bed.gz	<http://jungle.unige.ch/QTLtools_examples/exons.50percent.chr22.bed.gz>
+.sp 0
+exons.50percent.chr22.bed.gz.tbi	<http://jungle.unige.ch/QTLtools_examples/exons.50percent.chr22.bed.gz.tbi>
+.sp 0
+gencode.v19.annotation.chr22.gtf.gz	<http://jungle.unige.ch/QTLtools_examples/gencode.v19.annotation.chr22.gtf.gz>
+.sp 0
+gencode.v19.exon.chr22.bed.gz	<http://jungle.unige.ch/QTLtools_examples/gencode.v19.exon.chr22.bed.gz>
+.sp 0
+genes.50percent.chr22.bed.gz	<http://jungle.unige.ch/QTLtools_examples/genes.50percent.chr22.bed.gz>
+.sp 0
+genes.50percent.chr22.bed.gz.tbi	<http://jungle.unige.ch/QTLtools_examples/genes.50percent.chr22.bed.gz.tbi>
+.sp 0
+genes.covariates.pc50.txt.gz	<http://jungle.unige.ch/QTLtools_examples/genes.covariates.pc50.txt.gz>
+.sp 0
+genes.simulated.chr22.bed.gz	<http://jungle.unige.ch/QTLtools_examples/genes.simulated.chr22.bed.gz>
+.sp 0
+genes.simulated.chr22.bed.gz.tbi	<http://jungle.unige.ch/QTLtools_examples/genes.simulated.chr22.bed.gz.tbi>
+.sp 0
+genotypes.chr22.vcf.gz	<http://jungle.unige.ch/QTLtools_examples/genotypes.chr22.vcf.gz>
+.sp 0
+genotypes.chr22.vcf.gz.tbi	<http://jungle.unige.ch/QTLtools_examples/genotypes.chr22.vcf.gz.tbi>
+.sp 0
+GWAS.b37.txt	<http://jungle.unige.ch/QTLtools_examples/GWAS.b37.txt>
+.sp 0
+HG00381.chr22.bam	<http://jungle.unige.ch/QTLtools_examples/HG00381.chr22.bam>
+.sp 0
+HG00381.chr22.bam.bai	<http://jungle.unige.ch/QTLtools_examples/HG00381.chr22.bam.bai>
+.sp 0
+hotspots_b37_hg19.bed	<http://jungle.unige.ch/QTLtools_examples/hotspots_b37_hg19.bed>
+.sp 0
+results.genes.full.txt.gz	<http://jungle.unige.ch/QTLtools_examples/results.genes.full.txt.gz>
+.sp 0
+TFs.encode.bed.gz	<http://jungle.unige.ch/QTLtools_examples/TFs.encode.bed.gz>
+
+.SH SEE ALSO
+.IR QTLtools-bamstat (1),
+.IR QTLtools-mbv (1),
+.IR QTLtools-pca (1),
+.IR QTLtools-correct (1),
+.IR QTLtools-cis (1),
+.IR QTLtools-trans (1),
+.IR QTLtools-fenrich (1),
+.IR QTLtools-fdensity (1),
+.IR QTLtools-rtc (1),
+.IR QTLtools-rtc-union (1),
+.IR QTLtools-extract (1),
+.IR QTLtools-quan (1),
+.IR QTLtools-ase (1),
+.IR QTLtools-rep (1),
+.IR QTLtools-gwas (1)
+.PP
+QTLtools website: <https://qtltools.github.io/qtltools>
+.SH BUGS
+.IP o 2
+Versions up to and including 1.2, suffer from a bug in reading missing genotypes in VCF/BCF files. 
+This bug affects variants with a DS field in their genotype's FORMAT and have a missing genotype (DS field is .) in one of the samples, in which case genotypes for all the samples are set to missing, effectively removing this variant from the analyses.
+Affected modes: cis, correct, gwas, pca, rep, trans, rtc-union
+.PP   
+Please submit bugs to <https://github.com/qtltools/qtltools>
+.SH
+CITATIONS
+Delaneau O., Ongen H., Brown A. A., et al. A complete tool set for molecular QTL discovery and analysis. \fINat Commun\fR \fB8\fR, 15452 (2017). 
+<https://doi.org/10.1038/ncomms15452>
+.PP
+Ongen H, Brown A. A., Delaneau O., et al. Estimating the causal tissues for complex traits and diseases. \fINat Genet\fR. 2017;\fB49\fR(12):1676-1683. doi:10.1038/ng.3981
+<https://doi.org/10.1038/ng.3981>
+.PP
+Fort A., Panousis N. I., Garieri M., et al. MBV: a method to solve sample mislabeling and detect technical bias in large combined genotype and sequencing assay datasets, \fIBioinformatics\fR \fB33\fR(12), 1895 2017.
+<https://doi.org/10.1093/bioinformatics/btx074>
+
+.SH AUTHORS
+Olivier Delaneau (olivier.delaneau@gmail.com), Halit Ongen (halitongen@gmail.com)

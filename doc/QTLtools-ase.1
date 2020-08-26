@@ -1,0 +1,493 @@
+.\" Manpage for QTLtools ase.
+.\" Contact halitongen@gmail.com to correct errors or typos.
+.TH QTLtools-ase 1 "06 May 2020" "QTLtools-v1.3" "Bioinformatics tools"
+.SH NAME
+QTLtools ase \- Measure ASE from RNA-seq
+.SH SYNOPSIS
+.B QTLtools ase \-\-bam [\fIsample.bam|sample.sam|sample.cram\fB] \-\-vcf [\fIin.vcf\fR|\fIin.bcf\fR|\fIin.vcf.gz\fB] \-\-sample \fIsample_name_in_vcf\fB \-\-mapq \fI integer\fB \-\-out \fIoutput_file_prefix
+[\fB\fIOPTIONS\fR]
+.SH DESCRIPTION
+This mode measures allele specific expression (ASE) from RNAseq for transcribed heterozygous SNPs as detailed in <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3918453/>.
+In brief, the reference allele mapping bias is calculated for each of the 12 REF/ALT pairs separately provided that there are at least \fB\-\-sites\fR number of REF/ALT sites that have a minimum \fB\-\-cov\-bias\fR number of reads overlapping.
+For REF/ALT pairs that fail these criteria, reference allele mapping bias is calculated from all sites.
+Reference allele mapping bias is the number of all reads across many sites that contained the reference allele for a given REF/ALT pair over the total number of reads overlapping.
+\fB--subsample\fR controls which percentile of the highest covered sites are subsampled, which is necessary so that the reference allele mapping bias is not estimated mostly from very high coverage sites, but from sites covering all the genome.
+The ASE p-value for each site is then calculated as a two-tailed binomial test checking if the observed number of reference allele reads is significantly different from random, given the total number of reads, and the probability of observing a reference allele, which is the reference allele mapping bias for a certain REF/ALT pair.  
+.PP
+The defaults for options should work well for most RNAseq experiments.
+It is \fBNOT\fR advisable to decrease the \fB\-\-baseq\fR below 10, \fB\-\-cov\fR and \fB\-\-cov-bias\fR below 8, and setting \fB\-\-subsample\fR to 1. 
+It is \fBNOT\fR recommended to use the following options regarding filtering \fB\-\-keep-bans-for-bias\fR, \fB\-\-keep-discordant-for-bias\fR, \fB\-\-filter-duplicates\fR, \fB\-\-ignore-orientation\fR, and \fB\-\-legacy-options\fR.
+Also refrain from using \fB\-\-auto-flip\fR, but rather create correct VCF/BCF files.
+.PP
+We highly recommended using a BCF file rather than a VCF due to performance benefits, \fB\-\-fasta\fR to provide the genome sequence used, \fB\-\-blacklist\fR to filter low mappability regions, and \fB\-\-gtf\fR to annotate the SNPs.
+If you are using unfiltered imputed genotypes then consider using \fB\-\-imp-qual\fR and \fB\-\-geno-prob\fR.
+For trouble shooting purposes you can use \fB\-\-filtered\fR, which will list why certain variants are filtered from the analysis. 
+If you are I/O bound you may try using \fB\-\-group-by\fR for better performance.
+If your blacklist file contains many overlapping or contiguous regions you can decrease the memory usage with \fB\-\-merge-on-the-fly\fR.
+.SH OPTIONS
+.TP
+.B \-\-vcf, \-v  [\fIin.vcf\fR|\fIin.bcf\fR|\fIin.vcf.gz\fB]
+Genotypes in VCF/BCF format sorted by chromosome and then position.
+Can contain multiple samples. 
+REQUIRED and RECOMMENDED to use a BCF file for performance.
+.TP
+.B \-\-bam, \-b  [\fIin.bam\fR|\fIin.sam\fR|\fIin.cram\fB]
+Sequence data in BAM/SAM/CRAM format sorted by chromosome and then position.
+One sample per BAM file.
+REQUIRED.
+.TP
+.B \-\-ind, \-i \fIsample_name\fR
+Sample name in the VCF corresponding to the BAM file.
+REQUIRED.
+.TP
+.B \-\-out, \-o \fIoutput\fR
+Output prefix. 
+This will generate output.ase and output.ref_bias files. 
+Or if you give output.gz or output.bz2 then output.ase.gz etc.
+REQUIRED.
+.TP
+.B \-\-mapq, \-q \fIinteger\fR
+Minimum mapping quality for a read or read pair to be considered. 
+Set this to only include uniquely mapped reads.
+REQUIRED.
+.TP
+.B \-\-fasta, \-f \fIgenome_sequence.fa\fR
+Genome sequence in FASTA format. 
+Make sure this the sequence for the correct genome build.
+RECOMMENDED.
+.TP
+.B \-\-blacklist, \-B \fIpoor_mappability_regions.bed\fR
+Poor mappability regions in BED format.
+ASE estimates will be unreliable in regions with low mappability.
+RECOMMENDED.
+.TP
+.B \-\-merge\-on\-the\-fly, \-t 
+Merges the blacklisted regions on the fly.
+This can reduce memory usage if there are many overlapping or contiguous regions in the blacklist.
+.TP
+.B \-\-gtf, \-g \fIgene_annotation.gtf\fR
+Gene annotations in GTF format.
+These can be obtained from <https://www.gencodegenes.org/>.
+RECOMMENDED.
+.TP
+.B \-\-filtered, \-l \fIfilename\fR
+File to output filtered variants.
+RECOMMENDED for troubleshooting especially if \fB--suppress-warnings.\fR
+.TP
+.B \-\-reg, \-r \fIchr:start-end\fR
+Genomic region to be processed.
+E.g. chr4:12334456-16334456, or chr5
+.TP
+.B \-\-fix\-chr, \-F
+Attempt to match chromosome names to the BAM file by adding or removing chr to chromosome names.
+Does not apply to --{include,exclude}-positions options.
+These should be in the VCF chromosome names.
+.TP
+.B \-\-fix\-id, \-R
+Convert missing VCF variant IDs to chr_pos_refalt.
+.TP
+.B \-\-auto\-flip, \-x
+Attempt to fix reference allele mismatches.
+Requires a fasta file for the reference sequence by \fB\-\-fasta\fR.
+NOT RECOMMENDED.
+.TP
+.B \-\-print\-stats, \-P
+Print out stats for the filtered reads for ASE sites. 
+This will be slower and if there are sites with more reads than \fB\-\-max\-depth\fR, then will potentially give different results.
+.TP
+.B \-\-suppress\-warnings, \-k
+Suppress the warnings about individual variants.
+.TP
+.B \-\-illumina13, \-j
+Base quality is in the Illumina-1.3+ encoding.
+.TP
+.B \-\-group\-by, \-G \fIinteger\fR
+Group variants separated by this much into batches.
+This allows you not to stream the whole BAM file and may improve running time.
+.TP
+.B \-\-max\-depth, \-d \fIinteger\fR
+Pileup max-depth DEFAULT=1000000. 
+Set to more reasonable value if you experience memory or performance issues. 
+This is set to a high value by default since with RNA-seq you can have very high coverage sites. 
+Set to 0 for max.
+.TP
+.B \-\-baseq, \-Q \fIinteger\fR
+Minimum phred quality for a base to be considered DEFAULT=10. 
+.TP
+.B \-\-pvalue, \-p \fIfloat\fR
+Binomial p-value threshold for ASE output DEFAULT=1.0.
+.TP
+.B \-\-cov, \-c \fIinteger\fR
+Minimum coverage for a genotype to be considered in ASE analysis DEFAULT=16.
+.TP
+.B \-\-cov\-bias, \-C \fIinteger\fR
+Minimum coverage for a genotype to be considered in reference allele mapping bias analysis DEFAULT=10.
+.TP
+.B \-\-sites, \-s \fIinteger\fR
+Minimum number of sites to calculate a reference allele mapping bias from for a specific REF/ALT pair DEFAULT=200.
+The reference allele mapping bias for pairs with less than this many sites will be calculated from all sites.
+.TP
+.B \-\-imp\-qual\-id, \-I \fIstring\fR
+The VCF INFO field ID of the imputation score in the VCF DEFAULT=INFO.
+.TP
+.B \-\-geno\-prob\-id, \-L \fIstring\fR
+The VCF FORMAT field ID of the genotype posterior probabilities for RR/RA/AA in the VCF DEFAULT=GP.
+.TP
+.B \-\-imp\-qual, \-W \fIfloat\fR
+Minimum imputation score for a variant to be considered DEFAULT=0.0.
+.TP
+.B \-\-geno\-prob, \-V \fIfloat\fR
+Minimum posterior probability for a genotype to be considered DEFAULT=0.0.
+.TP
+.B \-\-subsample, \-S \fIfloat\fR
+Randomly subsample sites that have greater coverage than this percentile of all the sites in reference allele mapping bias calculations DEFAULT=0.75.
+Set to 1 to turn off which is NOT RECOMMENDED. 
+Set to 0 to subsample all sites to \fB\-\-cov\-bias\fR.
+.TP
+.B \-\-both\-alleles\-seen, \-a
+Require both alleles to be observed in RNA-seq reads for a site for ASE calculations.
+.TP
+.B \-\-keep\-bans\-for\-bias, \-A
+DON'T require both alleles to be observed in RNAseq reads for a site for reference allele mapping bias calculations.
+NOT RECOMMENDED.
+.TP
+.B \-\-keep\-discordant\-for\-bias, \-E
+If given, sites with more discordant alleles than REF or ALT alleles will be included in the reference allele mapping bias bias calculations.
+NOT RECOMMENDED.
+.TP
+.B \-\-filter\-indel\-reads, \-D
+Remove reads that contain indels.
+.TP
+.B \-\-keep\-failed\-qc, \-e
+Keep fastq reads that fail sequencing QC (as indicated by the sequencer).
+.TP
+.B \-\-keep\-orphan\-reads, \-O
+Keep paired end reads where one of mates is unmapped.
+.TP
+.B \-\-check\-proper\-pairing, \-y
+If provided only properly paired reads according to the aligner will be considered.
+.TP
+.B \-\-ignore\-orientation, \-X
+If NOT provided only mate pairs where both mates are on the same chromosome and where the first mate is on the +ve strand and the second is on the -ve strand will be considered.
+NOT RECOMMENDED.
+.TP
+.B \-\-filter\-duplicates, \-u
+Remove reads designated as duplicate by the aligner.
+NOT RECOMMENDED.
+.TP
+.B \-\-filter\-supp, \-m
+Remove supplementary (non-linear) alignments.
+.TP
+.B \-\-legacy\-options, \-J
+Replicate legacy options used.
+NOT RECOMMENDED.
+
+.SH OUTPUT FILES
+.TP 1
+.B .ase
+This file is the main ASE results file with the following columns.
+Columns after the 23rd column are only printed if \fB\-\-print\-stats\fR is provided.
+
+.TS
+n l lx .
+1	INDIVIDUAL	T{
+The sample id
+T}
+2	RSID	T{
+The SNP ID from the VCF file
+T}
+3	CHR	T{
+Chromosome of the SNP
+T}
+4	POS	T{
+Position of the SNP
+T}
+5	ALLELES	T{
+The SNP's alleles
+T}
+6	BOTH_ALLELES_SEEN	T{
+Whether or not both of the SNP's alleles were seen in the RNAseq reads
+T}
+7	MIN_ALLELE_RATIO	T{
+The minor allele ration among RNAseq reads
+T}
+8	REF_COUNT	T{
+Number of reference alleles in reads
+T}
+9	NONREF_COUNT	T{
+Number of alternative alleles in reads
+T}
+10	TOTAL_COUNT	T{
+Number of read overlapping the SNP
+T}
+11	WEIGHTED_REF_COUNT	T{
+REF_COUNT adjusted for ref mapping bias
+T}
+12	WEIGHTED_NONREF_COUNT	T{
+NONREF_COUNT adjusted for ref mapping bias
+T}
+13	WRC_MINUS_WNC	T{
+WEIGHTED_REF_COUNT - WEIGHTED_NONREF_COUNT
+T}
+14	ALLELES_SEEN	T{
+Alleles observed in RNAseq reads
+T}
+15	REF_ALLELE	T{
+Reference allele
+T}
+16	ALT_ALLELE	T{
+Alternative allele
+T}
+17	OTHER_COUNT	T{
+Number of discordant reads (not REF or ALT)
+T}
+18	EXPECTED_DISCORDANT	T{
+Expected number of discordant alleles.
+Calculated by adding up all the base error probabilities of RNAseq read positions overlapping the SNP
+T}
+19	DISCORDANT_PVAL	T{
+P-value for observed number of discordant reads being more than expected. 
+One can Bonferroni correct these p-values, and exclude the significant ones from downstream analyses.
+T}
+20	REF_RATIO	T{
+Reference allele mapping bias 
+T}
+21	PVALUE	T{
+ASE p-value 
+T}
+22	CONCERN	T{
+If there were any concerns potentially rendering this SNP unusable, they will be coded here.
+See below \fBOUTPUT FILE CODES\fR for how to decode  
+T}
+23	EXON_INFO	T{
+Exons that overlap this SNP will be listed here if a GTF file is provided.
+Exon names, which are formed by concatenating gene id, transcript id, exon position, and gene name delimited with a colon,  are separated with semicolons
+T}
+24	SECONDARY	T{
+The number of secondary alignments that were filtered out
+T}
+25	SUPPLEMENTARY	T{
+If \fB\-\-filter\-supp\fR is provided, then the number of supplementary alignments that were filtered out
+T}
+26	FAIL_MAPQ	T{
+The number of alignments that were filtered out due to low mapping quality
+T}
+27	FAILQC	T{
+If \fB\-\-keep\-failed\-qc\fR is not provided, then the number of filtered reads that failed qc according to the sequencer
+T}
+28	DUPLICATE	T{
+If \fB\-\-filter\-duplicates\fR is provided, then the number of filtered reads that were labeled as duplicate by the aligner
+T}
+29	MATE_UNMAPPED	T{
+If \fB\-\-keep\-orphan\-reads\fR is not provided, then the number of reads that were filtered since one mate was unmapped
+T}
+30	WRONG_ORIENTATION	T{
+If \fB\-\-ignore\-orientation\fR is not provided, then the number of reads that were filtered since they were in the wrong orientation
+T}
+31	NOT_PROPER_PAIR	T{
+If \fB\-\-check\-proper\-pairing\fR is provided, then the number of filtered reads that were not properly paired according to the aligner
+T}
+32	SKIPPED	T{
+The number of alignments that were filtered out since they did not have actual bases overlapping the SNP 
+T}
+33	FAIL_BASEQ	T{
+The number of filtered reads where the base overlapping the SNP had a base quality less than \fB\-\-baseq\fR 
+T}
+34	INDEL	T{
+If \fB\-\-filter\-indel\-reads\fR is provided, then the number of filtered reads that contained indels
+T}
+35	DEPTH	T{
+The number alignments that overlap with the SNP position
+T}
+.TE
+
+.TP 1
+.B .ref_bias
+Details the reference allele mapping bias results, and has the following columns:
+
+.TS
+n l lx .
+1	INDIVIDUAL	T{
+The sample id
+T}
+2	ALLELES	T{
+The reference alternative allele pair
+T}
+3	REF_ALL	T{
+Total number of reference alleles observed across all sites
+T}
+4	NONREF_ALL	T{
+Total number of alternative alleles observed across all sites
+T}
+5	SITES	T{
+Number of sites for this REF/ALT pair that pass the thresholds
+T}
+6	SUBSAMPLED_SITES	T{
+Number of sites that were subsampled to SUBSAMPLED_TO since they had too high a coverage
+T}
+7	SUBSAMPLED_TO	T{
+The coverage SUBSAMPLED_SITES were subsampled to
+T}
+8	PERC	T{
+Reference allele mapping bias
+T}
+9	SOURCE	T{
+Whether the reference allele mapping bias was calculated from allele specific sites of all sites
+T}
+.TE
+
+.TP 1
+.B \-\-filtered \fIfilename\fR
+This file lists the variants that were omitted from the analysis and why.
+The first column is the coded omission reason, followed by the variant ID.
+The codes and their meaning are listed in the following section.
+
+.SH OUTPUT FILE CODES
+.TP 1
+.B .ase file codes for the CONCERN column
+You probably want to exclude SNPs with RM, NRA, MDTA, or MDTR concerns from your analyses as these likely have wrong genotypes. 
+SNPs with other concern may be OK
+
+.TS
+l lx .
+RM	T{
+Reference allele in the VCF file mismatches the reference sequence.
+Requires \fB\-\-fasta\fR
+T}
+DP	T{
+Multiple variants observed at the same position in the VCF file
+T}
+NRA	T{
+No reference or alternative allele observed in the RNAseq reads
+T}
+MDTA	T{
+More discordant (not reference or alternative) alleles than alternative alleles in the RNAseq reads
+T}
+MDTR	T{
+More discordant (not reference or alternative) alleles than reference alleles in the RNAseq reads
+T}
+BANS	T{
+Both alleles of the SNP were not observed in RNAseq reads
+T}
+LMAR	T{
+Among the RNAseq reads the minor allele ratio was less than 2%
+T}
+PD	T{
+Pileup depth (\fB\-\-max\-depth\fR) was potentially exceeded around this SNP.
+This may prevent some overlapping reads from being counted.
+We recommend rerunning with a higher \fB\-\-max\-depth\fR.
+T}
+.TE
+
+.TP 1
+.B \-\-filtered file codes
+.TS
+l lx .
+VMA	T{
+Multi-allelic variant
+T}
+VU	T{
+Variant position or ID is excluded by the user
+T}
+VCNIB	T{
+Variant chromosome is not in the BAM file
+T}
+VB	T{
+Variant is in a blacklisted region
+T}
+VI	T{
+Variant is an indel
+T}
+VMRA	T{
+Variant is missing either the reference or the alternative allele
+T}
+VNIF	T{
+Variant is not in the reference genome.
+Only if \fB\-\-fasta\fR was provided
+T}
+VS	T{
+Reference and alternative alleles were swapped  (not excluded).
+Only if \fB\-\-auto\-flip\fR and \fB\-\-fasta\fR were provided
+T}
+VF	T{
+Reference and alternative alleles' strand was flipped  (not excluded).
+Only if \fB\-\-auto\-flip\fR and \fB\-\-fasta\fR were provided
+T}
+VWR	T{
+Reference allele does not match the reference sequence.
+Only if \fB\-\-auto\-flip\fR and \fB\-\-fasta\fR were provided
+T}
+VBI	T{
+Variant failed the imputation quality filter
+T}
+VMGT	T{
+Variant with missing GT field or variant is not diploid
+T}
+VMG	T{
+Missing genotype
+T}
+VH	T{
+Homozygous variant
+T}
+VBG	T{
+Variant failed the genotype probability filter
+T}
+VD	T{
+Duplicate variant position
+T}
+VMI	T{
+Variant with a missing ID (not excluded).
+Will be renamed if \fB\-\-fix\-id\fR is provided
+T}
+VDK	T{
+Heterozygous variant has another variant with the same position (not excluded)
+T}
+BC	T{
+Variant did not have enough coverage for reference allele mapping bias calculations
+T}
+BBANS	T{
+Both alleles were not observed for reference allele mapping bias calculations
+T}
+BMDTRA	T{
+Variant had more discordant alleles than reference or alternative alleles thus was excluded from reference allele mapping bias calculations
+T}
+AC	T{
+Variant did not have enough coverage ASE calculations
+T}
+ABANS	T{
+Both alleles were not observed for ASE calculations
+T}
+.TE
+
+.SH EXAMPLES
+.IP o 2
+ASE analysis of a sample mapped with STAR:
+.IP "" 2
+QTLtools ase \-\-vcf multi_sample.bcf \-\-bam sample1.bam \-\-ind sample1 \-\-mapq 255 \-\-out sample1 \-\-filtered sample1.filtered.gz \-\-gtf gencode.v19.annotation.gtf.gz \-\-blacklist poor_mappability_regions.bed \-\-fasta hg19.fa \-\-fix-chr \-\-fix-id
+
+.SH SEE ALSO
+.IR QTLtools (1)
+.\".IR QTLtools-bamstat (1),
+.\".IR QTLtools-mbv (1),
+.\".IR QTLtools-pca (1),
+.\".IR QTLtools-correct (1),
+.\".IR QTLtools-cis (1),
+.\".IR QTLtools-trans (1),
+.\".IR QTLtools-fenrich (1),
+.\".IR QTLtools-fdensity (1),
+.\".IR QTLtools-rtc (1),
+.\".IR QTLtools-rtc-union (1),
+.\".IR QTLtools-extract (1),
+.\".IR QTLtools-quan (1),
+.\".IR QTLtools-rep (1),
+.\".IR QTLtools-gwas (1),
+.PP
+QTLtools website: <https://qtltools.github.io/qtltools>
+.SH BUGS
+Please submit bugs to <https://github.com/qtltools/qtltools>
+.SH
+CITATION
+Delaneau, O., Ongen, H., Brown, A. et al. A complete tool set for molecular QTL discovery and analysis. \fINat Commun\fR \fB8\fR, 15452 (2017). 
+<https://doi.org/10.1038/ncomms15452>
+.SH AUTHORS
+Halit Ongen (halitongen@gmail.com), Olivier Delaneau (olivier.delaneau@gmail.com)

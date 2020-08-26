@@ -1,0 +1,91 @@
+.\" Manpage for QTLtools bamstat.
+.\" Contact halitongen@gmail.com to correct errors or typos.
+.TH QTLtools-bamstat 1 "06 May 2020" "QTLtools-v1.3" "Bioinformatics tools"
+.SH NAME
+QTLtools bamstat \- Calculate stats of overlap between an RNAseq BAM file and an annotation
+.SH SYNOPSIS
+.B QTLtools bamstat \-\-bam [\fIsample.bam|sample.sam|sample.cram\fB] \-\-bed [\fIgene_annotation.bed\fB] \fB \-\-out \fIoutput_file
+[\fB\fIOPTIONS\fR]
+.SH DESCRIPTION
+This mode counts the number of RNAseq reads, and the ones that overlap with an annotation file. 
+We recommend using uniquely mapping reads only by specifying the correct \fB\-\-filter\-mapping\-quality\fR.
+.SH OPTIONS
+.TP
+.B \-\-bed \fI annotation.bed\fB
+Annotation of interest
+REQUIRED.
+.TP
+.B \-\-bam, \-b  [\fIin.bam\fR|\fIin.sam\fR|\fIin.cram\fB]
+Sequence data in BAM/SAM/CRAM format.
+REQUIRED.
+.TP
+.B \-\-out, \-o \fIoutput\fR
+Output file name
+REQUIRED.
+.TP
+.B \-\-filter\-mapping\-quality \fIinteger\fR
+Minimum mapping quality for a read or read pair to be considered. 
+Set this to only include uniquely mapped reads.
+DEFAULT=10
+.TP
+.B \-\-filter\-keep\-duplicates
+Keep reads designated as duplicate by the aligner.
+RECOMMENDED for RNAseq
+
+
+.SH OUTPUT FILE COLUMNS
+.TP 1
+.BI \-\-out " filename
+This file does not have header and it contains the following columns:
+
+.TS
+n lx .
+1	T{
+The total number of reads in the BAM file
+T}
+2	T{
+The number of mapped sequencing reads passing the \fB\-\-filter\-mapping\-quality\fR 
+T}
+3	T{
+The number of mapped sequencing reads falling within the annotations specified with \fB\-\-bed\fR 
+T}
+4	T{
+The total number of annotations in the \fB\-\-bed\fR file
+T}
+5	T{
+The number of annotations covered by at least one sequencing read 
+T}
+.TE
+
+.SH EXAMPLES
+.IP o 2
+Running bamstat on an RNAseq sample mapped with GEM and GENCODE gene annotations:
+.IP "" 2
+QTLtools bamstat \-\-bam HG00381.chr22.bam  \-\-out HG00381.chr22.bamstat.txt \-\-bed gencode.v19.annotation.bed.gz \-\-filter\-mapping\-quality 150 \-\-filter\-keep\-duplicates
+
+.SH SEE ALSO
+.IR QTLtools (1)
+.\".IR QTLtools-bamstat (1),
+.\".IR QTLtools-mbv (1),
+.\".IR QTLtools-pca (1),
+.\".IR QTLtools-correct (1),
+.\".IR QTLtools-cis (1),
+.\".IR QTLtools-trans (1),
+.\".IR QTLtools-fenrich (1),
+.\".IR QTLtools-fdensity (1),
+.\".IR QTLtools-rtc (1),
+.\".IR QTLtools-rtc-union (1),
+.\".IR QTLtools-extract (1),
+.\".IR QTLtools-quan (1),
+.\".IR QTLtools-rep (1),
+.\".IR QTLtools-gwas (1),
+.PP
+QTLtools website: <https://qtltools.github.io/qtltools>
+.SH BUGS
+Please submit bugs to <https://github.com/qtltools/qtltools>
+.SH
+CITATION
+Delaneau, O., Ongen, H., Brown, A. et al. A complete tool set for molecular QTL discovery and analysis. \fINat Commun\fR \fB8\fR, 15452 (2017). 
+<https://doi.org/10.1038/ncomms15452>
+.SH AUTHORS
+Olivier Delaneau (olivier.delaneau@gmail.com), Halit Ongen (halitongen@gmail.com)

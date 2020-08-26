@@ -24,7 +24,7 @@ void gwas_main(vector < string > & argv) {
 	D.declareBasicOptions();  //Mandatory
 	boost::program_options::options_description opt_files ("\x1B[32mI/O\33[0m");
 	opt_files.add_options()
-		("vcf", boost::program_options::value< string >(), "Genotypes in VCF/BCF format.")
+		("vcf", boost::program_options::value< string >(), "Genotypes in VCF/BCF/BED format.")
 		("bed", boost::program_options::value< string >(), "Phenotypes in BED format.")
 		("cov", boost::program_options::value< string >(), "Covariates in TXT format.")
 		("out", boost::program_options::value< string >(), "Output file.");
@@ -68,7 +68,7 @@ void gwas_main(vector < string > & argv) {
 	//--------------
 	bool is_vcf = true;
 	D.processBasicOptions();
-	D.readSampleFromCOV(D.options["bed"].as < string > ());										//Read samples in BED
+	D.readSampleFromBED(D.options["bed"].as < string > ());										//Read samples in BED
    	htsFile * fp = hts_open(D.options["vcf"].as < string > ().c_str(),"r");
    	if (fp->format.format == sam) is_vcf = false;
    	hts_close(fp);

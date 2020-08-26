@@ -105,6 +105,7 @@ void trans_main(vector < string > & argv) {
 	if (D.options.count("sample")) {
 		D.mode = TRANS_MODE4;
 		vrb.bullet("TASK: Permute randomly chosen phenotypes " + stb.str(D.options["sample"].as < unsigned int > ()) + " times and test");
+		if (D.options.count("normal") == 0) vrb.warning("You are using the approximate permutation pass but not using the --normal option. Are your phenotypes normally distributed?");
 	}
 
 	//--------------

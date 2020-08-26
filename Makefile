@@ -21,6 +21,24 @@ define n
 
 endef
 
+#INSTALL LOCATIONS
+#CHANGE prefix TO INSTALL LOCALLY
+prefix      = /usr/local
+exec_prefix = $(prefix)
+bindir      = $(exec_prefix)/bin
+datarootdir = $(prefix)/share
+mandir      = $(datarootdir)/man
+man1dir     = $(mandir)/man1
+autocompdir = /etc/bash_completion.d
+MKDIR_P = mkdir -p
+INSTALL = install -p
+INSTALL_DATA    = $(INSTALL) -m 644
+INSTALL_EXE    = $(INSTALL) -m 755
+INSTALL_DIR     = $(MKDIR_P) -m 755
+INSTALL_MAN     = $(INSTALL_DATA)
+INSTALL_PROGRAM = $(INSTALL)
+INSTALL_SCRIPT  = $(INSTALL_EXE)
+
 #COMPILER MODE C++11
 CXX=g++ -std=c++0x
 
@@ -30,10 +48,12 @@ CXXFLAG_DBG=-g
 CXXFLAG_WRN=-Wall -Wextra -Wno-sign-compare -Wno-unused-local-typedefs -Wno-deprecated -Wno-unused-parameter
 
 #BASE LIBRARIES
-LIB_FLAGS=-lz -lgsl -lbz2 -llzma -lgslcblas -lm -lpthread
+LIB_FLAGS=-lz -lgsl -lbz2 -llzma -lgslcblas -lm -lpthread -lcurl
 
 #FILE LISTS
 BFILE=bin/QTLtools
+SFILE=$(shell find scripts -name *.R)
+MFILE=$(shell find doc -name *.1)
 HFILE=$(shell find src -name *.h)
 TFILE=$(shell find lib -name *.h)
 CFILE=$(shell find src -name *.cpp | LC_ALL=C sort)
@@ -59,12 +79,14 @@ MCBLAS=/usr/local/lib/libgslcblas.a
 MGSL=/usr/local/lib/libgsl.a
 MBZ2=/usr/local/opt/bzip2/lib/libbz2.a
 MLZMA=/usr/local/lib/liblzma.a
+MCURL=/usr/local/opt/curl/lib/libcurl.a
 
 #MAC SPECIFIC STUFF
 UNAME := $(shell uname)
 ifeq ($(UNAME),Darwin)
  CXXFLAG_REL+= -fvisibility=hidden -fvisibility-inlines-hidden
  CXXFLAG_DBG+= -fvisibility=hidden -fvisibility-inlines-hidden
+ autocompdir = /usr/local/etc/bash_completion.d
  ifeq ($(MAKECMDGOALS),static)
    ifeq ("$(wildcard  $(MZ))","")
      $(error Cannot find $(MZ)! $nTry:	brew install zlib$nOr edit the makefile with the correct location of libz.a)
@@ -80,7 +102,17 @@ ifeq ($(UNAME),Darwin)
    endif
    ifeq ("$(wildcard  $(MLZMA))","")
      $(error Cannot find $(MLZMA)! $nTry:	brew install xz$nOr edit the makefile with the correct location of liblzma.a)
-   endif        
+   endif
+   ifeq ("$(wildcard  $(MCURL))","")
+     $(error Cannot find $(MCURL)! $nTry:	brew install curl$nOr edit the makefile with the correct location of libcurl.a)
+   endif           
+ endif
+endif
+
+#CHECK IF WE MADE BEFORE INSTALLING
+ifeq ($(MAKECMDGOALS),install)
+ ifeq ("$(wildcard $(BFILE))","")
+   $(error Cannot find $(BFILE)! $nPlease make before you make install)
  endif
 endif
 
@@ -99,10 +131,10 @@ static: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN)
 static: LDFLAG=$(CXXFLAG_REL)
 ifeq ($(UNAME),Darwin)
 #ASSUMES YOU INSTALLED REQUIRED LIBRARIES WITH BREW. SEE ABOVE WHERE THESE VARIABLES ARE SET
-static: LIB_FILES+= $(MZ) $(MCBLAS) $(MGSL) $(MBZ2) $(MLZMA)
+static: LIB_FILES+= $(MZ) $(MCBLAS) $(MGSL) $(MBZ2) $(MLZMA) $(MCURL)
 static: LIB_FLAGS=-lm -lpthread
 else
-static: LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lbz2 -llzma -lgslcblas -Wl,-Bdynamic -lm -lpthread
+static: LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lbz2 -llzma -lgslcblas -lcurl -Wl,-Bdynamic -lm -lpthread
 endif
 static: $(BFILE)
 
@@ -111,10 +143,10 @@ static-dbg: CXXFLAG=$(CXXFLAG_DBG) $(CXXFLAG_WRN)
 static-dbg: LDFLAG=$(CXXFLAG_DBG)
 ifeq ($(UNAME),Darwin)
 #ASSUMES YOU INSTALLED REQUIRED LIBRARIES WITH BREW, SEE ABOVE WHERE THESE VARIABLES ARE SET
-static-dbg: LIB_FILES+= $(MZ) $(MCBLAS) $(MGSL) $(MBZ2) $(MLZMA)
+static-dbg: LIB_FILES+= $(MZ) $(MCBLAS) $(MGSL) $(MBZ2) $(MLZMA) $(MCURL)
 static-dbg: LIB_FLAGS=-lm -lpthread
 else
-static-dbg: LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lbz2 -llzma -lgslcblas -Wl,-Bdynamic -lm -lpthread
+static-dbg: LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lbz2 -llzma -lgslcblas -lcurl -Wl,-Bdynamic -lm -lpthread
 endif
 static-dbg: $(BFILE)
 
@@ -124,7 +156,7 @@ personal: RMATH_INC=$(HOME)/Tools/R-3.6.1/src/include
 personal: RMATH_LIB=$(HOME)/Tools/R-3.6.1/src/nmath/standalone
 personal: HTSLD_INC=$(HOME)/Tools/htslib-1.9
 personal: HTSLD_LIB=$(HOME)/Tools/htslib-1.9
-personal: all
+personal: static
 
 personal-dbg: BOOST_INC=/usr/include/
 personal-dbg: BOOST_LIB=/usr/lib/x86_64-linux-gnu/
@@ -150,6 +182,22 @@ baobab-dbg: RMATH_LIB=/srv/beegfs/scratch/groups/funpopgen/Tools/R-3.6.1/src/nma
 baobab-dbg: HTSLD_INC=/srv/beegfs/scratch/groups/funpopgen/Tools/htslib-1.9/
 baobab-dbg: HTSLD_LIB=/srv/beegfs/scratch/groups/funpopgen/Tools/htslib-1.9/
 baobab-dbg: static-dbg
+
+install:
+	$(INSTALL_DIR) $(DESTDIR)$(bindir) $(DESTDIR)$(man1dir) $(DESTDIR)$(autocompdir)
+	$(INSTALL_PROGRAM) $(BFILE) $(DESTDIR)$(bindir)
+	$(INSTALL_SCRIPT) $(SFILE) $(DESTDIR)$(bindir)
+	$(INSTALL_MAN) $(MFILE) $(DESTDIR)$(man1dir)
+	$(INSTALL_DATA) doc/QTLtools_bash_autocomplete.bash $(DESTDIR)$(autocompdir)
+
+uninstall:
+	rm $(DESTDIR)$(bindir)/QTLtools
+	rm $(DESTDIR)$(bindir)/qtltools_*.R
+	rm $(DESTDIR)$(man1dir)/QTLtools*.1
+	rm $(DESTDIR)$(autocompdir)/QTLtools_bash_autocomplete.bash
+	rmdir --ignore-fail-on-non-empty -p $(DESTDIR)$(bindir)
+	rmdir --ignore-fail-on-non-empty -p $(DESTDIR)$(man1dir)
+	rmdir --ignore-fail-on-non-empty -p $(DESTDIR)$(autocompdir)
 
 #COMPILATION RULES
 $(BFILE): $(OFILE)
