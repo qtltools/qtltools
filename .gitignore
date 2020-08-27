@@ -7,5 +7,7 @@ Makefile.*
 GPATH
 GRTAGS
 GTAGS
-
+.Rhistory
+.settings/
+.vscode/
 /man2html/
