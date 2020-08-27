@@ -1,0 +1,166 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-176212697-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-176212697-1');
+</script>
+
+<TITLE>Man page of QTLtools-correct</TITLE>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"/>
+<meta http-equiv="Cache-Control" content="max-age=3600"/>
+<meta name="description" content="description"/>
+<meta name="keywords" content="keywords"/> 
+<meta name="author" content="author"/> 
+<link rel="stylesheet" type="text/css" href="../style/default.css" media="screen"/>
+
+</HEAD><BODY>
+<div class="content">
+<div class="item"  id="item2">
+<H1>QTLtools-correct</H1><P>
+Section: Bioinformatics tools (1)<BR>Updated: 06 May 2020<BR><A HREF="#index">Index</A>
+<A HREF="basic_homepage.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2><P>
+
+QTLtools correct - Corrects genotypes or phenotypes with the provided covariates
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2><P>
+
+<B>QTLtools correct  --vcf</B>
+
+<I>[in.vcf</I>|<I>in.vcf.gz</I>|<I>in.bcf]</I>
+
+<B>| --bed</B>
+
+<I>in.bed.gz</I>
+
+<B>--cov</B>
+
+<I>covariates.txt</I>
+
+<B>| --normal --out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2><P>
+
+This mode corrects genotypes or phenotypes in VCF, BCF, or BED files with covariates provided and/or rank normal transforms the data and writes out the new corrected values to a file.
+This mode regresses out the covariates from the data, and writes the residuals to a file.
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2><P>
+
+<DL COMPACT>
+<DT><B>--vcf [</B><I>in.vcf</I>|<I>in.bcf</I>|<I>in.vcf.gz</I>|<I>in.bed.gz</I><B>]</B>
+
+<DD>
+Genotypes in VCF/BCF/BED format.
+REQUIRED unless <B>--bed</B>. 
+<DT><B>--bed </B><I>quantifications.bed.gz</I>
+
+<DD>
+Quantifications in BED format.
+REQUIRED unless <B>--vcf</B>.
+<DT><B>--out </B><I>output_file</I>
+
+<DD>
+Output file name.
+REQUIRED.
+<DT><B>--cov </B><I>covariates.txt</I>
+
+<DD>
+Covariates to correct the data with.
+REQUIRED unless <B>--normal</B>.
+<DT><B>--qtl </B><I>qtl_file [in.vcf|in.vcf.gz|in.bcf]</I>
+
+<DD>
+Corrects given phenotypes with the given genotypes.
+Takes two arguments.
+The first one is a text file listing genotype-phenotype pairs (separated by a space e.g. snp1 gene1), one pair per line. 
+A phenotype will be corrected for all the genotypes provided for that phenotype.
+The second argument is a VCF file containing the genotypes.
+The variant IDs in the qtl_file must match the variant IDs in the VCF file, and the phenotype IDs must match with the <B>--bed</B> file.
+Requires <B>--bed</B>.
+<DT><B>--normal</B>
+
+<DD>
+Rank normal transform the data.
+REQUIRED unless <B>--cov</B>.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>EXAMPLES</H2><P>
+
+<DL COMPACT>
+<DT>o
+Correct gene quantifications with technical covariates, rank normal transform the quantifications, and create a new bed file:
+<DT><DD>
+<P>
+</P><CODE>
+QTLtools correct --bed quantifications.bed.gz --out quantifications_corrected.bed --cov technical_covars.txt --normal
+</CODE>
+<DT>o
+Correct the gene quantifications for eQTLs
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+QTLtools correct --bed quantifications.bed.gz --out quantifications_corrected.bed --qtl eQTL_variant_gene_pairs.txt
+</CODE>
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>SEE ALSO</H2><P>
+
+<I><A HREF="QTLtools.1.html">QTLtools</A></I>(1)
+<A NAME="lbAH">&nbsp;</A>
+<H2>BUGS</H2><P>
+
+<DL COMPACT>
+<DT>o
+Versions up to and including 1.2, suffer from a bug in reading missing genotypes in VCF/BCF files. 
+This bug affects variants with a DS field in their genotype's FORMAT and have a missing genotype (DS field is .) in one of the samples, in which case genotypes for all the samples are set to missing, effectively removing this variant from the analyses.
+</DL>
+<P>
+
+Please submit bugs to &lt;<A HREF="https://github.com/qtltools/qtltools">https://github.com/qtltools/qtltools</A>&gt;
+<A NAME="lbAI">&nbsp;</A>
+<H2>CITATION</H2><P>
+
+Delaneau, O., Ongen, H., Brown, A. et al. A complete tool set for molecular QTL discovery and analysis. <I>Nat Commun</I> <B>8</B>, 15452 (2017). 
+&lt;<A HREF="https://doi.org/10.1038/ncomms15452">https://doi.org/10.1038/ncomms15452</A>&gt;
+<A NAME="lbAJ">&nbsp;</A>
+<H2>AUTHORS</H2><P>
+
+Olivier Delaneau (<A HREF="mailto:olivier.delaneau@gmail.com">olivier.delaneau@gmail.com</A>), Halit Ongen (<A HREF="mailto:halitongen@gmail.com">halitongen@gmail.com</A>)
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2><P>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">EXAMPLES</A><DD>
+<DT><A HREF="#lbAG">SEE ALSO</A><DD>
+<DT><A HREF="#lbAH">BUGS</A><DD>
+<DT><A HREF="#lbAI">CITATION</A><DD>
+<DT><A HREF="#lbAJ">AUTHORS</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 14:11:25 GMT, August 24, 2020
+</div>
+</div>
+</BODY>
+</HTML>

@@ -1,0 +1,592 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-176212697-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-176212697-1');
+</script>
+
+<TITLE>Man page of QTLtools-cis</TITLE>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"/>
+<meta http-equiv="Cache-Control" content="max-age=3600"/>
+<meta name="description" content="description"/>
+<meta name="keywords" content="keywords"/> 
+<meta name="author" content="author"/> 
+<link rel="stylesheet" type="text/css" href="../style/default.css" media="screen"/>
+
+</HEAD><BODY>
+<div class="content">
+<div class="item"  id="item2">
+<H1>QTLtools-cis</H1><P>
+Section: Bioinformatics tools (1)<BR>Updated: 06 May 2020<BR><A HREF="#index">Index</A>
+<A HREF="basic_homepage.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2><P>
+
+QTLtools cis - cis QTL analysis
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2><P>
+
+<B>QTLtools cis --vcf</B>
+
+<I>[in.vcf</I>|<I>in.vcf.gz</I>|<I>in.bcf</I>|<I>in.bed.gz]</I>
+
+<B>--bed</B>
+
+<I>quantifications.bed.gz</I>
+
+[<B>--nominal</B>
+
+<I>float</I>
+
+<B>| --permute </B>
+
+<I>integer</I>
+
+<B>| --mapping </B>
+
+<I>in.txt</I>]
+
+<B>--out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2><P>
+
+This mode maps cis (proximal) quantitative trait loci (QTLs) that affect the phenotype, using linear regression. 
+The method is detailed in &lt;<A HREF="https://www.nature.com/articles/ncomms15452">https://www.nature.com/articles/ncomms15452</A>&gt;.
+We first regress out the provided covariates from the phenotype data, followed by running the linear regression between the phenotype residuals and the genotype.
+If <B>--normal</B> and <B>--cov</B> are provided at the same time, then the residuals after the covariate correction are rank normal transformed.
+It incorporates an efficient permutation scheme to control for differential multiple testing burden of each phenotype.
+You can run a nominal pass (<B>--nominal</B> <I>threshold</I>) listing all genotype-phenotype associations below a certain threshold, a permutation pass (<B>--permute</B> <I>no_of_permutations</I>) to empirically characterize the null distribution of associations for each phenotype separately, thus adjusting the nominal p-value of the best association for a phenotype, or a conditional analysis pass (<B>--mapping</B> <I>filename</I>) to discover multiple proximal QTLs with independent effects on a phenotype. 
+<P>
+
+As multiple molecular phenotypes can belong to higher order biological entities, e.g. exons of genes, QTLtools cis allows grouping of phenotypes to maximize the discoveries in such particular cases.
+Specifically, QTLtools can either aggregate multiple phenotypes in a given group into a single phenotype via PCA (<B>--grp-pca1</B>) or by taking their mean (<B>--grp-mean</B>), or directly use all individual phenotypes in an extended permutation scheme that accounts for their number and correlation structure (<B>--grp-best</B>).
+In our experience, <B>--grp-best</B> outperforms the other options for expression QTLs (eQTLs).
+<P>
+
+The conditional analysis pass first uses permutations to derive a nominal p-value threshold per phenotype that varies and reflects the number of independent tests per cis-window. 
+Then, it uses a forward-backward stepwise regression to learn the number of independent signals per phenotype, determine the best candidate variant per signal and assign all significant hits to the independent signal they relate to.
+<P>
+
+Since linear regressions assumes normally distributed data, we <B>highly recommend</B> using the <B>--normal</B> option to rank normal transform the phenotype quantifications in order to avoid false positive associations due to outliers.
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2><P>
+
+<DL COMPACT>
+<DT><B>--vcf [</B><I>in.vcf</I>|<I>in.bcf</I>|<I>in.vcf.gz</I><B>|</B><I>in.bed.gz</I><B>]</B>
+
+<DD>
+Genotypes in VCF/BCF format, or another molecular phenotype in BED format.
+If there is a DS field in the genotype FORMAT of a variant (dosage of the genotype calculated from genotype probabilities, e.g. after imputation), then this is used as the genotype.
+If there is only the GT field in the genotype FORMAT then this is used and it is converted to a dosage.
+REQUIRED.
+<DT><B>--bed </B><I>quantifications.bed.gz</I>
+
+<DD>
+Molecular phenotype quantifications in BED format.
+REQUIRED.
+<DT><B>--out </B><I>output.txt</I>
+
+<DD>
+Output file. 
+REQUIRED.
+<DT><B>--cov </B><I>covariates.txt</I>
+
+<DD>
+Covariates to correct the phenotype data with.
+<DT><B>--normal</B>
+
+<DD>
+Rank normal transform the phenotype data so that each phenotype is normally distributed.
+RECOMMENDED.
+<DT><B>--std-err</B>
+
+<DD>
+Calculate and output the standard error of the beta (slope).
+<DT><B>--window </B><I>integer</I>
+
+<DD>
+Size of the cis window flanking each phenotype's start position.
+DEFAULT=1000000. 
+RECOMMENDED=1000000.
+<DT><B>--nominal </B><I>float</I>
+
+<DD>
+Calculate the nominal p-value for the genotype-phenotype associations and print out the ones that pass the provided threshold.
+Give 1.0 to print everything.
+Mutually exclusive with --permute and --mapping.
+<DT><B>--permute </B><I>integer</I>
+
+<DD>
+Adjust the best nominal p-value for this phenotype accounting for the number of variants and the linkage disequilibrium in its cis-window.
+We recommend at least 1000 permutation for the final analysis, and in most cases you will see diminishing returns when going over 5000.
+However, if you are doing exploratory analyses like which/how many covariates to include, you can go as low as 100.
+Mutually exclusive with --nominal and --mapping.
+RECOMMENDED=1000.
+<DT><B>--mapping </B><I>thresholds_filename</I>
+
+<DD>
+The conditional analysis.
+First you need to run a permutation analysis, then generate a thresholds file using the runFDR_cis.R script in the script directory.
+Mutually exclusive with --nominal and --permute.
+<DT><B>--grp-best</B>
+
+<DD>
+Correct for multiple phenotypes within a phenotype group.
+Mutually exclusive with --grp-pca1 and --grp-mean. 
+<DT><B>--grp-pca1</B>
+
+<DD>
+Run PCA on phenotypes within a phenotype group and use PC1 for association testing.
+Mutually exclusive with --grp-best and --grp-mean.
+<DT><B>--grp-mean</B>
+
+<DD>
+Average phenotypes within a group and use the results for association testing.
+Mutually exclusive with --grp-best and --grp-pca1.
+<DT><B>--chunk </B><I>integer1</I> <I>integer2</I>
+
+<DD>
+For parallelization.
+Divide the data into <I>integer2</I> number of chunks and process chunk number <I>integer1</I>.
+Chunk 0 will print a header.
+Mutually exclusive with --region and --region-pair.
+<B>Minimum number of chunks has to be at least the same number of chromosomes in the --bed file.</B>
+<DT><B>--region </B><I>chr:start-end</I>
+
+<DD>
+Genomic region to be processed.
+E.g. chr4:12334456-16334456, or chr5
+Mutually exclusive with --chunk and --region-pair.
+<DT><B>--region-pair </B><I>chr:start-end</I> <I>chr:start-end</I>
+
+<DD>
+Genomic region for genotypes followed by region for phenotypes to be processed.
+Mutually exclusive with --chunk and --region.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>OUTPUT FILES</H2><P>
+
+<DL COMPACT>
+<DT><B>--nominal output file</B>
+
+<DD>
+Space separated output file with the following columns (certain columns are only printed based on options).
+We recommend including chunk 0 to print out a header in order to avoid confusion.
+<TABLE>
+<TR VALIGN=top><TD ALIGN=right>1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_id | grp_id</TD><TD>
+The phenotype ID or if one of the grouping options is provided, then phenotype group ID 
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_chr</TD><TD>
+The phenotype chromosome
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>3&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_from</TD><TD>
+Start position of the phenotype
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>4&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_to</TD><TD>
+End position of the phenotype
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_strd</TD><TD>
+The phenotype strand
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5.1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_id | ve_by_pc1 | n_phe_in_grp</TD><TD>
+Only printed if <B>--group-best</B> | <B>--group-pca1</B> | <B>--group-mean</B>.
+The phenotype ID, variance explained by PC1, or number of phenotypes in the phenotype group for <B>--group-best</B>, <B>--group-pca1</B>, and <B>--group-mean</B>, respectively.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5.2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>n_phe_in_grp</TD><TD>
+Only printed if <B>--group-pca1</B> | <B>--group-mean</B>.
+The number of phenotypes in the phenotype group.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>6&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>n_var_in_cis</TD><TD>
+The number variants in the cis window for this phenotype.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>7&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>dist_phe_var</TD><TD>
+The distance between the variant and the phenotype start positions.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>8&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>var_id</TD><TD>
+The variant ID.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>9&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>var_chr</TD><TD>
+The variant chromosome.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>10&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>var_from</TD><TD>
+The start position of the variant.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>11&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>var_to</TD><TD>
+The end position of the variant.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>12&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>nom_pval</TD><TD>
+The nominal p-value of the association between the variant and the phenotype.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>13&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>r_squared</TD><TD>
+The r squared of the linear regression.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>14&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>slope</TD><TD>
+The beta (slope) of the linear regression.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>14.1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>slope_se</TD><TD>
+The standard error of the beta.
+Only printed if <B>--std-err</B> is provided.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>15&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>best_hit</TD><TD>
+Whether this varint was the best hit for this phenotype.
+<BR></TD></TR>
+</TABLE>
+
+<P>
+<DT><B>--permute output file</B>
+
+<DD>
+Space separated output file with the following columns (certain columns are only printed based on options).
+We recommend including chunk 0 to print out a header in order to avoid confusion.
+<TABLE>
+<TR VALIGN=top><TD ALIGN=right>1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_id | grp_id</TD><TD>
+The phenotype ID or if one of the grouping options is provided, then phenotype group ID 
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_chr</TD><TD>
+The phenotype chromosome
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>3&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_from</TD><TD>
+Start position of the phenotype
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>4&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_to</TD><TD>
+End position of the phenotype
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_strd</TD><TD>
+The phenotype strand
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5.1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_id | ve_by_pc1 | n_phe_in_grp</TD><TD>
+Only printed if <B>--group-best</B> | <B>--group-pca1</B> | <B>--group-mean</B>.
+The phenotype ID, variance explained by PC1, or number of phenotypes in the phenotype group for <B>--group-best</B>, <B>--group-pca1</B>, and <B>--group-mean</B>, respectively.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5.2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>n_phe_in_grp</TD><TD>
+Only printed if <B>--group-pca1</B> | <B>--group-mean</B>.
+The number of phenotypes in the phenotype group.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>6&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>n_var_in_cis</TD><TD>
+The number variants in the cis window for this phenotype.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>7&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>dist_phe_var</TD><TD>
+The distance between the variant and the phenotype start positions.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>8&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>var_id</TD><TD>
+The most significant variant ID.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>9&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>var_chr</TD><TD>
+The most significant variant's chromosome.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>10&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>var_from</TD><TD>
+The start position of the most significant variant.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>11&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>var_to</TD><TD>
+The end position of the most significant variant.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>12&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>dof1</TD><TD>
+The number of degrees of freedom used to compute the p-values.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>13&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>dof2</TD><TD>
+Estimated number of degrees of freedom used in beta approximation p-value calculations.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>14&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>bml1</TD><TD>
+The first shape parameter of the fitted beta distribution (alpha parameter).
+These should be close to 1.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>15&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>bml2</TD><TD>
+The second shape parameter of the fitted beta distribution (beta parameter).
+This corresponds to the effective number of independent tests in the region.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>16&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>nom_pval</TD><TD>
+The nominal p-value of the association between the most significant variant and the phenotype.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>17&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>r_squared</TD><TD>
+The r squared of the linear regression.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>18&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>slope</TD><TD>
+The beta (slope) of the linear regression.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>18.1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>slope_se</TD><TD>
+The standard error of the beta.
+Only printed if <B>--std-err</B> is provided.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>19&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>adj_emp_pval</TD><TD>
+Adjusted empirical p-value from permutations.
+This is the adjusted p-value not using the beta approximation.
+Simply calculated as: (number of p-values observed during permutations that were smaller than or equal to the nominal p-value + 1) / (number of permutations + 1).
+The most significant p-value achievable would be 1 / (number of permutations + 1).  
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>20&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>adj_beta_pval</TD><TD>
+Adjusted empirical p-value given by the fitted beta distribution.
+<B>We strongly recommend using this adjusted p-value in any downstream analysis</B>.
+<BR></TD></TR>
+</TABLE>
+
+<P>
+<DT><B>--mapping output file</B>
+
+<DD>
+Space separated output file with the following columns (certain columns are only printed based on options).
+We recommend including chunk 0 to print out a header in order to avoid confusion.
+<TABLE>
+<TR VALIGN=top><TD ALIGN=right>1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_id | grp_id</TD><TD>
+The phenotype ID or if one of the grouping options is provided, then phenotype group ID 
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_chr</TD><TD>
+The phenotype chromosome
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>3&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_from</TD><TD>
+Start position of the phenotype
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>4&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_to</TD><TD>
+End position of the phenotype
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_strd</TD><TD>
+The phenotype strand
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5.1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>phe_id | ve_by_pc1 | n_phe_in_grp</TD><TD>
+Only printed if <B>--group-best</B> | <B>--group-pca1</B> | <B>--group-mean</B>.
+The phenotype ID, variance explained by PC1, or number of phenotypes in the phenotype group for <B>--group-best</B>, <B>--group-pca1</B>, and <B>--group-mean</B>, respectively.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5.2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>n_phe_in_grp</TD><TD>
+Only printed if <B>--group-pca1</B> | <B>--group-mean</B>.
+The number of phenotypes in the phenotype group.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>6&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>n_var_in_cis</TD><TD>
+The number variants in the cis window for this phenotype.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>7&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>dist_phe_var</TD><TD>
+The distance between the variant and the phenotype start positions.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>8&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>var_id</TD><TD>
+The most significant variant ID.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>9&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>var_chr</TD><TD>
+The most significant variant's chromosome.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>10&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>var_from</TD><TD>
+The start position of the most significant variant.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>11&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>var_to</TD><TD>
+The end position of the most significant variant.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>12&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>rank</TD><TD>
+The rank of the association.
+This tells you if the variant has been mapped as belonging to the best signal (rank=0), the second best (rank=1), etc ... 
+As a consequence, the maximum rank value for a given phenotype tells you how many independent signals there are (e.g. rank=2 means 3 independent signals).
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>13&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>fwd_pval</TD><TD>
+The nominal forward p-value of the association between the most significant variant and the phenotype.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>14&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>fwd_r_squared</TD><TD>
+The r squared of the forward linear regression.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>15&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>fwd_slope</TD><TD>
+The beta (slope) of the forward linear regression.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>15.1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>fwd_slope_se</TD><TD>
+The standard error of the forward beta.
+Only printed if <B>--std-err</B> is provided.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>16&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>fwd_best_hit</TD><TD>
+Whether or not this variant was the forward most significant variant.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>17&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>fwd_sig</TD><TD>
+Whether this variant was significant.
+Currently all variants are significant so this is redundant.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>18&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>bwd_pval</TD><TD>
+The nominal backward p-value of the association between the most significant variant and the phenotype.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>19&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>bwd_r_squared</TD><TD>
+The r squared of the backward linear regression.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>20&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>bwd_slope</TD><TD>
+The beta (slope) of the backward linear regression.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>20.1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>bwd_slope_se</TD><TD>
+The standard error of the backward beta.
+Only printed if <B>--std-err</B> is provided.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>21&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>bwd_best_hit</TD><TD>
+Whether or not this variant was the backward most significant variant.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>22&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>bwd_sig</TD><TD>
+Whether this variant was significant.
+Currently all variants are significant so this is redundant.
+<BR></TD></TR>
+</TABLE>
+
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>NOMINAL ANALYSIS EXAMPLES</H2><P>
+
+<DL COMPACT>
+<DT>o
+Nominal pass, correcting for technical covariates, rank normal transforming the phenotype, and printing out associations with a p-value &lt;= 0.01 on chromosome 22 between 17000000 and 18000000 bp, and excluding some samples (see <I>QTLtools</I> (1)):<DD>
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+QTLtools cis --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --cov genes.covariates.pc50.txt.gz --nominal 0.01 --region chr22:17000000-18000000 --normal --out nominals.txt --exclude-samples sample_names_to_exclude.txt
+</CODE>
+<P>
+<DT>o
+Nominal pass with parallelization correcting for technical covariates, rank normal transforming the phenotype, and printing out associations with a p-value &lt;= 0.01.
+To facilitate parallelization on compute cluster, we developed an option to run the analysis into chunks of molecular phenotypes.
+For instance, to run analysis on chunk 12 when splitting the example data set into 20 chunks, run:<DD>
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+QTLtools cis --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --cov genes.covariates.pc50.txt.gz --nominal 0.01 --chunk 12 20 --normal --out nominals_12_20.txt
+</CODE>
+<P>
+<DT>o
+If you want to submit the whole analysis with 20 jobs on a compute cluster, just run (qsub needs to be changed to the job submission system used [bsub, psub, etc...]): <DD>
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+for j in $(seq 0 20); do
+<BR>
+<TD>&nbsp;&nbsp;&nbsp;&nbsp;</TD> echo &quot;QTLtools cis --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --cov genes.covariates.pc50.txt.gz --nominal 0.01 --chunk $j 20 --normal --out nominals_$j\_20.txt&quot; | qsub
+<BR>
+done
+</CODE>
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>PERMUTATION ANALYSIS EXAMPLES</H2><P>
+
+<DL COMPACT>
+<DT>o
+Permutation pass, correcting for technical covariates, rank normal transforming the phenotype, and running 1000 permutations with a specific random seed on chromosome 22 between 17000000 and 18000000 bp:
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+QTLtools cis --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --cov genes.covariates.pc50.txt.gz --permute 1000 --region chr22:17000000-18000000 --normal --seed 1354145 --out permutation.txt
+</CODE>
+<DT>o
+Permutation pass with parallelization correcting for technical covariates, rank normal transforming the phenotype, and running 5000 permutations.
+To facilitate parallelization on compute cluster, we developed an option to run the analysis into chunks of molecular phenotypes.
+For instance, to run analysis on chunk 12 when splitting the example data set into 20 chunks, run:
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+QTLtools cis --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --cov genes.covariates.pc50.txt.gz --permute 5000 --chunk 12 20 --normal --out permutations_12_20.txt
+</CODE>
+<DT>o
+If you want to submit the whole analysis with 20 jobs on a compute cluster, just run (qsub needs to be changed to the job submission system used [bsub, psub, etc...]):
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+for j in $(seq 0 20); do
+<BR>
+<TD>&nbsp;&nbsp;&nbsp;&nbsp;</TD>echo &quot;QTLtools cis --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --cov genes.covariates.pc50.txt.gz --permute 5000 --chunk $j 20 --normal --out permutations_$j\_20.txt&quot; | qsub
+<BR>
+done
+</CODE>
+<P>
+<DT>o
+When your phenotypes in the BED file are grouped, you can perform a permutation pass at the phenotype group level in order to discover group-level QTLs:
+<DT><DD>
+</P><CODE style="font-size:1em;">
+QTLtools cis --vcf genotypes.chr22.vcf.gz --bed exons.50percent.chr22.bed.gz --cov genes.covariates.pc50.txt.gz --permute 1000 --normal --grp-best --out permutation.group.txt
+</CODE>
+</DL>
+<A NAME="lbAI">&nbsp;</A>
+<H2>CONDITIONAL ANALYSIS EXAMPLE</H2><P>
+
+Conditional analysis to discover independent signals.
+<DL COMPACT>
+<DT>1
+First we need to run a permutation analysis (see previous section), then calculate nominal p-value threshold for each gene.
+Here an FDR of 5% is given as an example:
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+cat permutations_*.txt | gzip -c &gt; permutations_all.txt.gz
+<BR>
+Rscript ./script/qtltools_runFDR_cis.R permutations_all.txt.gz 0.05 permutations_all
+</CODE>
+<DT>2
+Now you can proceed with the actual conditional analysis.
+Here splitting into 20 chunks, and when all complete concatenate the results:
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+for j in $(seq 0 20); do
+<BR>
+<TD>&nbsp;&nbsp;&nbsp;&nbsp;</TD>echo &quot;QTLtools cis --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --cov genes.covariates.pc50.txt.gz --mapping permutations_all.thresholds.txt --chunk $j 20 --normal --out conditional_$j\_20.txt&quot; | qsub
+<BR>
+done
+<BR>
+cat conditional_*.txt &gt; conditional_all.txt
+</CODE>
+<P>
+<DT>3
+If you are interested in the most significant variants per independent signal, you can filter the results, using the backward p-value: 
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+awk '{ if ($21 == 1) print $0 }' conditional_all.txt &gt; conditional_top_variants.txt
+</CODE>
+</DL>
+<A NAME="lbAJ">&nbsp;</A>
+<H2>SEE ALSO</H2><P>
+
+<I><A HREF="QTLtools.1.html">QTLtools</A></I>(1)
+<A NAME="lbAK">&nbsp;</A>
+<H2>BUGS</H2><P>
+
+<DL COMPACT>
+<DT>o
+Versions up to and including 1.2, suffer from a bug in reading missing genotypes in VCF/BCF files. 
+This bug affects variants with a DS field in their genotype's FORMAT and have a missing genotype (DS field is .) in one of the samples, in which case genotypes for all the samples are set to missing, effectively removing this variant from the analyses.
+</DL>
+<P>
+
+Please submit bugs to &lt;<A HREF="https://github.com/qtltools/qtltools">https://github.com/qtltools/qtltools</A>&gt;
+<A NAME="lbAL">&nbsp;</A>
+<H2>CITATION</H2><P>
+
+Delaneau, O., Ongen, H., Brown, A. et al. A complete tool set for molecular QTL discovery and analysis. <I>Nat Commun</I> <B>8</B>, 15452 (2017). 
+&lt;<A HREF="https://doi.org/10.1038/ncomms15452">https://doi.org/10.1038/ncomms15452</A>&gt;
+<A NAME="lbAM">&nbsp;</A>
+<H2>AUTHORS</H2><P>
+
+Olivier Delaneau (<A HREF="mailto:olivier.delaneau@gmail.com">olivier.delaneau@gmail.com</A>), Halit Ongen (<A HREF="mailto:halitongen@gmail.com">halitongen@gmail.com</A>)
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2><P>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">OUTPUT FILES</A><DD>
+<DT><A HREF="#lbAG">NOMINAL ANALYSIS EXAMPLES</A><DD>
+<DT><A HREF="#lbAH">PERMUTATION ANALYSIS EXAMPLES</A><DD>
+<DT><A HREF="#lbAI">CONDITIONAL ANALYSIS EXAMPLE</A><DD>
+<DT><A HREF="#lbAJ">SEE ALSO</A><DD>
+<DT><A HREF="#lbAK">BUGS</A><DD>
+<DT><A HREF="#lbAL">CITATION</A><DD>
+<DT><A HREF="#lbAM">AUTHORS</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 14:11:25 GMT, August 24, 2020
+</div>
+</div>
+</BODY>
+</HTML>

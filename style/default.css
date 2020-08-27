@@ -31,9 +31,23 @@ p,note,code,ul, ol {
 	padding-bottom: 1.2em;
 }
 
+dl,dt {
+	font-size: 1.1em;
+}
+
+dd {
+	font-size: 1.1em;
+	margin-left: 20px;
+}
+
 h1 {
 	font-size: 1.4em;
 }
+
+h2 {
+	font-size: 1.3em;
+}
+
 
 .highligth {
 	color: #f00
@@ -45,7 +59,7 @@ code {
 	color: #555;
 	display: block;
 	/* font: normal 1.1em "Lucida Sans Unicode",serif; */
-	font: normal 1.2em "MS Courier New", monospace;
+	font: normal 1.1em "MS Courier New", monospace;
 	margin-bottom: 12px;
 	padding: 8px 10px;
 }

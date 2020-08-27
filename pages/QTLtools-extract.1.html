@@ -1,0 +1,162 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-176212697-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-176212697-1');
+</script>
+
+<TITLE>Man page of QTLtools-extract</TITLE>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"/>
+<meta http-equiv="Cache-Control" content="max-age=3600"/>
+<meta name="description" content="description"/>
+<meta name="keywords" content="keywords"/> 
+<meta name="author" content="author"/> 
+<link rel="stylesheet" type="text/css" href="../style/default.css" media="screen"/>
+
+</HEAD><BODY>
+<div class="content">
+<div class="item"  id="item2">
+<H1>QTLtools-extract</H1><P>
+Section: Bioinformatics tools (1)<BR>Updated: 06 May 2020<BR><A HREF="#index">Index</A>
+<A HREF="basic_homepage.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2><P>
+
+QTLtools extract - Data extraction mode. 
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2><P>
+
+<B>QTLtools extract [--vcf --bed --cov]</B>
+
+<I>relevant_file</I>
+
+<B>--out </B>
+
+<I>output_prefix</I>
+
+<I>[OPTIONS]</I>
+
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2><P>
+
+Extract all the data from the provided files into one flat file.
+This will also impute all the missing data.
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2><P>
+
+<DL COMPACT>
+<DT><B>--vcf [</B><I>in.vcf</I>|<I>in.bcf</I>|<I>in.vcf.gz</I><B>]</B>
+
+<DD>
+Genotypes in VCF/BCF format.
+At least one of <B>--vcf --bed --cov</B> is REQUIRED.
+<DT><B>--bed </B><I>quantifications.bed.gz</I>
+
+<DD>
+Molecular phenotype quantifications in BED format.
+At least one of <B>--vcf --bed --cov</B> is REQUIRED.
+<DT><B>--cov </B><I>covariates.txt</I>
+
+<DD>
+Covariates data.
+At least one of <B>--vcf --bed --cov</B> is REQUIRED.
+<DT><B>--out </B><I>filename_prefix</I>
+
+<DD>
+Output file name prefix.
+REQUIRED.
+<DT><B>--region </B><I>chr:start-end</I>
+
+<DD>
+Genomic region to be processed.
+E.g. chr4:12334456-16334456, or chr5.
+<P>
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>OUTPUT FILES</H2><P>
+
+<DL COMPACT>
+<DT><B>.content.txt.gz</B>
+
+<DD>
+Flat file with samples in rows and all the extracted variables in columns.
+<DT><B>.header.txt</B>
+
+<DD>
+Genomic locations of the extracted variables.
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>EXAMPLE</H2><P>
+
+<DL COMPACT>
+<DT>o
+Extract genotypes, gene quantifications, and covariates from a certain region:
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+QTLtools extract --vcf genotypes.chr22.vcf.gz --bed genes.50percent.chr22.bed.gz --cov genes.covariates.pc50.txt.gz --region chr22:17000000-18000000 --out extract_output
+</CODE>
+<P>
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>SEE ALSO</H2><P>
+
+<I><A HREF="QTLtools.1.html">QTLtools</A></I>(1)
+
+
+
+
+
+<A NAME="lbAI">&nbsp;</A>
+<H2>BUGS</H2><P>
+
+<DL COMPACT>
+<DT>o
+Versions up to and including 1.2, suffer from a bug in reading missing genotypes in VCF/BCF files. 
+This bug affects variants with a DS field in their genotype's FORMAT and have a missing genotype (DS field is .) in one of the samples, in which case genotypes for all the samples are set to missing, effectively removing this variant from the analyses.
+</DL>
+<P>
+
+Please submit bugs to &lt;<A HREF="https://github.com/qtltools/qtltools">https://github.com/qtltools/qtltools</A>&gt;
+<A NAME="lbAJ">&nbsp;</A>
+<H2>CITATION</H2><P>
+
+Delaneau, O., Ongen, H., Brown, A. et al. A complete tool set for molecular QTL discovery and analysis. <I>Nat Commun</I> <B>8</B>, 15452 (2017). 
+&lt;<A HREF="https://doi.org/10.1038/ncomms15452">https://doi.org/10.1038/ncomms15452</A>&gt;
+<A NAME="lbAK">&nbsp;</A>
+<H2>AUTHORS</H2><P>
+
+Olivier Delaneau (<A HREF="mailto:olivier.delaneau@gmail.com">olivier.delaneau@gmail.com</A>), Halit Ongen (<A HREF="mailto:halitongen@gmail.com">halitongen@gmail.com</A>)
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2><P>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">OUTPUT FILES</A><DD>
+<DT><A HREF="#lbAG">EXAMPLE</A><DD>
+<DT><A HREF="#lbAH">SEE ALSO</A><DD>
+<DT><A HREF="#lbAI">BUGS</A><DD>
+<DT><A HREF="#lbAJ">CITATION</A><DD>
+<DT><A HREF="#lbAK">AUTHORS</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 14:11:25 GMT, August 24, 2020
+</div>
+</div>
+</BODY>
+</HTML>

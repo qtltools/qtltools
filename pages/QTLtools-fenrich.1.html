@@ -1,0 +1,332 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-176212697-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-176212697-1');
+</script>
+
+<TITLE>Man page of QTLtools-fenrich</TITLE>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"/>
+<meta http-equiv="Cache-Control" content="max-age=3600"/>
+<meta name="description" content="description"/>
+<meta name="keywords" content="keywords"/> 
+<meta name="author" content="author"/> 
+<link rel="stylesheet" type="text/css" href="../style/default.css" media="screen"/>
+
+</HEAD><BODY>
+<div class="content">
+<div class="item"  id="item2">
+<H1>QTLtools-fenrich</H1><P>
+Section: Bioinformatics tools (1)<BR>Updated: 06 May 2020<BR><A HREF="#index">Index</A>
+<A HREF="basic_homepage.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2><P>
+
+QTLtools fenrich - Functional enrichment of molecular QTLs
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2><P>
+
+<B>QTLtools fenrich  --qtl</B>
+
+<I>significanty_genes.bed</I>
+
+<B>--tss</B>
+
+<I>gene_tss.bed</I>
+
+<B>--bed</B>
+
+<I>TFs.encode.bed.gz</I>
+
+<B>--out</B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2><P>
+
+This mode allows assessing whether a set of QTLs fall within some functional annotations more often than what is expected by chance.
+The method is detailed in &lt;<A HREF="https://www.nature.com/articles/ncomms15452">https://www.nature.com/articles/ncomms15452</A>&gt;.
+Here, we mean by chance is what is expected given the non-uniform distributions of molQTLs and functional annotations around the genomic positions of the molecular phenotypes.
+To do so, we first enumerate all the functional annotations located nearby a given molecular phenotype.
+In practice, for X phenotypes being quantified, we have X lists of annotations.
+And, for the subset Y of those having a significant molQTL, we count how often the Y molQTLs overlap the annotations in the corresponding lists: this gives the observed overlap frequency fobs(Y) between molQTLs and functional annotations.
+Then, we permute the lists of functional annotations across the phenotypes (e.g, phenotype A may be assigned the list of annotations coming from phenotype B) and for each permuted data set, we count how often the Y molQTLs do overlap the newly assigned functional annotations: this gives the expected overlap frequency fexp(Y) between molQTLs and functional annotations.
+By doing this permutation scheme, we keep the distribution of functional annotations and molQTLs around molecular phenotypes unchanged.
+Now that we have the observed and expected overlap frequencies, we use a fisher test to assess how fobs(Y) and fexp(Y) differ.
+This gives an odd ratio estimate and a two-sided p-value which basically tells us first if there is and enrichment or depletion, and second how significant this is.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2><P>
+
+<DL COMPACT>
+<DT><B>--qtl </B><I>in.bed</I><B></B>
+
+<DD>
+List of QTLs of interest in BED format.
+REQUIRED.
+<DT><B>--bed </B><I>functional_annotation.bed.gz</I>
+
+<DD>
+Functional annotations in BED format.
+REQUIRED.
+<DT><B>--tss </B><I>genes.bed</I>
+
+<DD>
+List of positions of all phenotypes you mapped QTLs for, in BED format.
+REQUIRED.
+<DT><B>--out </B><I>output.txt</I>
+
+<DD>
+Output file.
+REQUIRED.
+<DT><B>--permute </B><I>integer</I>
+
+<DD>
+Number of permutation to run.
+DEFAULT=1000
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>INPUT FILES</H2><P>
+
+<DL COMPACT>
+<DT><B>--qtl file</B>
+
+<DD>
+List of QTLs of interest.
+An example:
+<P>
+</P><CODE style="font-size:1em;">
+1<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>15210<TT>&nbsp;&nbsp;&nbsp;</TT>15211<TT>&nbsp;&nbsp;&nbsp;</TT>1_15211<TT>&nbsp;</TT>ENSG00000227232.4<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>-<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>735984<TT>&nbsp;&nbsp;</TT>735985<TT>&nbsp;&nbsp;</TT>1_735985<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>ENSG00000177757.1<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>+<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>735984<TT>&nbsp;&nbsp;</TT>735985<TT>&nbsp;&nbsp;</TT>1_735985<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>ENSG00000240453.1<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>-<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>739527<TT>&nbsp;&nbsp;</TT>739528<TT>&nbsp;&nbsp;</TT>1_739528<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>ENSG00000237491.4<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>+<BR>
+</CODE>
+<P>
+The column definitions are:
+<TABLE>
+<TR VALIGN=top><TD ALIGN=right>1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The variant chromosome
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The variant's start position (<B>0-based</B>)
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>3&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The variant's end position (<B>1-based</B>)
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>4&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The variant ID
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The phenotype ID
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>6&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The phenotype's strand. (<B>not used</B>)
+<BR></TD></TR>
+</TABLE>
+
+
+
+<DT><B>--bed file</B>
+
+<DD>
+List of annotations in BED format.
+An example:
+<P>
+</P><CODE style="font-size:1em;">
+1<TT>&nbsp;&nbsp;&nbsp;</TT>254874<TT>&nbsp;&nbsp;&nbsp;</TT>265487<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;</TT>730984<TT>&nbsp;&nbsp;&nbsp;</TT>735985<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;</TT>734984<TT>&nbsp;&nbsp;&nbsp;</TT>736585<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;</TT>739527<TT>&nbsp;&nbsp;&nbsp;</TT>748528<BR>
+</CODE>
+<P>
+The column definitions are:
+<TABLE>
+<TR VALIGN=top><TD ALIGN=right>1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+Chromosome
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+Start position (<B>0-based</B>)
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>3&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+End position (<B>1-based</B>)
+<BR></TD></TR>
+</TABLE>
+
+
+
+<DT><B>--tss file</B>
+
+<DD>
+List of positions of all phenotypes you mapped QTLs for.
+An example:
+<P>
+</P><CODE style="font-size:1em;">
+1<TT>&nbsp;&nbsp;&nbsp;</TT>29369<TT>&nbsp;&nbsp;&nbsp;</TT>29370<TT>&nbsp;&nbsp;&nbsp;</TT>ENSG00000227232.4<TT>&nbsp;&nbsp;&nbsp;</TT>1_15211<TT>&nbsp;&nbsp;&nbsp;</TT>-<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;</TT>135894<TT>&nbsp;&nbsp;&nbsp;</TT>135895<TT>&nbsp;&nbsp;&nbsp;</TT>ENSG00000268903.1<TT>&nbsp;&nbsp;&nbsp;</TT>1_985446<TT>&nbsp;&nbsp;&nbsp;</TT>-<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;</TT>137964<TT>&nbsp;&nbsp;&nbsp;</TT>137965<TT>&nbsp;&nbsp;&nbsp;</TT>ENSG00000269981.1<TT>&nbsp;&nbsp;&nbsp;</TT>1_1118728<TT>&nbsp;&nbsp;&nbsp;</TT>-<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;</TT>317719<TT>&nbsp;&nbsp;&nbsp;</TT>317720<TT>&nbsp;&nbsp;&nbsp;</TT>ENSG00000237094.7<TT>&nbsp;&nbsp;&nbsp;</TT>1_15211<TT>&nbsp;&nbsp;&nbsp;</TT>+<BR>
+</CODE>
+<P>
+The column definitions are:
+<TABLE>
+<TR VALIGN=top><TD ALIGN=right>1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+Phenotype's chromosome
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The start position of the phenotype (<B>0-based</B>)
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>3&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The end position of the phenotype (<B>1-based</B>)
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>4&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The phenotype ID
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+Top variant (<B>not used</B>)
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>6&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The phenotype's strand
+<BR></TD></TR>
+</TABLE>
+
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>OUTPUT FILE</H2><P>
+
+<DL COMPACT>
+<DT><B>--out</B> file
+
+<DD>
+Space separated results output file detailing the enrichment with the following columns:
+<TABLE>
+<TR VALIGN=top><TD ALIGN=right>1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The observed number of QTLs falling within the functional annotations
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The total number of QTLs
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>3&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The mean expected number of QTLs falling within the functional annotations (across multiple permutations)
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>4&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The standard deviation of the expected number of QTLs falling within the functional annotations (across multiple permutations)
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The empirical p-value
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>6&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+Lower bound of the 95% confidence interval of the odds ratio
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>7&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The odds ratio
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>8&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+Upper bound of the 95% confidence interval of the odds ratio
+<BR></TD></TR>
+</TABLE>
+
+<P>
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>EXAMPLE</H2><P>
+
+<DL COMPACT>
+<DT>1
+You need to prepare a BED file containing the positions of the QTLs of interest.
+To do so, extract all significant hits at a given FDR threshold (e.g. 5%), and then transform the significant QTL list into a BED file:
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+Rscript ./script/qtltools_runFDR_cis.R results.genes.full.txt.gz 0.05 results.genes
+<BR>
+cat results.genes.significant.txt | awk '{ print $9, $10-1, $11, $8, $1, $5 }' | tr ' ' '\t' | sort -k1,1V -k2,2g &gt; results.genes.significant.bed
+</CODE>
+<P>
+<DT>2
+Prepare a BED file containing the positions of all phenotypes you mapped QTLs for:
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+zcat results.genes.full.txt.gz | awk '{ print $2, $3-1, $4, $1, $8, $5 }' | tr ' ' '\t' | sort -k1,1V -k2,2g &gt; results.genes.quantified.bed
+</CODE>
+<DT>3
+Run the enrichment analysis:
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+QTLtools fenrich --qtl results.genes.significant.bed --tss results.genes.quantified.bed --bed TFs.encode.bed.gz --out enrichment.QTL.in.TF.txt
+</CODE>
+</DL>
+<A NAME="lbAI">&nbsp;</A>
+<H2>SEE ALSO</H2><P>
+
+<I><A HREF="QTLtools.1.html">QTLtools</A></I>(1)
+
+
+
+
+
+
+
+
+
+
+<A NAME="lbAJ">&nbsp;</A>
+<H2>BUGS</H2><P>
+Please submit bugs to &lt;<A HREF="https://github.com/qtltools/qtltools">https://github.com/qtltools/qtltools</A>&gt;
+
+<A NAME="lbAK">&nbsp;</A>
+<H2>CITATION</H2><P>
+
+Delaneau, O., Ongen, H., Brown, A. et al. A complete tool set for molecular QTL discovery and analysis. <I>Nat Commun</I> <B>8</B>, 15452 (2017).
+&lt;<A HREF="https://doi.org/10.1038/ncomms15452">https://doi.org/10.1038/ncomms15452</A>&gt;
+<A NAME="lbAL">&nbsp;</A>
+<H2>AUTHORS</H2><P>
+
+Olivier Delaneau (<A HREF="mailto:olivier.delaneau@gmail.com">olivier.delaneau@gmail.com</A>), Halit Ongen (<A HREF="mailto:halitongen@gmail.com">halitongen@gmail.com</A>)
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2><P>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">INPUT FILES</A><DD>
+<DT><A HREF="#lbAG">OUTPUT FILE</A><DD>
+<DT><A HREF="#lbAH">EXAMPLE</A><DD>
+<DT><A HREF="#lbAI">SEE ALSO</A><DD>
+<DT><A HREF="#lbAJ">BUGS</A><DD>
+<DT><A HREF="#lbAK">CITATION</A><DD>
+<DT><A HREF="#lbAL">AUTHORS</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 14:11:25 GMT, August 24, 2020
+</div>
+</div>
+</BODY>
+</HTML>

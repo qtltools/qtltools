@@ -1,0 +1,198 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-176212697-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-176212697-1');
+</script>
+
+<TITLE>Man page of QTLtools-mbv</TITLE>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"/>
+<meta http-equiv="Cache-Control" content="max-age=3600"/>
+<meta name="description" content="description"/>
+<meta name="keywords" content="keywords"/> 
+<meta name="author" content="author"/> 
+<link rel="stylesheet" type="text/css" href="../style/default.css" media="screen"/>
+
+</HEAD><BODY>
+<div class="content">
+<div class="item"  id="item2">
+<H1>QTLtools-pca</H1><P>
+Section: Bioinformatics tools (1)<BR>Updated: 06 May 2020<BR><A HREF="#index">Index</A>
+<A HREF="basic_homepage.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2><P>
+
+QTLtools pca - Conducts PCA
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2><P>
+
+<B>QTLtools pca --vcf</B>
+
+<I>[in.vcf</I>|<I>in.vcf.gz</I>|<I>in.bcf]</I>
+
+<B>| --bed</B>
+
+<I>in.bed.gz</I>
+
+<B>--out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2><P>
+
+This mode allows performing a Principal Component Analysis (PCA) either on molecular phenotype quantifications or genotype data. 
+It is typically used (i) to detect outliers in the data, (ii) to detect stratification in the data or (iii) to build a covariate matrix before QTL mapping.
+QTLtools' PCA implementation utilizes singular value decomposition (SVD).
+When building a covariate matrix to account for technical covariates we recommend using <B>--center</B> and  <B>--scale</B>.
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2><P>
+
+<DL COMPACT>
+<DT><B>--vcf [</B><I>in.vcf</I>|<I>in.bcf</I>|<I>in.vcf.gz</I>|<I>in.bed.gz</I><B>]</B>
+
+<DD>
+Genotypes in VCF/BCF/BED format.
+REQUIRED unless <B>--bed</B>. 
+<DT><B>--bed </B><I>quantifications.bed.gz</I>
+
+<DD>
+Quantifications in BED format.
+REQUIRED unless <B>--vcf</B>.
+<DT><B>--out </B><I>output_prefix</I>
+
+<DD>
+Output file prefix.
+REQUIRED.
+<DT><B>--center</B>
+
+<DD>
+Center the variables (genotypes or phenotypes) by subtracting the mean from each value
+<DT><B>--scale</B>
+
+<DD>
+Scale the variables (genotypes or phenotypes) by dividing each value by the standard deviation
+<DT><B>--region </B><I>chr:start-end</I>
+
+<DD>
+Genomic region to be processed.
+E.g. chr4:12334456-16334456, or chr5
+<DT><B>--exclude-chrs </B><I>string</I>
+
+<DD>
+The chromosomes to exclude given as a space separated list.
+Only applies to <B>--vcf</B>. 
+DEFAULT=&quot;X Y M MT XY chrX chrY chrM chrMT chrXY&quot;
+<DT><B>--maf </B><I>float</I>
+
+<DD>
+Exclude sites with minor allele frequency less than this.
+Only applies to <B>--vcf</B>.
+DEFAULT=0.0
+<DT><B>--distance </B><I>integer</I>
+
+<DD>
+Only include sites separated with this many base pairs.
+Only applies to <B>--vcf</B>. 
+DEFAULT=0
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>OUTPUT FILES</H2><P>
+
+<DL COMPACT>
+<DT><B>.pca</B>
+
+<DD>
+This file contains the principal components that were calculated.
+The names of the principal components, which is given in the first column, is composed of the output file prefix, whether the data was centered, whether the data was scaled, and the principal component number.
+<DT><B>.pca_stats</B>
+
+<DD>
+This file contains the standard deviation of each principal component, and the variance and the cumulative variance explained by each PC.
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>EXAMPLES</H2><P>
+
+<DL COMPACT>
+<DT>o
+Running pca on RNAseq quantifications to calculate technical covariates:
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+QTLtools pca --bed genes.50percent.chr22.bed.gz --out genes.50percent.chr22 --center --scale
+</CODE>
+<P>
+<DT>o
+Running pca on genotypes to detect population stratification:
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+QTLtools pca --vcf genotypes.chr22.vcf.gz --out genotypes.chr22 --center --scale --maf 0.05 --distance 5000
+</CODE>
+<P>
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>SEE ALSO</H2><P>
+
+<I><A HREF="QTLtools.1.html">QTLtools</A></I>(1)
+
+
+
+
+
+
+
+
+
+
+
+
+<A NAME="lbAI">&nbsp;</A>
+<H2>BUGS</H2><P>
+
+<DL COMPACT>
+<DT>o
+Versions up to and including 1.2, suffer from a bug in reading missing genotypes in VCF/BCF files. 
+This bug affects variants with a DS field in their genotype's FORMAT and have a missing genotype (DS fiels is .) in one of the samples, in which case genotypes for all the samples are set to missing, effectively removing this variant from the analyses.
+</DL>
+<P>
+
+Please submit bugs to &lt;<A HREF="https://github.com/qtltools/qtltools">https://github.com/qtltools/qtltools</A>&gt;
+<A NAME="lbAJ">&nbsp;</A>
+<H2>AUTHORS</H2><P>
+
+Halit Ongen (<A HREF="mailto:halitongen@gmail.com">halitongen@gmail.com</A>), Olivier Delaneau (<A HREF="mailto:olivier.delaneau@gmail.com">olivier.delaneau@gmail.com</A>)
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2><P>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">OUTPUT FILES</A><DD>
+<DT><A HREF="#lbAG">EXAMPLES</A><DD>
+<DT><A HREF="#lbAH">SEE ALSO</A><DD>
+<DT><A HREF="#lbAI">BUGS</A><DD>
+<DT><A HREF="#lbAJ">AUTHORS</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 14:11:25 GMT, August 24, 2020
+</div>
+</div>
+</BODY>
+</HTML>

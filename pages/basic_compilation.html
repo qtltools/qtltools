@@ -1,0 +1,206 @@
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"/>
+<meta http-equiv="Cache-Control" content="max-age=3600"/>
+<meta name="description" content="description"/>
+<meta name="keywords" content="keywords"/> 
+<meta name="author" content="author"/> 
+<link rel="stylesheet" type="text/css" href="../style/default.css" media="screen"/>
+<title>QTLtools</title>
+</head>
+
+<body>
+<div class="content">
+	<div class="item"  id="item1">
+		<h1>Compilation walkthrough on a fresh Ubuntu 20.04.1 Desktop distribution</h1>
+		<p> This will guide you through compiling and installing QTLtools and all it's dependencies. </p>
+		<p>	1. Install packages that are required to compile HTSlib, R math standalone library, and QTLtools:</p>
+		<code>
+			sudo apt install g++ gcc gfortran make autoconf automake libtool zlib1g-dev liblzma-dev libbz2-dev lbzip2 libgsl-dev libblas-dev libx11-dev libboost1.71-all-dev git libreadline-dev libxt-dev libpcre2-dev libcurl4-openssl-dev
+		</code>
+		<p>	2. Create a directory for downloads and change to it:</p>
+		<code>
+			mkdir ~/Tools
+			<br>
+			cd ~/Tools
+		</code>
+		<p>	3. Download and extract R and HTSlib:</p>
+		<code>
+			wget https://cran.r-project.org/src/base/R-4/R-4.0.2.tar.gz
+			<br>
+			wget https://github.com/samtools/htslib/releases/download/1.10.2/htslib-1.10.2.tar.bz2
+			<br>
+			tar zxvf R-4.0.2.tar.gz
+			<br>
+			tar jxvf htslib-1.10.2.tar.bz2
+		</code>
+		<p>	4. Compile R standalone math library:</p>
+		<code>
+			cd ~/Tools/R-4.0.2/
+			<br>
+			./configure
+			<br>
+			cd src/nmath/standalone/
+			<br>
+			make
+		</code>
+		<p>	5. Compile HTSlib:</p>
+		<code>
+			cd ~/Tools/htslib-1.10.2/
+			<br>
+			./configure
+			<br>
+			make
+		</code>
+		<p>	6. Get QTLtools, here using git but you can also download and extract the source code:</p>
+		<code>
+			cd ~/Tools/
+			<br>
+			git clone https://github.com/qtltools/qtltools.git
+			<br>
+			cd qtltools
+		</code>
+		<p>	7. Edit QTLtools Makefile to set the necessary variables:</p>
+		<code>
+			########################################################
+			<br>
+			# YOU NEED TO UPDATE THESE 6 PATHS TO COMPILE QTLTOOLS #
+			<br>
+			########################################################
+			<br>
+			BOOST_INC=/usr/include
+			<br>
+			BOOST_LIB=/usr/lib/x86_64-linux-gnu
+			<br>
+			RMATH_INC=$(HOME)/Tools/R-4.0.2/src/include
+			<br>
+			RMATH_LIB=$(HOME)/Tools/R-4.0.2/src/nmath/standalone
+			<br>
+			HTSLD_INC=$(HOME)/Tools/htslib-1.10.2
+			<br>
+			HTSLD_LIB=$(HOME)/Tools/htslib-1.10.2
+		</code>
+		<p>	8. Compile and install QTLtools</p>
+		<code>
+			make
+            <br>
+            <br>
+            # If you do not have root privileges, append ./bin/ & ./scripts/ to $PATH and ./man/ to $MANPATH
+            <br>
+            # Also add ". ~/Tools/doc/QTLtools_bash_autocomplete.bash" to your .bashrc
+            <br>
+            # If you are root you can install:
+            <br>
+            <br>
+            sudo make install 
+			<br>
+			exec bash # necessary to immediately enable autocompletion 
+		</code>
+		<p>	9. If you want to clean or uninstall you can:</p>
+		<code>
+			make clean
+			<br>
+			make uninstall
+		</code>
+    <div class="log">Thursday 27th August 2020</div>
+	</div>
+
+	<div class="item"  id="item1">
+		<h1>Compilation walkthrough on a fresh CentOS 8.2.2004 distribution</h1>
+		<p> This will guide you through compiling and installing QTLtools and all it's dependencies. </p>
+		<p>	1. Install packages that are required to compile HTSlib, R math standalone library, and QTLtools:</p>
+		<code>
+			sudo dnf config-manager --enable PowerTools
+			<br>
+			sudo yum install gcc-c++.x86_64 gcc-gfortran.x86_64 autoconf automake libtool zlib-devel.x86_64 xz-devel.x86_64 bzip2-devel.x86_64 gsl-devel.x86_64 blas64.x86_64 libX11-devel.x86_64 libXt-devel-1.1.5-12.el8.x86_64 pcre2-devel.x86_64 libcurl-devel.x86_64 readline-devel.x86_64 boost-devel.x86_64 boost-static.x86_64 git
+		</code>
+		<p>	2. Create a directory for downloads and change to it:</p>
+		<code>
+			mkdir ~/Tools
+			<br>
+			cd ~/Tools
+		</code>
+		<p>	3. Download and extract R and HTSlib:</p>
+		<code>
+			wget https://cran.r-project.org/src/base/R-4/R-4.0.2.tar.gz
+			<br>
+			wget https://github.com/samtools/htslib/releases/download/1.10.2/htslib-1.10.2.tar.bz2
+			<br>
+			tar zxvf R-4.0.2.tar.gz
+			<br>
+			tar jxvf htslib-1.10.2.tar.bz2
+		</code>
+		<p>	4. Compile R standalone math library:</p>
+		<code>
+			cd ~/Tools/R-4.0.2/
+			<br>
+			./configure
+			<br>
+			cd src/nmath/standalone/
+			<br>
+			make
+		</code>
+		<p>	5. Compile HTSlib:</p>
+		<code>
+			cd ~/Tools/htslib-1.10.2/
+			<br>
+			./configure
+			<br>
+			make
+		</code>
+		<p>	6. Get QTLtools, here using git but you can also download and extract the source code:</p>
+		<code>
+			cd ~/Tools/
+			<br>
+			git clone https://github.com/qtltools/qtltools.git
+			<br>
+			cd qtltools
+		</code>
+		<p>	7. Edit QTLtools Makefile to set the necessary variables:</p>
+		<code>
+			########################################################
+			<br>
+			# YOU NEED TO UPDATE THESE 6 PATHS TO COMPILE QTLTOOLS #
+			<br>
+			########################################################
+			<br>
+			BOOST_INC=/usr/include
+			<br>
+			BOOST_LIB=/usr/lib64
+			<br>
+			RMATH_INC=$(HOME)/Tools/R-4.0.2/src/include
+			<br>
+			RMATH_LIB=$(HOME)/Tools/R-4.0.2/src/nmath/standalone
+			<br>
+			HTSLD_INC=$(HOME)/Tools/htslib-1.10.2
+			<br>
+			HTSLD_LIB=$(HOME)/Tools/htslib-1.10.2
+		</code>
+		<p>	8. Compile and install QTLtools</p>
+		<code>
+			make
+            <br>
+            <br>
+            # If you do not have root privileges, append ./bin/ & ./scripts/ to $PATH and ./man/ to $MANPATH
+            <br>
+            # Also add ". ~/Tools/doc/QTLtools_bash_autocomplete.bash" to your .bashrc
+            <br>
+            # If you are root you can install:
+            <br>
+            <br>
+            sudo make install 
+			<br>
+			exec bash # necessary to immediately enable autocompletion 
+		</code>
+		<p>	9. If you want to clean or uninstall you can:</p>
+		<code>
+			make clean
+			<br>
+			make uninstall
+		</code>
+    <div class="log">Thursday 27th August 2020</div>
+    </div>
+
+</div>
+</body>
+</html>

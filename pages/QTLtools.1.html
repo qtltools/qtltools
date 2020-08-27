@@ -1,0 +1,761 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-176212697-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-176212697-1');
+</script>
+
+<TITLE>Man page of QTLtools</TITLE>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"/>
+<meta http-equiv="Cache-Control" content="max-age=3600"/>
+<meta name="description" content="description"/>
+<meta name="keywords" content="keywords"/> 
+<meta name="author" content="author"/> 
+<link rel="stylesheet" type="text/css" href="../style/default.css" media="screen"/>
+
+</HEAD><BODY>
+<div class="content">
+<div class="item"  id="item2">
+<H1>QTLtools</H1><P>
+Section: Bioinformatics tools (1)<BR>Updated: 06 May 2020<BR><A HREF="#index">Index</A>
+<A HREF="basic_homepage.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2><P>
+
+QTLtools - A complete tool set for molecular QTL discovery and analysis
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2><P>
+
+<B>QTLtools</B>
+
+[<B></B><I>MODE</I>] [<B></B><I>OPTIONS</I>]
+</P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2><P>
+
+QTLtools is a complete tool set for molecular QTL discovery and analysis that is fast, user and cluster friendly. 
+QTLtools performs multiple key tasks such as checking the quality of the sequence data, checking that sequence and genotype data match, quantifying and stratifying individuals using molecular phenotypes, discovering proximal or distal molQTLs and integrating them with functional annotations or GWAS data, and analyzing allele specific expression. 
+It utilizes HTSlib &lt;<A HREF="http://www.htslib.org/">http://www.htslib.org/</A>&gt; to quickly and efficiently handle common genomics files types like VCF, BCF, BAM, SAM, CRAM, BED, and GTF, and the Eigen C++ library &lt;<A HREF="http://eigen.tuxfamily.org/">http://eigen.tuxfamily.org/</A>&gt; for fast linear algebra.
+</P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>MODES</H2><P>
+
+<DL COMPACT>
+<DT><B>bamstat </B>
+
+<DD>
+<B>QTLtools bamstat --bam</B>
+
+<I>[in.sam</I>|<I>in.bam</I>|<I>in.cram]</I>
+
+<B>--bed</B>
+
+<I>annotation.bed.gz</I>
+
+<B>--out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<BR>
+Calculate basic QC metrics for BAM/SAM.
+<DT><B>mbv</B>
+
+<DD>
+<B>QTLtools mbv --bam</B>
+
+<I>[in.sam</I>|<I>in.bam</I>|<I>in.cram]</I>
+
+<B>--vcf</B>
+
+<I>[in.vcf</I>|<I>in.vcf.gz</I>|<I>in.bcf]</I>
+
+<B>--out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<BR>
+Match BAM to VCF
+<DT><B>pca</B>
+
+<DD>
+<B>QTLtools pca --vcf</B>
+
+<I>[in.vcf</I>|<I>in.vcf.gz</I>|<I>in.bcf]</I>
+
+<B>| --bed</B>
+
+<I>in.bed.gz</I>
+
+<B>--out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<BR>
+Calculate principal components for a BED/VCF/BCF/CRAM file.
+<DT><B>correct</B>
+
+<DD>
+<B>QTLtools correct  --vcf</B>
+
+<I>[in.vcf</I>|<I>in.vcf.gz</I>|<I>in.bcf]</I>
+
+<B>| --bed</B>
+
+<I>in.bed.gz</I>
+
+<B>--cov</B>
+
+<I>covariates.txt</I>
+
+<B>| --normal --out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<BR>
+Covariate correction of a BED file.
+<DT><B>cis</B>
+
+<DD>
+<B>QTLtools cis --vcf</B>
+
+<I>[in.vcf</I>|<I>in.vcf.gz</I>|<I>in.bcf</I>|<I>in.bed.gz]</I>
+
+<B>--bed</B>
+
+<I>quantifications.bed.gz</I>
+
+<B>[--nominal</B>
+
+<I>float</I>
+
+<B>| --permute </B>
+
+<I>integer</I>
+
+<B>| --mapping </B>
+
+<I>in.txt</I>]
+
+<B>--out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<BR>
+cis QTL analysis.
+<DT><B>trans</B>
+
+<DD>
+<B>QTLtools trans --vcf</B>
+
+<I>[in.vcf</I>|<I>in.vcf.gz</I>|<I>in.bcf</I>|<I>in.bed.gz]</I>
+
+<B>--bed</B>
+
+<I>quantifications.bed.gz</I>
+
+<B>[--nominal</B>
+
+<B>| --permute </B>
+
+<B>| --sample </B>
+
+<I>integer</I>
+
+<B>| --adjust </B>
+
+<I>in.txt</I>]
+
+<B>--out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<BR>
+trans QTL analysis.
+<DT><B>fenrich</B>
+
+<DD>
+<B>QTLtools fenrich  --qtl</B>
+
+<I>significanty_genes.bed</I>
+
+<B>--tss</B>
+
+<I>gene_tss.bed</I>
+
+<B>--bed</B>
+
+<I>TFs.encode.bed.gz</I>
+
+<B>--out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<BR>
+Functional enrichment for QTLs.
+<DT><B>fdensity</B>
+
+<DD>
+<B>QTLtools fdensity  --qtl</B>
+
+<I>significanty_genes.bed</I>
+
+<B>--bed</B>
+
+<I>TFs.encode.bed.gz</I>
+
+<B>--out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<BR>
+Functional density around QTLs.
+<DT><B>genrich</B>
+
+<DD>
+<B>QTLtools genrich  --qtl</B>
+
+<I>significanty_genes.bed</I>
+
+<B>--tss</B>
+
+<I>gene_tss.bed</I>
+
+<B>--vcf</B>
+
+<I>1000kg.vcf</I>
+
+<B>--gwas</B>
+
+<I>gwas_hits.bed</I>
+
+<B>--out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<BR>
+GWAS enrichment for QTLs. 
+This mode is deprecated and not supported, use rtc instead.  
+<DT><B>rtc</B>
+
+<DD>
+<B>QTLtools rtc  --vcf</B>
+
+<I>[in.vcf</I>|<I>in.vcf.gz</I>|<I>in.bcf</I>|<I>in.bed.gz]</I>
+
+<B>--bed</B>
+
+<I>quantifications.bed.gz</I>
+
+<B>--hotspots</B>
+
+<I>hotspots_b37_hg19.bed</I>
+
+<B>[--gwas-cis | --gwas-trans | --mergeQTL-cis | --mergeQTL-trans]</B>
+
+<I>variants_external.txt qtls_in_this_dataset.txt</I>
+
+<B>--out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<BR>
+Regulatory Trait Concordance score analysis to test if two colocalizing variants are due to the same functional effect.
+<DT><B>rtc-union</B>
+
+<DD>
+<B>QTLtools rtc-union  --vcf</B>
+
+[<I>in.vcf</I>|<I>in.vcf.gz</I>|<I>in.bcf</I>|<I>in.bed.gz</I>] ... 
+<B>--bed</B>
+
+<I>quantifications.bed.gz</I> ...
+<B>--hotspots</B>
+
+<I>hotspots_b37_hg19.bed</I>
+
+<B>--results</B>
+
+<I>qtl_results_files.txt</I> ...
+<I>[OPTIONS]</I>
+
+<BR>
+Find the union of QTLs from independent datasets. 
+If there was a QTL in a given recombination interval in one dataset, then find the best QTL (may or may not be genome-wide significant) in the same recombination interval in all other datasets.
+<DT><B>extract</B>
+
+<DD>
+<B>QTLtools extract [--vcf --bed --cov]</B>
+
+<I>relevant_file</I>
+
+<B>--out </B>
+
+<I>output_prefix</I>
+
+<I>[OPTIONS]</I>
+
+<BR>
+Data extraction mode. 
+Extract all the data from the provided files into one flat file.
+<DT><B>quan</B>
+
+<DD>
+<B>QTLtools quan --bam</B>
+
+<I>[in.sam</I>|<I>in.bam</I>|<I>in.cram]</I>
+
+<B>--gtf</B>
+
+<I>gene_annotation.gtf</I>
+
+<B>--out-prefix </B>
+
+<I>output</I>
+
+<I>[OPTIONS]</I>
+
+<BR>
+Quantify gene and exon expression from RNAseq.
+<DT><B>ase</B>
+
+<DD>
+<B>QTLtools ase --bam</B>
+
+<I>[in.sam</I>|<I>in.bam</I>|<I>in.cram]</I>
+
+<B>--vcf</B>
+
+<I>[in.vcf</I>|<I>in.vcf.gz</I>|<I>in.bcf]</I>
+
+<B>--ind</B>
+
+<I>sample_name_in_vcf</I>
+
+<B>--mapq</B>
+
+<I>integer</I>
+
+<B>--out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<BR>
+Measure allele specific expression from RNAseq at transcribed heterozygous SNPs
+<DT><B>rep</B>
+
+<DD>
+<B>QTLtools rep --bed</B>
+
+<I>quantifications.bed.gz</I>
+
+<B>--vcf</B>
+
+<I>[in.vcf</I>|<I>in.vcf.gz</I>|<I>in.bcf]</I>
+
+<B>--qtl</B>
+
+<I>qtls_external.txt</I>
+
+<B>--out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<BR>
+Replicate QTL associations in an independent dataset
+<DT><B>gwas</B>
+
+<DD>
+<B>QTLtools gwas  --vcf</B>
+
+<I>[in.vcf</I>|<I>in.vcf.gz</I>|<I>in.bcf</I>|<I>in.bed.gz]</I>
+
+<B>--bed</B>
+
+<I>quantifications.bed.gz</I>
+
+<B>--out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<BR>
+GWAS tests. Correlate all genotypes with all phenotypes.
+<BR>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>GLOBAL OPTIONS</H2><P>
+
+QTLtools can read gzip, bgzip, and bzip2 files, and can output gzip and bzip2 files.
+This is dependent on the input and output files' extension. 
+E.g --out output.txt.gz will write a gzipped file.
+</P><P>
+
+The following are common options that are used in all of the modes.
+Some of these will not apply to certain modes.</P>
+<DL COMPACT>
+<DT><B>--help</B>
+
+<DD>
+Produces a description of options for a given mode.
+<DT><B>--seed</B><I> integer</I>
+
+<DD>
+Random seed for analyses that utilizes randomness.
+Useful for generating replicable results.
+Default=15112011.
+<DT><B>--log</B><I> file</I>
+
+<DD>
+Dump screen output to this file.
+<DT><B>--silent</B>
+
+<DD>
+Disable screen output.
+<DT><B>--exclude-samples</B><I> file</I>
+
+<DD>
+List of samples to exclude.
+One sample name per line.
+<DT><B>--include-samples</B><I> file</I>
+
+<DD>
+List of samples to include.
+One sample name per line.
+<DT><B>--exclude-sites</B><I> file</I>
+
+<DD>
+List of variants to exclude.
+One variant ID per line.
+<DT><B>--include-sites</B><I> file</I>
+
+<DD>
+List of variants to include.
+One variant ID per line.
+<DT><B>--exclude-positions</B><I> file</I>
+
+<DD>
+List of positions to exclude from genotypes.
+One chr position per line (separated by a space).
+<DT><B>--include-positions</B><I> file</I>
+
+<DD>
+List of positions to include from genotypes.
+One chr position per line (separated by a space).
+<DT><B>--exclude-phenotypes</B><I> file</I>
+
+<DD>
+List of phenotypes to exclude.
+One phenotype ID per line.
+<DT><B>--include-phenotypes</B><I> file</I>
+
+<DD>
+List of phenotypes to include.
+One phenotype ID per line.
+<DT><B>--exclude-covariates</B><I> file</I>
+
+<DD>
+List of covariates to exclude.
+One covariate name per line.
+<DT><B>--include-covariates</B><I> file</I>
+
+<DD>
+List of covariates to include.
+One covariate name per line.
+<BR>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>FILE FORMATS</H2>
+
+<BR>
+<DL COMPACT>
+<DT><B>.bcf|.vcf|.vcf.gz</B>
+
+<DD>
+These files are used for genotype data.
+The official VCF specification is described at &lt;<A HREF="https://samtools.github.io/hts-specs/VCFv4.2.pdf">https://samtools.github.io/hts-specs/VCFv4.2.pdf</A>&gt;.
+The VCF/BCF files used with QTLtools must satisfy this spec's requirements.
+BCF files must be indexed with <B>bcftools index </B><I> in.bcf</I> &lt;<A HREF="http://samtools.github.io/bcftools/bcftools.html">http://samtools.github.io/bcftools/bcftools.html</A>&gt;.
+VCF files should be compressed by <B>bgzip</B> &lt;<A HREF="http://www.htslib.org/doc/bgzip.html">http://www.htslib.org/doc/bgzip.html</A>&gt; and indexed with <B>tabix -p vcf </B><I> in.vcf.gz</I> &lt;<A HREF="http://www.htslib.org/doc/tabix.html">http://www.htslib.org/doc/tabix.html</A>&gt;.
+<BR>
+<BR>
+<DT><B>.bed|.bed.gz </B>
+
+<DD>
+These files are used for phenotype data, and in certain modes they can also be used with the --vcf option, which can be used to correlate two molecular phenotypes.
+The format used for QTLtools is a custom UCSC BED format &lt;<A HREF="https://genome.ucsc.edu/FAQ/FAQformat.html#format1">https://genome.ucsc.edu/FAQ/FAQformat.html#format1</A>&gt;, which has 6 annotation columns followed by sample columns.
+The header line must exist, and must begin with a # and columns must be tab separated. <B>THIS IS A DIFFERENT FILE FORMAT THAN THE ONE USED FOR FASTQTL, THUS FASTQTL BED FILES ARE INCOMPATIBLE WITH QTLTOOLS</B>.
+Phenotype BED files must be compressed by <B>bgzip</B> &lt;<A HREF="http://www.htslib.org/doc/bgzip.html">http://www.htslib.org/doc/bgzip.html</A>&gt; and indexed with <B>tabix -p bed </B><I> in.bed.gz</I> &lt;<A HREF="http://www.htslib.org/doc/tabix.html">http://www.htslib.org/doc/tabix.html</A>&gt;.
+<B>Missing values must be coded as NA</B>.
+Following is an example BED file:
+<BR>
+<BR>
+<CODE style="font-size:1em;">
+#chr<TT>&nbsp;&nbsp;&nbsp;</TT>start<TT>&nbsp;&nbsp;&nbsp;</TT>end<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>pid<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>gid<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>strand<TT>&nbsp;&nbsp;</TT>sample1<TT>&nbsp;</TT>sample2<BR>
+1<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>9999<TT>&nbsp;&nbsp;&nbsp;&nbsp;</TT>10000<TT>&nbsp;&nbsp;&nbsp;</TT>exon1<TT>&nbsp;&nbsp;&nbsp;</TT>gene1<TT>&nbsp;&nbsp;&nbsp;</TT>+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>15<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>234<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>9999<TT>&nbsp;&nbsp;&nbsp;&nbsp;</TT>10000<TT>&nbsp;&nbsp;&nbsp;</TT>exon2<TT>&nbsp;&nbsp;&nbsp;</TT>gene1<TT>&nbsp;&nbsp;&nbsp;</TT>+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>11<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>134<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>19999<TT>&nbsp;&nbsp;&nbsp;</TT>20000<TT>&nbsp;&nbsp;&nbsp;</TT>exon1<TT>&nbsp;&nbsp;&nbsp;</TT>gene2<TT>&nbsp;&nbsp;&nbsp;</TT>-<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>154<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>284<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>19999<TT>&nbsp;&nbsp;&nbsp;</TT>20000<TT>&nbsp;&nbsp;&nbsp;</TT>exon2<TT>&nbsp;&nbsp;&nbsp;</TT>gene2<TT>&nbsp;&nbsp;&nbsp;</TT>-<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>112<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>301<BR>
+</CODE>
+<BR>
+BED file's annotation columns' descriptions:
+<TABLE>
+<TR VALIGN=top><TD ALIGN=right>1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+Phenotype chromosome [<I>string</I>]
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+Start position of the phenotype [<I>integer</I>, <B>0-based</B>]
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>3&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+End position of the phenotype [<I>integer</I>, <B>1-based</B>]
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>4&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+Phenotype ID [<I>string</I>]
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+Phenotype group ID or any type of info about the phenotype [<I>string</I>]
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>6&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+Phenotype strand [<I>+/-</I>]
+<BR></TD></TR>
+</TABLE>
+
+<P>
+<DT><B>.bam|.sam|.cram</B>
+
+<DD>
+These files are used for sequence data.
+The official SAM specification is described at &lt;<A HREF="https://samtools.github.io/hts-specs/SAMv1.pdf">https://samtools.github.io/hts-specs/SAMv1.pdf</A>&gt;.
+The SAM/BAM/CRAM files used with QTLtools must satisfy this spec's requirements.
+SAM/BAM/CRAM files must be indexed with <B>samtools index </B><I> in.bam</I> &lt;<A HREF="http://www.htslib.org/doc/samtools.html">http://www.htslib.org/doc/samtools.html</A>&gt;.
+<P>
+<DT><B>.gtf</B>
+
+<DD>
+These files are used for gene annotation.
+The file specification is described at &lt;<A HREF="https://www.ensembl.org/info/website/upload/gff.html">https://www.ensembl.org/info/website/upload/gff.html</A>&gt;.
+The GTF files used must comply with this spec, and should have the gene_id, transcript_id, gene_name, gene_type, and trnascript_type attributes.
+We recommend using gene annotations from GENCODE &lt;<A HREF="https://www.gencodegenes.org/">https://www.gencodegenes.org/</A>&gt;.
+<P>
+<DT><B>covariate files</B>
+
+<DD>
+The covariate file contains the covariate data in simple text format.
+<B>The missing values should be encoded as NA</B>.
+Both quantitative and qualitative covariates are supported. 
+Quantitative covariates are assumed when only numeric values are provided. 
+Qualitative covariates are assumed when only non-numeric values are provided. 
+In practice, qualitative covariates with F factors are converted in F-1 binary covariates.
+Following is an example a covariate file:
+<P>
+</P><CODE style="font-size:1em;">
+id<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>sample1<TT>&nbsp;</TT>sample2<TT>&nbsp;</TT>sample3<BR>
+
+PC1<TT>&nbsp;&nbsp;&nbsp;&nbsp;</TT>-0.02<TT>&nbsp;&nbsp;&nbsp;</TT>0.14<TT>&nbsp;&nbsp;&nbsp;&nbsp;</TT>0.16<BR>
+
+PC2<TT>&nbsp;&nbsp;&nbsp;&nbsp;</TT>0.01<TT>&nbsp;&nbsp;&nbsp;&nbsp;</TT>0.11<TT>&nbsp;&nbsp;&nbsp;&nbsp;</TT>0.10<BR>
+
+PC3<TT>&nbsp;&nbsp;&nbsp;&nbsp;</TT>0.03<TT>&nbsp;&nbsp;&nbsp;&nbsp;</TT>0.05<TT>&nbsp;&nbsp;&nbsp;&nbsp;</TT>0.07<BR>
+
+COV<TT>&nbsp;&nbsp;&nbsp;&nbsp;</TT>A<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>B<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>C<BR>
+</CODE>
+<P>
+<DT><B>include/exclude files</B>
+
+<DD>
+The various --{include,exclude}-{sites,samples,phenotypes,covariates} options require a simple text file which lists the IDs of the desired type, one ID per line.
+The include options will result in running the analyses only in this subset of IDs, whereas exclude options will remove these IDs from the analyses. 
+The IDs for --{include,exclude}-sites refer to the 3rd column in VCF/BCF files, --{include,exclude}-covariates refer to the 1st column in COV files, --{include,exclude}-phenotyps refer to the 4th column in BED files and when --grp-best option is used to the 5th column.
+The --include-positions and --exclude-positions options require a text file which lists the chromosomes and positions (separated by a space) of genotypes to be excluded or included. One position per line.
+<P>
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>IMPORTANT NOTES</H2><P>
+
+<DL COMPACT>
+<DT>o
+BED files' <B>start position is 0-based</B>, whereas the <B>end position is 1-based</B>. 
+Positions in all other files used in QTLtools are <B>1-based</B>. 
+All positions provided as option arguments and filters, even the ones referring to BED files, must be <B>1-based</B>.
+1-based means the first base of the sequence has the position 1, whereas in 0-based the first position is 0.
+<P>
+<DT>o
+Make sure the chromosome names are the same across all files. 
+If some files have e.g. chr1 and another has 1 as a chromosome name then these will be considered different chromosomes.
+<P>
+<DT>o
+BED files used for FastQTL &lt;<A HREF="http://fastqtl.sourceforge.net/">http://fastqtl.sourceforge.net/</A>&gt; are not directly compatible with QTLtools.
+To convert a FastQTL BED file to the format used in QTLtools you need to add 2 columns after the 4th column.
+<P>
+<DT>o
+The quan mode in version 1.2 and above is not compatible with the quantifications generated by the previous versions. 
+This due to bug fixes and slight adjustments to the way we quantify. 
+<B>Do not mix quantifications generated by earlier versions of QTLtools with quantifications from version 1.2 and above</B>, as this will create a bias in your dataset.
+<P>
+<DT>o
+Make sure you index all your genotype, phenotype, and sequence files.
+<P>
+<DT>o
+Use BCF and BAM files for the best performance.
+<P>
+</DL>
+<A NAME="lbAI">&nbsp;</A>
+<H2>EXAMPLE FILES</H2><P>
+
+exons.50percent.chr22.bed.gz<TT>&nbsp;&nbsp;&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/exons.50percent.chr22.bed.gz">http://jungle.unige.ch/QTLtools_examples/exons.50percent.chr22.bed.gz</A>&gt;<BR>
+
+exons.50percent.chr22.bed.gz.tbi<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/exons.50percent.chr22.bed.gz.tbi">http://jungle.unige.ch/QTLtools_examples/exons.50percent.chr22.bed.gz.tbi</A>&gt;<BR>
+
+gencode.v19.annotation.chr22.gtf.gz<TT>&nbsp;&nbsp;&nbsp;&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/gencode.v19.annotation.chr22.gtf.gz">http://jungle.unige.ch/QTLtools_examples/gencode.v19.annotation.chr22.gtf.gz</A>&gt;<BR>
+
+gencode.v19.exon.chr22.bed.gz<TT>&nbsp;&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/gencode.v19.exon.chr22.bed.gz">http://jungle.unige.ch/QTLtools_examples/gencode.v19.exon.chr22.bed.gz</A>&gt;<BR>
+
+genes.50percent.chr22.bed.gz<TT>&nbsp;&nbsp;&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/genes.50percent.chr22.bed.gz">http://jungle.unige.ch/QTLtools_examples/genes.50percent.chr22.bed.gz</A>&gt;<BR>
+
+genes.50percent.chr22.bed.gz.tbi<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/genes.50percent.chr22.bed.gz.tbi">http://jungle.unige.ch/QTLtools_examples/genes.50percent.chr22.bed.gz.tbi</A>&gt;<BR>
+
+genes.covariates.pc50.txt.gz<TT>&nbsp;&nbsp;&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/genes.covariates.pc50.txt.gz">http://jungle.unige.ch/QTLtools_examples/genes.covariates.pc50.txt.gz</A>&gt;<BR>
+
+genes.simulated.chr22.bed.gz<TT>&nbsp;&nbsp;&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/genes.simulated.chr22.bed.gz">http://jungle.unige.ch/QTLtools_examples/genes.simulated.chr22.bed.gz</A>&gt;<BR>
+
+genes.simulated.chr22.bed.gz.tbi<TT>&nbsp;&nbsp;&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/genes.simulated.chr22.bed.gz.tbi">http://jungle.unige.ch/QTLtools_examples/genes.simulated.chr22.bed.gz.tbi</A>&gt;<BR>
+
+genotypes.chr22.vcf.gz<TT>&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/genotypes.chr22.vcf.gz">http://jungle.unige.ch/QTLtools_examples/genotypes.chr22.vcf.gz</A>&gt;<BR>
+
+genotypes.chr22.vcf.gz.tbi<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/genotypes.chr22.vcf.gz.tbi">http://jungle.unige.ch/QTLtools_examples/genotypes.chr22.vcf.gz.tbi</A>&gt;<BR>
+
+GWAS.b37.txt<TT>&nbsp;&nbsp;&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/GWAS.b37.txt">http://jungle.unige.ch/QTLtools_examples/GWAS.b37.txt</A>&gt;<BR>
+
+HG00381.chr22.bam<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/HG00381.chr22.bam">http://jungle.unige.ch/QTLtools_examples/HG00381.chr22.bam</A>&gt;<BR>
+
+HG00381.chr22.bam.bai<TT>&nbsp;&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/HG00381.chr22.bam.bai">http://jungle.unige.ch/QTLtools_examples/HG00381.chr22.bam.bai</A>&gt;<BR>
+
+hotspots_b37_hg19.bed<TT>&nbsp;&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/hotspots_b37_hg19.bed">http://jungle.unige.ch/QTLtools_examples/hotspots_b37_hg19.bed</A>&gt;<BR>
+
+results.genes.full.txt.gz<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/results.genes.full.txt.gz">http://jungle.unige.ch/QTLtools_examples/results.genes.full.txt.gz</A>&gt;<BR>
+
+TFs.encode.bed.gz<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>&lt;<A HREF="http://jungle.unige.ch/QTLtools_examples/TFs.encode.bed.gz">http://jungle.unige.ch/QTLtools_examples/TFs.encode.bed.gz</A>&gt;<BR>
+
+<A NAME="lbAJ">&nbsp;</A>
+<H2>SEE ALSO</H2><P>
+
+<I><A HREF="QTLtools-bamstat.1.html">QTLtools-bamstat</A></I>(1),
+
+<I><A HREF="QTLtools-mbv.1.html">QTLtools-mbv</A></I>(1),
+
+<I><A HREF="QTLtools-pca.1.html">QTLtools-pca</A></I>(1),
+
+<I><A HREF="QTLtools-correct.1.html">QTLtools-correct</A></I>(1),
+
+<I><A HREF="QTLtools-cis.1.html">QTLtools-cis</A></I>(1),
+
+<I><A HREF="QTLtools-trans.1.html">QTLtools-trans</A></I>(1),
+
+<I><A HREF="QTLtools-fenrich.1.html">QTLtools-fenrich</A></I>(1),
+
+<I><A HREF="QTLtools-fdensity.1.html">QTLtools-fdensity</A></I>(1),
+
+<I><A HREF="QTLtools-rtc.1.html">QTLtools-rtc</A></I>(1),
+
+<I><A HREF="QTLtools-rtc-union.1.html">QTLtools-rtc-union</A></I>(1),
+
+<I><A HREF="QTLtools-extract.1.html">QTLtools-extract</A></I>(1),
+
+<I><A HREF="QTLtools-quan.1.html">QTLtools-quan</A></I>(1),
+
+<I><A HREF="QTLtools-ase.1.html">QTLtools-ase</A></I>(1),
+
+<I><A HREF="QTLtools-rep.1.html">QTLtools-rep</A></I>(1),
+
+<I><A HREF="QTLtools-gwas.1.html">QTLtools-gwas</A></I>(1)
+
+<A NAME="lbAK">&nbsp;</A>
+<H2>BUGS</H2><P>
+
+<DL COMPACT>
+<DT>o
+Versions up to and including 1.2, suffer from a bug in reading missing genotypes in VCF/BCF files. 
+This bug affects variants with a DS field in their genotype's FORMAT and have a missing genotype (DS field is .) in one of the samples, in which case genotypes for all the samples are set to missing, effectively removing this variant from the analyses.
+Affected modes: cis, correct, gwas, pca, rep, trans, rtc-union
+</DL>
+<P>
+<BR>
+Please submit bugs to &lt;<A HREF="https://github.com/qtltools/qtltools">https://github.com/qtltools/qtltools</A>&gt;
+<A NAME="lbAL">&nbsp;</A>
+<H2>CITATIONS</H2><P>
+
+Delaneau O., Ongen H., Brown A. A., et al. A complete tool set for molecular QTL discovery and analysis. <I>Nat Commun</I> <B>8</B>, 15452 (2017). 
+&lt;<A HREF="https://doi.org/10.1038/ncomms15452">https://doi.org/10.1038/ncomms15452</A>&gt;
+<P>
+
+Ongen H, Brown A. A., Delaneau O., et al. Estimating the causal tissues for complex traits and diseases. <I>Nat Genet</I>. 2017;<B>49</B>(12):1676-1683. doi:10.1038/ng.3981
+&lt;<A HREF="https://doi.org/10.1038/ng.3981">https://doi.org/10.1038/ng.3981</A>&gt;
+<P>
+
+Fort A., Panousis N. I., Garieri M., et al. MBV: a method to solve sample mislabeling and detect technical bias in large combined genotype and sequencing assay datasets, <I>Bioinformatics</I> <B>33</B>(12), 1895 2017.
+&lt;<A HREF="https://doi.org/10.1093/bioinformatics/btx074">https://doi.org/10.1093/bioinformatics/btx074</A>&gt;
+<P>
+<A NAME="lbAM">&nbsp;</A>
+<H2>AUTHORS</H2><P>
+
+Olivier Delaneau (<A HREF="mailto:olivier.delaneau@gmail.com">olivier.delaneau@gmail.com</A>), Halit Ongen (<A HREF="mailto:halitongen@gmail.com">halitongen@gmail.com</A>)
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2><P>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">MODES</A><DD>
+<DT><A HREF="#lbAF">GLOBAL OPTIONS</A><DD>
+<DT><A HREF="#lbAG">FILE FORMATS</A><DD>
+<DT><A HREF="#lbAH">IMPORTANT NOTES</A><DD>
+<DT><A HREF="#lbAI">EXAMPLE FILES</A><DD>
+<DT><A HREF="#lbAJ">SEE ALSO</A><DD>
+<DT><A HREF="#lbAK">BUGS</A><DD>
+<DT><A HREF="#lbAL">CITATIONS</A><DD>
+<DT><A HREF="#lbAM">AUTHORS</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 14:11:25 GMT, August 24, 2020
+</div>
+</div>
+</BODY>
+</HTML>

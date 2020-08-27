@@ -1,0 +1,206 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-176212697-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-176212697-1');
+</script>
+
+<TITLE>Man page of QTLtools-rep</TITLE>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"/>
+<meta http-equiv="Cache-Control" content="max-age=3600"/>
+<meta name="description" content="description"/>
+<meta name="keywords" content="keywords"/> 
+<meta name="author" content="author"/> 
+<link rel="stylesheet" type="text/css" href="../style/default.css" media="screen"/>
+
+</HEAD><BODY>
+<div class="content">
+<div class="item"  id="item2">
+<H1>QTLtools-rep</H1><P>
+Section: Bioinformatics tools (1)<BR>Updated: 06 May 2020<BR><A HREF="#index">Index</A>
+<A HREF="basic_homepage.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2><P>
+
+QTLtools rep - Replicate QTL associations in an independent dataset 
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2><P>
+
+<B>QTLtools rep --bed</B>
+
+<I>quantifications.bed.gz</I>
+
+<B>--vcf</B>
+
+<I>[in.vcf</I>|<I>in.vcf.gz</I>|<I>in.bcf]</I>
+
+<B>--qtl</B>
+
+<I>qtls_external.txt</I>
+
+<B>--out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2><P>
+
+This mode reads phenotype-genotype pairs that were identified in another dataset and checks association between the same genotype and phenotype in this dataset. 
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2><P>
+
+<DL COMPACT>
+<DT><B>--vcf [</B><I>in.vcf</I>|<I>in.bcf</I>|<I>in.vcf.gz</I><B>|</B><I>in.bed.gz</I><B>] ...</B>
+
+<DD>
+Genotypes in VCF/BCF format, or another molecular phenotype in BED format.
+If there is a DS field in the genotype FORMAT of a variant (dosage of the genotype calculated from genotype probabilities, e.g. after imputation), then this is used as the genotype.
+If there is only the GT field in the genotype FORMAT then this is used and it is converted to a dosage.
+REQUIRED.
+<DT><B>--bed </B><I>quantifications.bed.gz</I> ...
+
+<DD>
+Molecular phenotype quantifications in BED format.
+REQUIRED.
+<DT><B>--qtl </B><I>external_qtls.txt</I> ...
+
+<DD>
+The file listing the QTLs identified in the external dataset. 
+One phenotype genotype pair (separated by space, phenotype first) per line.
+REQUIRED.
+<DT><B>--out </B><I>filename.txt</I>
+
+<DD>
+The output file name.
+REQUIRED.
+<DT><B>--cov </B><I>covariates.txt</I>
+
+<DD>
+Covariates to correct the phenotype data with.
+<DT><B>--normal</B>
+
+<DD>
+Rank normal transform the phenotype data so that each phenotype is normally distributed.
+RECOMMENDED.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>OUTPUT FILE</H2><P>
+
+<DL COMPACT>
+<DT><B>output file</B>
+
+<DD>
+Space separated output file with the following columns.
+<TABLE>
+<TR VALIGN=top><TD ALIGN=right>1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The phenotype ID
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The phenotype's chromosome
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>3&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The phenotype's start position
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>4&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The phenotype's end position
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The phenotype's strand
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>6&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The genotype ID
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>7&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The genotype's chromosome
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>8&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The genotype's start position
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>9&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The genotype's end position
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>10&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The p-value of the association
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>11&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The slope of the association
+<BR></TD></TR>
+</TABLE>
+
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>EXAMPLE</H2><P>
+
+<DL COMPACT>
+<DT>o
+Replicate the results of dataset1 in dataset2, correcting dataset2 phenotype's with technical covariates and normal transforming them:
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+QTLtools rep --bed dataset2.bed.gz --vcf dataset2.bcf --cov dataset2.covariates.txt --qtl significant_qtls_dataset1.txt --normal --out rep_results.txt
+</CODE>
+<P>
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>SEE ALSO</H2><P>
+
+<I><A HREF="QTLtools.1.html">QTLtools</A></I>(1)
+
+
+
+
+
+
+
+<A NAME="lbAI">&nbsp;</A>
+<H2>BUGS</H2><P>
+
+Versions up to and including 1.2, suffer from a bug in reading missing genotypes in VCF/BCF files. 
+This bug affects variants with a DS field in their genotype's FORMAT and have a missing genotype (DS field is .) in one of the samples, in which case genotypes for all the samples are set to missing, effectively removing this variant from the analyses.
+<P>
+
+Please submit bugs to &lt;<A HREF="https://github.com/qtltools/qtltools">https://github.com/qtltools/qtltools</A>&gt;
+<A NAME="lbAJ">&nbsp;</A>
+<H2>CITATION</H2><P>
+
+Delaneau O., Ongen H., Brown A. A., et al. A complete tool set for molecular QTL discovery and analysis. <I>Nat Commun</I> <B>8</B>, 15452 (2017). 
+&lt;<A HREF="https://doi.org/10.1038/ncomms15452">https://doi.org/10.1038/ncomms15452</A>&gt;
+<A NAME="lbAK">&nbsp;</A>
+<H2>AUTHORS</H2><P>
+
+Olivier Delaneau (<A HREF="mailto:olivier.delaneau@gmail.com">olivier.delaneau@gmail.com</A>), Halit Ongen (<A HREF="mailto:halitongen@gmail.com">halitongen@gmail.com</A>)
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2><P>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">OUTPUT FILE</A><DD>
+<DT><A HREF="#lbAG">EXAMPLE</A><DD>
+<DT><A HREF="#lbAH">SEE ALSO</A><DD>
+<DT><A HREF="#lbAI">BUGS</A><DD>
+<DT><A HREF="#lbAJ">CITATION</A><DD>
+<DT><A HREF="#lbAK">AUTHORS</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 14:11:25 GMT, August 24, 2020
+</div>
+</div>
+</BODY>
+</HTML>

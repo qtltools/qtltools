@@ -21,8 +21,14 @@
 
 <body>
 <div class="content">
+  <div class="item">
+		<h1>Important information</h1>
+				<p style="font-size:18px"><b>Versions up to and including 1.2, suffer from a bug in reading missing genotypes in VCF/BCF files. This bug affects variants with a DS field in their genotype's FORMAT and have a missing genotype (DS field is .) in one of the samples, in which case genotypes for all the samples are set to missing, effectively removing this variant from the analyses. Affected modes: <u>cis</u>, <u>correct</u>, <u>gwas</u>, <u>pca</u>, <u>rep</u>, <u>trans</u>, <u>rtc-union</u></b></p>
+		<p style="font-size:18px"><b>Please use the man pages for documentation. The previous documentation is still available but is now OUTDATED, and will be removed in the future.</b></p>
+	</div>
 	<div class="item">
 		<h1>General information</h1>
+
 		<p>
 		<b>QTLtools</b> is a tool set for molecular QTL discovery and analysis. It allows to go from the raw sequence data to collection of molecular Quantitative Trait Loci (QTLs) in few easy-to-perform steps. For the moment, QTLtools can perform the following tasks:
 		<ul>
@@ -35,6 +41,12 @@
 			<li><b>fdensity</b>; to measure the density of functional annotations around the QTL locations. Useful to look at the degree of overlap between QTLs and functional annotations.</li>
 			<li><b>fenrich</b>; to measure how QTLs are enriched in any given functional annotations.</li>
 			<li><b>rtc</b>; to co-localize collections of QTLs with collection of GWAS hits.</li>
+			<li><b>rtc-union</b>; to find the union of QTLs from independent datasets. If there was a QTL in a given recombination interval in one dataset, then find the best QTL (may or may not be genome-wide significant) in the same recombination interval in all other datasets.</li>
+			<li><b>correct</b>; to correct data for technical covariates.</li>
+			<li><b>extract</b>; to extract all the data from multiple files into one flat file.</li>
+			<li><b>ase</b>; to measure allele specific expression.</li>
+			<li><b>rep</b>; to replicate QTLs in an independent dataset.</li>
+			<li><b>gwas</b>; to correlate all genotypes with all phenotypes</li>
 		</ul>
 		</p>
 
@@ -46,6 +58,7 @@
 			<li>It is <b>Cluster-friendly</b>; all functional modes have been designed to be easily parallelized on a compute cluster.</li>
 		</ul>
 		</p>
+		
 		
 		<p><b>QTLtools</b> is mostly developed by :</p>
 		<ul>
@@ -62,13 +75,17 @@
 		
 		<p>When <b>QTLtools</b> is used, please cite one of the following papers:</p>
 		<ul>
-			<li><u>mode mbv</u>: Fort et al. MBV: an efficient sample mislabeling and technical bias detection method for combined genotype and sequencing assay data sets (in review).</li>
-			<li><u>one of the other modes</u>: Delaneau et al. A complete tool set for molecular QTL discovery and analysis. doi: https://doi.org/10.1101/068635</li>
+			<li><u>mode mbv</u>: Fort A., Panousis N. I., Garieri M., et al. MBV: a method to solve sample mislabeling and detect technical bias in large combined genotype and sequencing assay datasets, <I>Bioinformatics</I> <B>33</B>(12), 1895 2017.
+&lt;<A HREF="https://doi.org/10.1093/bioinformatics/btx074">https://doi.org/10.1093/bioinformatics/btx074</A>&gt;</li>
+      <li><u>mode rtc and rtc-union</u>: Ongen H, Brown A. A., Delaneau O., et al. Estimating the causal tissues for complex traits and diseases. <I>Nat Genet</I>. 2017;<B>49</B>(12):1676-1683. doi:10.1038/ng.3981
+&lt;<A HREF="https://doi.org/10.1038/ng.3981">https://doi.org/10.1038/ng.3981</A>&gt;</li>
+			<li><u>one of the other modes</u>: Delaneau O., Ongen H., Brown A. A., et al. A complete tool set for molecular QTL discovery and analysis. <I>Nat Commun</I> <B>8</B>, 15452 (2017). 
+&lt;<A HREF="https://doi.org/10.1038/ncomms15452">https://doi.org/10.1038/ncomms15452</A>&gt;</li>
 		</ul>
 		
 	</div>
 	
-	<div class="log">Monday 11th July 2016</div>
+	<div class="log">Thursday 27th August 2020<</div>
 </div>
 </body>
 </html>

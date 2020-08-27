@@ -1,0 +1,226 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-176212697-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-176212697-1');
+</script>
+
+<TITLE>Man page of QTLtools-mbv</TITLE>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"/>
+<meta http-equiv="Cache-Control" content="max-age=3600"/>
+<meta name="description" content="description"/>
+<meta name="keywords" content="keywords"/> 
+<meta name="author" content="author"/> 
+<link rel="stylesheet" type="text/css" href="../style/default.css" media="screen"/>
+
+</HEAD><BODY>
+<div class="content">
+<div class="item"  id="item2">
+<H1>QTLtools-mbv</H1><P>
+Section: Bioinformatics tools (1)<BR>Updated: 06 May 2020<BR><A HREF="#index">Index</A>
+<A HREF="basic_homepage.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2><P>
+
+QTLtools mbv - Match genotypes in a VCF to a BAM file
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2><P>
+
+<B>QTLtools mbv --bam [</B><I>sample.bam|sample.sam|sample.cram</I><B>] --vcf [</B><I>in.vcf</I>|<I>in.bcf</I>|<I>in.vcf.gz</I><B>] --out </B><I>output_file</I>
+
+[<B></B><I>OPTIONS</I>]
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2><P>
+
+This mode checks if the genotypes in the VCF are observed in the RNAseq reads in the BAM file to quickly solve sample mislabeling and detect cross-sample contamination and PCR amplification bias.
+The details of the method are described &lt;<A HREF="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6044394/">https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6044394/</A>&gt;. 
+In brief, we measure, for each individual in the VCF, the proportions of heterozygous and homozygous genotypes for which both alleles are captured by the sequencing reads in the BAM file. 
+A 'match' would have close to 100% concordance for both measures, whereas a 'mismatch' will have significantly lower concordance for both metrics.
+Increased cross-sample contaminations leads to decreased homozygous concordance values with no change in heterozygous concordance while increased amplification bias leads to decreased heterozygous concordance with no change in homozygous concordance.
+We recommend using uniquely mapping reads only by specifying the correct <B>--filter-mapping-quality</B>.
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2><P>
+
+<DL COMPACT>
+<DT><B>--vcf [</B><I>in.vcf</I>|<I>in.bcf</I>|<I>in.vcf.gz</I><B>]</B>
+
+<DD>
+Genotypes in VCF/BCF format.
+Should contain all the samples in the dataset.
+REQUIRED. 
+<DT><B>--bam [</B><I>in.bam</I>|<I>in.sam</I>|<I>in.cram</I><B>]</B>
+
+<DD>
+Sequence data in BAM/SAM/CRAM format.
+REQUIRED.
+<DT><B>--out </B><I>output</I>
+
+<DD>
+Output file name
+REQUIRED.
+<DT><B>--reg </B><I>chr:start-end</I>
+
+<DD>
+Genomic region to be processed.
+E.g. chr4:12334456-16334456, or chr5
+<DT><B>--filter-mapping-quality </B><I>integer</I>
+
+<DD>
+Minimum mapping quality for a read or read pair to be considered. 
+Set this to only include uniquely mapped reads.
+DEFAULT=10
+<DT><B>--filter-base-quality </B><I>integer</I>
+
+<DD>
+Minimum phred quality for a base to be considered. 
+DEFAULT=5
+<DT><B>--filter-binomial-pvalue </B><I>float</I>
+
+<DD>
+Binomial p-value threshold below which a heterozygous genotype is considered as exhibiting allelic imbalance. 
+DEFAULT=0.05
+<DT><B>--filter-minimal-coverage </B><I>integer</I>
+
+<DD>
+Minimum number of reads overlapping a genotype for it to be considered. 
+DEFAULT=10
+<DT><B>--filter-imputation-qual </B><I>float</I>
+
+<DD>
+Minimum imputation information score for a variant to be considered. 
+DEFAULT=0.9
+<DT><B>--filter-imputation-prob </B><I>float</I>
+
+<DD>
+Minimum posterior probability for a genotype to be considered. 
+DEFAULT=0.99
+<DT><B>--filter-keep-duplicates</B>
+
+<DD>
+Keep reads designated as duplicate by the aligner.
+<P>
+<P>
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>OUTPUT FILE COLUMNS</H2><P>
+
+<DL COMPACT>
+<DT><B>--out</B><I> filename</I>
+
+<DD>
+This file does not have header and it contains the following columns:
+<P>
+<TABLE>
+<TR VALIGN=top><TD ALIGN=right>1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The sample ID in the VCF against which the sequence data has been matched
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The number of missing genotypes for this sample 
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>3&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The total number of heterozygous genotypes examined
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>4&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The total number of homozygous genotypes examined
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The number of heterozygous genotypes considered for the matching, i.e. those that are covered by more than <B>--filter-minimal-coverage</B>  
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>6&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The number of homozygous genotypes considered for the matching, i.e. those that are covered by more than <B>--filter-minimal-coverage</B>  
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>7&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The number of heterozygous genotypes that match between this sample and the BAM file
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>8&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The number of homozygous genotypes that match between this sample and the BAM file  
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>9&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The percentage of heterozygous genotypes that match between this sample and the BAM file  
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>10&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The percentage of homozygous genotypes that match between this sample and the BAM file  
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>11&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The number of heterozygous genotypes with significant allelic imbalance  
+<BR></TD></TR>
+</TABLE>
+
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>EXAMPLES</H2><P>
+
+<DL COMPACT>
+<DT>o
+Running mbv on an RNAseq sample mapped with GEM:
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+QTLtools mbv --bam HG00381.chr22.bam --out HG00381.chr22.mbv.txt --vcf genotypes.chr22.vcf.gz --filter-mapping-quality 150
+</CODE>
+<P>
+You can then plot column 9 vs. 10 to identify the genotyped sample in the VCF that matches best your sequence data.
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>SEE ALSO</H2><P>
+
+<I><A HREF="QTLtools.1.html">QTLtools</A></I>(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+<A NAME="lbAI">&nbsp;</A>
+<H2>BUGS</H2><P>
+
+Please submit bugs to &lt;<A HREF="https://github.com/qtltools/qtltools">https://github.com/qtltools/qtltools</A>&gt;
+<A NAME="lbAJ">&nbsp;</A>
+<H2>CITATION</H2><P>
+
+Fort A., Panousis N. I., Garieri M. et al. MBV: a method to solve sample mislabeling and detect technical bias in large combined genotype and sequencing assay datasets, <I>Bioinformatics</I> <B>33</B>(12), 1895 2017.
+&lt;<A HREF="https://doi.org/10.1093/bioinformatics/btx074">https://doi.org/10.1093/bioinformatics/btx074</A>&gt;
+<A NAME="lbAK">&nbsp;</A>
+<H2>AUTHORS</H2><P>
+
+Olivier Delaneau (<A HREF="mailto:olivier.delaneau@gmail.com">olivier.delaneau@gmail.com</A>), Halit Ongen (<A HREF="mailto:halitongen@gmail.com">halitongen@gmail.com</A>)
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2><P>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">OUTPUT FILE COLUMNS</A><DD>
+<DT><A HREF="#lbAG">EXAMPLES</A><DD>
+<DT><A HREF="#lbAH">SEE ALSO</A><DD>
+<DT><A HREF="#lbAI">BUGS</A><DD>
+<DT><A HREF="#lbAJ">CITATION</A><DD>
+<DT><A HREF="#lbAK">AUTHORS</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 14:11:25 GMT, August 24, 2020
+</div>
+</div>
+</BODY>
+</HTML>

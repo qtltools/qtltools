@@ -1,0 +1,256 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-176212697-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-176212697-1');
+</script>
+
+<TITLE>Man page of QTLtools-fdensity</TITLE>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"/>
+<meta http-equiv="Cache-Control" content="max-age=3600"/>
+<meta name="description" content="description"/>
+<meta name="keywords" content="keywords"/> 
+<meta name="author" content="author"/> 
+<link rel="stylesheet" type="text/css" href="../style/default.css" media="screen"/>
+
+</HEAD><BODY>
+<div class="content">
+<div class="item"  id="item2">
+<H1>QTLtools-fdensity</H1><P>
+Section: Bioinformatics tools (1)<BR>Updated: 06 May 2020<BR><A HREF="#index">Index</A>
+<A HREF="basic_homepage.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2><P>
+
+QTLtools fdensity - Functional density around molecular QTLs
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2><P>
+
+<B>QTLtools fdensity  --qtl</B>
+
+<I>significant_genes.bed</I>
+
+<B>--bed</B>
+
+<I>TFs.encode.bed.gz</I>
+
+<B>--out </B>
+
+<I>output.txt</I>
+
+<I>[OPTIONS]</I>
+
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2><P>
+
+This mode measures the density of functional annotations around the genomic positions of molecular QTLs.
+The method is detailed in &lt;<A HREF="https://www.nature.com/articles/ncomms15452">https://www.nature.com/articles/ncomms15452</A>&gt;.
+In brief, we first enumerate all annotations within a given window around the molecular QTLs (by default 1 Mb).
+Then, we split this window into small bins (default 1 kb) and count the number of functional annotations overlapping each bin. 
+This produces an annotation count per bin that can be then plotted to see if there is any peak or depletion around the molQTLs.
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2><P>
+
+<DL COMPACT>
+<DT><B>--qtl </B><I>in.bed</I><B></B>
+
+<DD>
+List of QTLs of interest in BED format.
+REQUIRED.
+<DT><B>--bed </B><I>functional_annotation.bed.gz</I>
+
+<DD>
+Functional annotations in BED format.
+REQUIRED.
+<DT><B>--out </B><I>output.txt</I>
+
+<DD>
+Output file.
+REQUIRED.
+<DT><B>--window </B><I>integer</I>
+
+<DD>
+Window size around the molecular QTL position.
+DEFAULT=1000000
+<DT><B>--bin </B><I>integer</I>
+
+<DD>
+Bin size in base pairs.
+DEFAULT=1000
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>INPUT FILES</H2><P>
+
+<DL COMPACT>
+<DT><B>--qtl file</B>
+
+<DD>
+List of QTLs of interest.
+An example:
+<P>
+</P><CODE style="font-size:1em;">
+1<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>15210<TT>&nbsp;&nbsp;&nbsp;</TT>15211<TT>&nbsp;&nbsp;&nbsp;</TT>1_15211<TT>&nbsp;</TT>ENSG00000227232.4<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>-<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>735984<TT>&nbsp;&nbsp;</TT>735985<TT>&nbsp;&nbsp;</TT>1_735985<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>ENSG00000177757.1<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>+<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>735984<TT>&nbsp;&nbsp;</TT>735985<TT>&nbsp;&nbsp;</TT>1_735985<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>ENSG00000240453.1<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>-<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>739527<TT>&nbsp;&nbsp;</TT>739528<TT>&nbsp;&nbsp;</TT>1_739528<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>ENSG00000237491.4<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>+<BR>
+</CODE>
+<P>
+The column definitions are:
+<TABLE>
+<TR VALIGN=top><TD ALIGN=right>1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The variant chromosome
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The variant's start position (<B>0-based</B>)
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>3&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The variant's end position (<B>1-based</B>)
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>4&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The variant ID
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The phenotype ID (<B>not used</B>)
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>6&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The phenotype's strand.
+<BR></TD></TR>
+</TABLE>
+
+
+
+<DT><B>--bed file</B>
+
+<DD>
+List of annotations in BED format.
+An example:
+<P>
+</P><CODE style="font-size:1em;">
+1<TT>&nbsp;&nbsp;&nbsp;</TT>254874<TT>&nbsp;&nbsp;&nbsp;</TT>265487<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;</TT>730984<TT>&nbsp;&nbsp;&nbsp;</TT>735985<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;</TT>734984<TT>&nbsp;&nbsp;&nbsp;</TT>736585<BR>
+
+1<TT>&nbsp;&nbsp;&nbsp;</TT>739527<TT>&nbsp;&nbsp;&nbsp;</TT>748528<BR>
+</CODE>
+<P>
+The column definitions are:
+<TABLE>
+<TR VALIGN=top><TD ALIGN=right>1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+Chromosome
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+Start position (<B>0-based</B>)
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>3&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+End position (<B>1-based</B>)
+<BR></TD></TR>
+</TABLE>
+
+
+
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>OUTPUT FILE</H2><P>
+
+<DL COMPACT>
+<DT><B>--out</B> file
+
+<DD>
+Space separated results output file detailing the enrichment with the following columns:
+<TABLE>
+<TR VALIGN=top><TD ALIGN=right>1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The start position of the bin
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The end position of the bin
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>3&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The number of associations in this bin
+<BR></TD></TR>
+</TABLE>
+
+<P>
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>EXAMPLE</H2><P>
+
+<DL COMPACT>
+<DT>1
+You need to prepare a BED file containing the positions of the QTLs of interest.
+To do so, extract all significant hits at a given FDR threshold (e.g. 5%), and then transform the significant QTL list into a BED file:
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+Rscript ./script/qtltools_runFDR_cis.R results.genes.full.txt.gz 0.05 results.genes
+<BR>
+cat results.genes.significant.txt | awk '{ print $9, $10-1, $11, $8, $1, $5 }' | tr ' ' '\t' | sort -k1,1V -k2,2g &gt; results.genes.significant.bed
+</CODE>
+<P>
+<DT>2
+Measure the density using the following command:
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+QTLtools fdensity --qtl results.genes.significant.bed --bed TFs.encode.bed.gz --out density.TF.around.QTL.txt
+</CODE style="font-size:1em;">
+<P>
+</DL>
+<A NAME="lbAI">&nbsp;</A>
+<H2>SEE ALSO</H2><P>
+
+<I><A HREF="QTLtools.1.html">QTLtools</A></I>(1)
+
+
+
+<A NAME="lbAJ">&nbsp;</A>
+<H2>BUGS</H2><P>
+Please submit bugs to &lt;<A HREF="https://github.com/qtltools/qtltools">https://github.com/qtltools/qtltools</A>&gt;
+
+<A NAME="lbAK">&nbsp;</A>
+<H2>CITATION</H2><P>
+
+Delaneau, O., Ongen, H., Brown, A. et al. A complete tool set for molecular QTL discovery and analysis. <I>Nat Commun</I> <B>8</B>, 15452 (2017).
+&lt;<A HREF="https://doi.org/10.1038/ncomms15452">https://doi.org/10.1038/ncomms15452</A>&gt;
+<A NAME="lbAL">&nbsp;</A>
+<H2>AUTHORS</H2><P>
+
+Olivier Delaneau (<A HREF="mailto:olivier.delaneau@gmail.com">olivier.delaneau@gmail.com</A>), Halit Ongen (<A HREF="mailto:halitongen@gmail.com">halitongen@gmail.com</A>)
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2><P>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">INPUT FILES</A><DD>
+<DT><A HREF="#lbAG">OUTPUT FILE</A><DD>
+<DT><A HREF="#lbAH">EXAMPLE</A><DD>
+<DT><A HREF="#lbAI">SEE ALSO</A><DD>
+<DT><A HREF="#lbAJ">BUGS</A><DD>
+<DT><A HREF="#lbAK">CITATION</A><DD>
+<DT><A HREF="#lbAL">AUTHORS</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 14:11:25 GMT, August 24, 2020
+</div>
+</div>
+</BODY>
+</HTML>

@@ -1,0 +1,271 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-176212697-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-176212697-1');
+</script>
+
+<TITLE>Man page of QTLtools-rtc-union</TITLE>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"/>
+<meta http-equiv="Cache-Control" content="max-age=3600"/>
+<meta name="description" content="description"/>
+<meta name="keywords" content="keywords"/> 
+<meta name="author" content="author"/> 
+<link rel="stylesheet" type="text/css" href="../style/default.css" media="screen"/>
+
+</HEAD><BODY>
+<div class="content">
+<div class="item"  id="item2">
+<H1>QTLtools-rtc-union</H1><P>
+Section: Bioinformatics tools (1)<BR>Updated: 06 May 2020<BR><A HREF="#index">Index</A>
+<A HREF="basic_homepage.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2><P>
+
+QTLtools rtc-union - Find the union of QTLs from independent datasets 
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2><P>
+
+<B>QTLtools rtc-union  --vcf</B>
+
+[<I>in.vcf</I>|<I>in.vcf.gz</I>|<I>in.bcf</I>|<I>in.bed.gz</I>] ... 
+<B>--bed</B>
+
+<I>quantifications.bed.gz</I> ...
+<B>--hotspots</B>
+
+<I>hotspots_b37_hg19.bed</I>
+
+<B>--results</B>
+
+<I>qtl_results_files.txt</I> ...
+<I>[OPTIONS]</I>
+
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2><P>
+
+This mode finds the best molQTL (may or may not be genome-wide significant) in each region flanked by recombination hotspots (coldspot),  if there was a molQTL in the same coldspot in one dataset.
+First we map all the significant molQTLs in all of the datasets to coldspots. Subsequently if certain datasets do not have a significant molQTL in a given coldspot for a given phenotype, we then take the most significant variant associated with that phenotype in that coldspot, for all the missing datasets.
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2><P>
+
+<DL COMPACT>
+<DT><B>--vcf [</B><I>in.vcf</I>|<I>in.bcf</I>|<I>in.vcf.gz</I><B>|</B><I>in.bed.gz</I><B>] ...</B>
+
+<DD>
+Genotypes in VCF/BCF format, or another molecular phenotype in BED format.
+If there is a DS field in the genotype FORMAT of a variant (dosage of the genotype calculated from genotype probabilities, e.g. after imputation), then this is used as the genotype.
+If there is only the GT field in the genotype FORMAT then this is used and it is converted to a dosage.
+If a single file is provided then all datasets are assumed to have the same genotypes, and all datasets' samples are all included in this file.
+If multiple files are provided for each dataset, then <B>all --vcf, --bed, --cov, and --results files MUST be in the same order</B>.
+E.g if the first vcf file is from dataset1, then the first bed, cov, and results files must also be from dataset1.
+REQUIRED.
+<DT><B>--bed </B><I>quantifications.bed.gz</I> ...
+
+<DD>
+Molecular phenotype quantifications in BED format for each of the datasets.
+<B>All --vcf, --bed, --cov, and --results files MUST be in the same order</B>.
+E.g if the first vcf file is from dataset1, then the first bed, cov, and results files must also be from dataset1.
+REQUIRED.
+<DT><B>--results </B><I>significant_qtls.txt</I> ...
+
+<DD>
+Results file with the QTLs in each of the datasets.
+<B>All --vcf, --bed, --cov, and --results files MUST be in the same order</B>.
+E.g if the first vcf file is from dataset1, then the first bed, cov, and results files must also be from dataset1.
+REQUIRED.
+<DT><B>--hotspots </B><I>recombination_hotspots.bed</I>
+
+<DD>
+Recombination hotspots in BED format.
+REQUIRED.
+<DT><B>--out-suffix </B><I>suffix</I>
+
+<DD>
+If provided output files will be suffixed with this.
+<DT><B>--cov </B><I>covariates.txt</I>
+
+<DD>
+Covariates to correct the phenotype data with for each of the datasets.
+<B>All --vcf, --bed, --cov, and --results files MUST be in the same order</B>.
+E.g if the first vcf file is from dataset1, then the first bed, cov, and results files must also be from dataset1.
+<DT><B>--force</B>
+
+<DD>
+If the output file exists, overwrite it.
+<DT><B>--normal</B>
+
+<DD>
+Rank normal transform the phenotype data so that each phenotype is normally distributed.
+RECOMMENDED.
+<DT><B>--conditional</B>
+
+<DD>
+molQTLs contain independent signals so execute the conditional analysis.
+<DT><B>--window </B><I>integer</I>
+
+<DD>
+Size of the cis window flanking each phenotype's start position.
+DEFAULT=1000000. 
+RECOMMENDED=1000000.
+<DT><B>--pheno-col </B><I>integer</I>
+
+<DD>
+1-based phenotype id column number.
+DEFAULT=1
+<DT><B>--geno-col </B><I>integer</I>
+
+<DD>
+1-based genotype id column number.
+DEFAULT=8
+<DT><B>--rank-col </B><I>integer</I>
+
+<DD>
+1-based conditional analysis rank column number.
+Only relevant if <B>--conditional</B> is in effect.
+DEFAULT=12
+<DT><B>--best-col </B><I>integer</I>
+
+<DD>
+1-based phenotype column number
+Only relevant if <B>--conditional</B> is in effect.
+DEFAULT=21 
+<DT><B>--chunk </B><I>integer1</I> <I>integer2</I>
+
+<DD>
+For parallelization.
+Divide the data into <I>integer2</I> number of chunks and process chunk number <I>integer1</I>.
+Chunk 0 will print a header.
+Mutually exclusive with --region.
+<B>Minimum number of chunks has to be at least the same number of chromosomes in the --bed file.</B>
+<DT><B>--region </B><I>chr:start-end</I>
+
+<DD>
+Genomic region to be processed.
+E.g. chr4:12334456-16334456, or chr5.
+Mutually exclusive with --chunk.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>OUTPUT FILE</H2><P>
+
+<DL COMPACT>
+<DT><B>output file</B>
+
+<DD>
+Space separated output file with the following columns.
+<TABLE>
+<TR VALIGN=top><TD ALIGN=right>1&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+Column showing that this is a rtc-union result.
+Always __UNION__ 
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>2&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The phenotype ID
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>3&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The genotype ID.
+This can say __UNION_FILLER_MAX_INDEP__, __UNION_FILLER_MISS_GENO__, or __UNION_FILLER_MISS_PHENO__ which are fillers for missing cases in one of the datasets.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>4&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The rank of the best variant in this coldspot.
+If this was discovered in the rtc-union run then this would be -1, and if there was already a significant variant in this coldspot then a different value.
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+Dummy field indicating that this is the best hit per rank
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>6&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The p-value of the association.
+Will be 0 if this was already significant in the dataset
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>7&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The coldspot ID
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>8&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>
+The coldspot region
+<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD><BR></TD></TR>
+</TABLE>
+
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>EXAMPLE</H2><P>
+
+<DL COMPACT>
+<DT>o
+Find the union of 3 datasets, correcting for technical covariates, and rank normal transforming the phenotypes with 20 jobs on a compute cluster (qsub needs to be changed to the job submission system used [bsub, psub, etc...]):
+<DT><DD>
+<P>
+</P><CODE style="font-size:1em;">
+for j in $(seq 1 20); do
+<BR>
+<TD>&nbsp;&nbsp;&nbsp;&nbsp;</TD> echo &quot;QTLtools rtc-union --bed dataset1.bed.gz dataset2.bed.gz dataset3.bed.gz  --vcf dataset1.bcf dataset2.bcf dataset3.bcf --cov dataset1.covariates.txt dataset2.covariates.txt dataset3.covariates.txt --results dataset1.txt dataset2.txt dataset3.txt --hotspots hotspots_b37_hg19.bed --normal --conditional --chunk $j 20 --out-suffix .chunk.$j.20.txt&quot; | qsub
+<BR>
+done
+</CODE>
+<P>
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>SEE ALSO</H2><P>
+
+<I><A HREF="QTLtools.1.html">QTLtools</A></I>(1)
+
+
+
+
+
+
+
+
+
+
+
+
+<A NAME="lbAI">&nbsp;</A>
+<H2>BUGS</H2><P>
+
+Versions up to and including 1.2, suffer from a bug in reading missing genotypes in VCF/BCF files. 
+This bug affects variants with a DS field in their genotype's FORMAT and have a missing genotype (DS field is .) in one of the samples, in which case genotypes for all the samples are set to missing, effectively removing this variant from the analyses.
+<P>
+
+Please submit bugs to &lt;<A HREF="https://github.com/qtltools/qtltools">https://github.com/qtltools/qtltools</A>&gt;
+<A NAME="lbAJ">&nbsp;</A>
+<H2>CITATION</H2><P>
+
+Ongen H, Brown AA, Delaneau O, et al. Estimating the causal tissues for complex traits and diseases. <I>Nat Genet</I>. 2017;<B>49</B>(12):1676-1683. doi:10.1038/ng.3981
+&lt;<A HREF="https://doi.org/10.1038/ng.3981">https://doi.org/10.1038/ng.3981</A>&gt;
+<A NAME="lbAK">&nbsp;</A>
+<H2>AUTHORS</H2><P>
+
+Halit Ongen (<A HREF="mailto:halitongen@gmail.com">halitongen@gmail.com</A>), Olivier Delaneau (<A HREF="mailto:olivier.delaneau@gmail.com">olivier.delaneau@gmail.com</A>)
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2><P>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">OUTPUT FILE</A><DD>
+<DT><A HREF="#lbAG">EXAMPLE</A><DD>
+<DT><A HREF="#lbAH">SEE ALSO</A><DD>
+<DT><A HREF="#lbAI">BUGS</A><DD>
+<DT><A HREF="#lbAJ">CITATION</A><DD>
+<DT><A HREF="#lbAK">AUTHORS</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 14:11:25 GMT, August 24, 2020
+</div>
+</div>
+</BODY>
+</HTML>
