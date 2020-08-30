@@ -109,7 +109,7 @@
 		<code>
 			make clean
 			<br>
-			make uninstall
+			sudo make uninstall
 		</code>
     <div class="log">Thursday 27th August 2020</div>
 	</div>
@@ -205,10 +205,82 @@
 		<code>
 			make clean
 			<br>
-			make uninstall
+			sudo make uninstall
 		</code>
     <div class="log">Thursday 27th August 2020</div>
     </div>
+
+	<div class="item"  id="item1">
+		<h1>Compilation walkthrough on a fresh MacOS Catalina</h1>
+		<p> This will guide you through compiling and installing QTLtools and all it's dependencies. </p>
+		<p>	1. Install brew package manager:</p>
+		<code>
+			/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"		</code>
+		<p>	2. Install QTLtools dependencies:</p>
+		<code>
+			brew install R boost gsl htslib groff
+			#groff is optional but is necessary to correctly display the man pages
+		</code>
+		<p>	3. (Optional) Edit the /etc/man.conf file to modify the TBL line to the following:</p>
+		<code>
+			TBL /usr/local/Cellar/groff/1.22.4/bin/tbl
+			#This is necessary since the tbl in catalina is ancient. Also the groff version 1.22.4 may have changed so modify accordingly. 
+		</code>
+		<p>	4. Get QTLtools, here using git but you can also download and extract the source code:</p>
+		<code>
+			mkdir ~/Tools/
+			<br>
+			cd ~/Tools/
+			<br>
+			git clone https://github.com/qtltools/qtltools.git
+			<br>
+			cd qtltools
+		</code>
+		<p>	5. Edit QTLtools Makefile to set the necessary variables:</p>
+		<code>
+			########################################################
+			<br>
+			# YOU NEED TO UPDATE THESE 6 PATHS TO COMPILE QTLTOOLS #
+			<br>
+			########################################################
+			<br>
+			BOOST_INC=/usr/local/include
+			<br>
+			BOOST_LIB=/usr/local/lib
+			<br>
+			RMATH_INC=/usr/local/include
+			<br>
+			RMATH_LIB=/usr/local/lib
+			<br>
+			HTSLD_INC=/usr/local/include
+			<br>
+			HTSLD_LIB=/usr/local/lib
+		</code>
+		<p>	6. Compile and install QTLtools</p>
+		<code>
+			make
+            <br>
+            <br>
+            # If you do not have root privileges, append ./bin/ & ./scripts/ to $PATH and ./man/ to $MANPATH
+            <br>
+            # Also add ". ~/Tools/doc/QTLtools_bash_autocomplete.bash" to your .bashrc
+            <br>
+            # If you are root you can install:
+            <br>
+            <br>
+            sudo make install 
+			<br>
+			exec bash # necessary to immediately enable autocompletion 
+		</code>
+		<p>	7. If you want to clean or uninstall you can:</p>
+		<code>
+			make clean
+			<br>
+			sudo make uninstall
+		</code>
+    <div class="log">Thursday 27th August 2020</div>
+    </div>
+
 
 </div>
 </body>
