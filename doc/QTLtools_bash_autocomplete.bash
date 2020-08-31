@@ -16,11 +16,11 @@ _QTLtools()
         copts=$( QTLtools $mode --help | grep '^  \-' | awk '{if($3 ~ /^\-/) {print $1"\n"$3} else {print $1}}' | tr '\n' ' ')
         COMPREPLY=( $(compgen -W "${copts}" -- ${cur}) )
         return 0
-    else
-        local copts
-        copts=$(ls -a .)
-        COMPREPLY=( $(compgen -W "${copts}" -- ${cur}) )
-        return 0       
+    #else
+    #    local copts
+    #    copts=$(ls -a .)
+    #    COMPREPLY=( $(compgen -W "${copts}" -- ${cur}) )
+    #    return 0       
     fi
 }
-complete -F _QTLtools -o filenames QTLtools
+complete -o default -F _QTLtools QTLtools
