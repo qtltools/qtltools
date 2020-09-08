@@ -166,7 +166,6 @@ personal-dbg: HTSLD_INC=$(HOME)/Tools/htslib-1.9
 personal-dbg: HTSLD_LIB=$(HOME)/Tools/htslib-1.9
 personal-dbg: debug
 
-
 baobab: BOOST_INC=/srv/beegfs/scratch/groups/funpopgen/Tools/boost_1_71_0/
 baobab: BOOST_LIB=/srv/beegfs/scratch/groups/funpopgen/Tools/boost_1_71_0/stage/lib/
 baobab: RMATH_INC=/srv/beegfs/scratch/groups/funpopgen/Tools/R-3.6.1/src/include/
@@ -182,6 +181,17 @@ baobab-dbg: RMATH_LIB=/srv/beegfs/scratch/groups/funpopgen/Tools/R-3.6.1/src/nma
 baobab-dbg: HTSLD_INC=/srv/beegfs/scratch/groups/funpopgen/Tools/htslib-1.9/
 baobab-dbg: HTSLD_LIB=/srv/beegfs/scratch/groups/funpopgen/Tools/htslib-1.9/
 baobab-dbg: static-dbg
+
+hbb: BOOST_INC=/hbb/include
+hbb: BOOST_LIB=/hbb/lib
+hbb: RMATH_INC=/hbb/include
+hbb: RMATH_LIB=/hbb/lib64
+hbb: HTSLD_INC=/hbb/include
+hbb: HTSLD_LIB=/hbb/lib
+hbb: CXXFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN) -fvisibility=hidden
+hbb: LDFLAG=$(CXXFLAG_REL) $(CXXFLAG_WRN) -fvisibility=hidden -static-libstdc++ -L/hbb/lib
+hbb: LIB_FLAGS=-Wl,-Bstatic -lz -lgsl -lbz2 -llzma -lgslcblas -lcurl -lssl -lcrypto -Wl,-Bdynamic -lm -lpthread -ldl -lrt
+hbb: $(BFILE)
 
 install:
 	$(INSTALL_DIR) $(DESTDIR)$(bindir) $(DESTDIR)$(man1dir) $(DESTDIR)$(autocompdir)
