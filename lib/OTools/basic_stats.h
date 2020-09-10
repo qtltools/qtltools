@@ -45,6 +45,16 @@ public:
 		for (uint32_t e = 0 ; e < X.size() ; e ++) push(X[e]);
 	}
 
+	template <class T>
+	basic_stats(T * X, int N) {
+		m_n = 0;
+		m_oldM = 0;
+		m_newM = 0;
+		m_oldS = 0;
+		m_newS = 0;
+		for (uint32_t e = 0 ; e < N ; e ++) push(X[e]);
+	}
+
 	void clear() {
 		m_n = 0;
 		m_oldM = 0;

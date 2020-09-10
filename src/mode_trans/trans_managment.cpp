@@ -77,7 +77,10 @@ void trans_data::normalize(vector < float > & G) {
 }
 
 void trans_data::normalizePhenotypes() {
-	for (int p = 0 ; p < phenotype_count ; p ++) normalize(phenotype_val[p]);
+	for (int p = 0 ; p < phenotype_count ; p ++) {
+		phenotype_sd[p] = basic_stats(phenotype_val[p]).sd();
+		normalize(phenotype_val[p]);
+	}
 }
 
 void trans_data::normalTranformPhenotypes() {

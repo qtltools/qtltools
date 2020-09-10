@@ -43,6 +43,7 @@ void trans_data::runTransPass(string fvcf, string fout) {
 	int mode_GT_DS = -1;	//-1 means unset / 0 means dosages / 1 means genotypes
     output_file fdhits (fhits);
     if (fdhits.fail()) vrb.error("Cannot open file for writing [" + fhits + "]");
+    fdhits << "#PID PCHR PSTART VID VCHR VPOS NPVAL APVAL CORR SLOPE STD" << endl;
     while ( (rec = bcf_sweep_fwd(sw)) ) {
 		bcf_unpack(rec, BCF_UN_STR);
 		string vid = string(rec->d.id);
@@ -71,6 +72,7 @@ void trans_data::runTransPass(string fvcf, string fout) {
 
 			if (variant_is_to_be_processed) {
 				imputeGenotypes(vDS);
+				double genotype_sd = basic_stats(vDS, sample_count).sd();
 				normalize(vDS);
 				for (int p = 0 ; p < phenotype_count ; p ++) {
 					if (chr != phenotype_chr[p] || abs(phenotype_start[p] - pos) > cis_window) {
@@ -78,8 +80,10 @@ void trans_data::runTransPass(string fvcf, string fout) {
 						double acorr = abs (rcorr);
 						if (acorr >= correlation_threshold) {
 							double npval = getNominalPvalue(acorr, sample_count - 2);
+							double slope = getSlope(acorr, genotype_sd, phenotype_sd[p]);
+							double stderr = getSE(acorr*acorr, genotype_sd, phenotype_sd[p]);
 							double apval = getAdjustedPvalue(npval);
-							fdhits << phenotype_id[p] << " " << phenotype_chr[p] << " " << phenotype_start[p] << " " << vid << " " << chr << " " << pos << " " << npval << " " << apval << " " << rcorr << endl;
+							fdhits << phenotype_id[p] << " " << phenotype_chr[p] << " " << phenotype_start[p] << " " << vid << " " << chr << " " << pos << " " << npval << " " << apval << " " << rcorr << " " << slope << " " << stderr << endl;
 							n_pos_tests ++;
 						} else {
 							unsigned int idx_bin = (unsigned int) floor(acorr * step_bins);

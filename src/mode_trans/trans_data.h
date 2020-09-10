@@ -46,6 +46,7 @@ public:
 	vector < int > phenotype_start;						//phenotype start positions
 	vector < int > phenotype_end;						//phenotype end positions
 	vector < bool > phenotype_neg;						//phenotype is on the negative strand
+	vector < double > phenotype_sd;						//phenotype SDs
 
 	//COVARIATES
 	int covariate_count;								//covariate number
@@ -83,6 +84,8 @@ public:
 	double fastCorrelation(vector < float > &, float *);
 	double slowCorrelation(vector < float > &, float *);
 	double getNominalPvalue(double, double);
+	double getSlope(double , double , double );
+	double getSE(double , double , double );
 	double getAdjustedPvalue(double);
 	void getCorrelationThreshold (double);
 	int learnBetaParameters(vector < double > & , double &, double &);
@@ -136,6 +139,25 @@ inline double trans_data::slowCorrelation(vector < float > & P, float * G) {
 	for (int e = 0 ; e < sample_count ; e ++) sum += P[e] * G[e];
 	return sum;
 }
+
+
+inline double trans_data::getSlope(double nominal_correlation, double gsd, double psd) {
+	if (gsd < 1e-16 || psd < 1e-16) return 0;
+	else return nominal_correlation * psd / gsd;
+}
+
+
+inline double trans_data::getSE(double r_squared, double gsd, double psd) {
+	if (gsd < 1e-16 || psd < 1e-16) return 0;
+	else{
+		double adjusted_r_squared = 1.0 - ((((double) sample_count - 1.0) / ((double) sample_count - 2.0)) * (1.0 - r_squared));
+		double std_err_of_the_regression =  sqrt(1.0 - adjusted_r_squared) * psd;
+		double population_sd_of_genotypes = sqrt((gsd * gsd * ((double) sample_count - 1.0)) / (double) sample_count);
+		//cerr << r_squared << " " << gsd << " " << psd << " " << adjusted_r_squared << " " << std_err_of_the_regression << " " << population_sd_of_genotypes << " " << (std_err_of_the_regression / sqrt(sample_count)) * (1.0 / population_sd_of_genotypes) << endl;
+		return (std_err_of_the_regression / sqrt(sample_count)) * (1.0 / population_sd_of_genotypes);
+	}
+}
+
 
 inline double trans_data::getNominalPvalue(double corr, double df) {
 	double pval = pf(df * corr * corr / (1 - corr * corr), 1, df, 0, 0);

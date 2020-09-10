@@ -31,7 +31,10 @@ void fenrich_data::readQTL(string fqtl) {
 			phenos.insert(str[4]);
 			int idx_tss = findTSS(str[4]);
 			if (idx_tss < 0) vrb.error("Unknown phenotype id!");
-			qtl_pos.push_back(atoi(str[1].c_str()) - tss_pos[idx_tss]);
+
+			int position = (atoi(str[1].c_str()) + atoi(str[2].c_str())) / 2;
+			if (!tss_neg[idx_tss]) qtl_pos.push_back(position - tss_pos[idx_tss]);
+            else qtl_pos.push_back(tss_pos[idx_tss] - position);
 			qtl_order.push_back(idx_tss);
 		}
 	}

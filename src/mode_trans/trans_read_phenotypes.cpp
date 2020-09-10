@@ -56,6 +56,7 @@ void trans_data::readPhenotypes(string fbed) {
                     phenotype_start.push_back(atoi(tokens[1].c_str()) + 1);
                     phenotype_end.push_back(atoi(tokens[2].c_str()));
                     phenotype_neg.push_back(tokens[5] == "-");
+                    phenotype_sd.push_back(0.0f);
                     if (phenotype_neg.back()) n_negativeStrd ++;
                     phenotype_val.push_back(vector < float > (sample_count, 0.0));
                     for (int t = 6 ; t < tokens.size() ; t ++) if (mappingS[t-6] >= 0) {
