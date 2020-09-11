@@ -109,34 +109,40 @@ Divide the data into \fIinteger2\fR number of chunks and process chunk number \f
 .B .hits.txt.gz 
 Space separated results output file detailing the variant-phenotype pairs that pass the threshold with the following columns:
 .TS
-n lx .
-1	T{
+n l lx .
+1	PID	T{
 The phenotype ID 
 T}
-2	T{
+2	PCHR	T{
 The phenotype chromosome
 T}
-3	T{
+3	PSTART	T{
 Start position of the phenotype
 T}
-4	T{
+4	VID	T{
 The variant ID
 T}
-5	T{
+5	VCHR	T{
 The variant chromosome
 T}
-6	T{
+6	VPOS	T{
 The start position of the variant
 T}
-7	T{
-The nominal p-value of the association between the variant and the phenotype.
+7	NPVAL	T{
+The nominal p-value of the association between the variant and the phenotype
 T}
-8	T{
-The adjusted p-value of the association between the variant and the phenotype.
+8	APVAL	T{
+The adjusted p-value of the association between the variant and the phenotype
 Requires \fB\-\-adjust\fR
 T}
-9	T{
+9	CORR	T{
 Correlation coefficient
+T}
+10	SLOPE	T{
+The slope
+T}
+11	STD	T{
+Standard error of the slope
 T}
 .TE
 
