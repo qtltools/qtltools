@@ -80,7 +80,7 @@ void trans_data::runTransPass(string fvcf, string fout) {
 						double acorr = abs (rcorr);
 						if (acorr >= correlation_threshold) {
 							double npval = getNominalPvalue(acorr, sample_count - 2);
-							double slope = getSlope(acorr, genotype_sd, phenotype_sd[p]);
+							double slope = getSlope(rcorr, genotype_sd, phenotype_sd[p]);
 							double stderr = getSE(acorr*acorr, genotype_sd, phenotype_sd[p]);
 							double apval = getAdjustedPvalue(npval);
 							fdhits << phenotype_id[p] << " " << phenotype_chr[p] << " " << phenotype_start[p] << " " << vid << " " << chr << " " << pos << " " << npval << " " << apval << " " << rcorr << " " << slope << " " << stderr << endl;
