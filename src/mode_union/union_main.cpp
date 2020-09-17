@@ -88,7 +88,8 @@ void union_main(vector < string > & argv) {
     vector < string > bedFiles = D.options["bed"].as < vector < string > > ();
     vector < string > hitFiles = D.options["results"].as < vector < string > > ();
     vector < string > vcfFiles = D.options["vcf"].as < vector < string > > ();
-    vector < string > covFiles = D.options["cov"].as < vector < string > > ();
+    vector < string > covFiles;
+	if (D.options.count("cov")) covFiles = D.options["cov"].as < vector < string > > ();
     if (bedFiles.size() != hitFiles.size()) vrb.error("Unmatched --results and --bed files");
     if (D.options.count("cov") && covFiles.size() != hitFiles.size()) vrb.error("Unmatched --results and --cov files");
     if (vcfFiles.size() == 1) vrb.bullet("Single VCF provided, assuming common VCF file.");
