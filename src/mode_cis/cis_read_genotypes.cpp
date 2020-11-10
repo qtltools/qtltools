@@ -135,8 +135,8 @@ void cis_data::readGenotypesBED(string fbed) {
 	//Process sample names
 	vector < string > tokens;
 	stb.split(string(str.s), tokens);
-	if (tokens.size() < 5) vrb.error("Incorrect number of columns!");
-	for (int i0 = 4 ; i0 < tokens.size() ; i0 ++) {
+	if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
+	for (int i0 = 6 ; i0 < tokens.size() ; i0 ++) {
 		string sid = tokens[i0];
 		if (filter_sample.check(sid)) {
 			mappingS.push_back(findSample(sid));
@@ -164,17 +164,17 @@ void cis_data::readGenotypesBED(string fbed) {
             linecount ++;
             if (linecount % 100000 == 0) vrb.bullet("Read " + stb.str(linecount) + " lines");
             stb.split(string(str.s), tokens);
-            if (tokens.size() < 5) vrb.error("Incorrect number of columns!");
+            if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
             if (filter_genotype.check(tokens[3])) {
                 genotype_id.push_back(tokens[3]);
                 genotype_chr.push_back(tokens[0]);
                 genotype_start.push_back(atoi(tokens[1].c_str()) + 1);
                 genotype_end.push_back(atoi(tokens[2].c_str()));
                 genotype_val.push_back(vector < float > (sample_count, 0.0));
-                for (int t = 4 ; t < tokens.size() ; t ++) {
-                    if (mappingS[t-4] >= 0) {
-                        if (tokens[t] == "NA") bcf_float_set_missing(genotype_val.back()[mappingS[t-4]]);
-                        else genotype_val.back()[mappingS[t-4]] = atof(tokens[t].c_str());
+                for (int t = 6 ; t < tokens.size() ; t ++) {
+                    if (mappingS[t-6] >= 0) {
+                        if (tokens[t] == "NA") bcf_float_set_missing(genotype_val.back()[mappingS[t-6]]);
+                        else genotype_val.back()[mappingS[t-6]] = atof(tokens[t].c_str());
                     }
                 }
                 n_includedG++;
@@ -186,17 +186,17 @@ void cis_data::readGenotypesBED(string fbed) {
             linecount ++;
             if (linecount % 100000 == 0) vrb.bullet("Read " + stb.str(linecount) + " lines");
             stb.split(string(str.s), tokens);
-            if (tokens.size() < 5) vrb.error("Incorrect number of columns!");
+            if (tokens.size() < 7) vrb.error("Incorrect number of columns!");
             if (filter_genotype.check(tokens[3])) {
                 genotype_id.push_back(tokens[3]);
                 genotype_chr.push_back(tokens[0]);
                 genotype_start.push_back(atoi(tokens[1].c_str()) + 1);
                 genotype_end.push_back(atoi(tokens[2].c_str()));
                 genotype_val.push_back(vector < float > (sample_count, 0.0));
-                for (int t = 4 ; t < tokens.size() ; t ++) {
-                    if (mappingS[t-4] >= 0) {
-                        if (tokens[t] == "NA") bcf_float_set_missing(genotype_val.back()[mappingS[t-4]]);
-                        else genotype_val.back()[mappingS[t-4]] = atof(tokens[t].c_str());
+                for (int t = 6 ; t < tokens.size() ; t ++) {
+                    if (mappingS[t-6] >= 0) {
+                        if (tokens[t] == "NA") bcf_float_set_missing(genotype_val.back()[mappingS[t-6]]);
+                        else genotype_val.back()[mappingS[t-6]] = atof(tokens[t].c_str());
                     }
                 }
                 n_includedG++;
