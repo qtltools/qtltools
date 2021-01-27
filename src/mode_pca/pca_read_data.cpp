@@ -311,7 +311,10 @@ void pca_data::readDataPhenoBED(string fbed) {
             mappingS.push_back(findSample(tokens[t]));
             if (mappingS.back() < 0) n_excludedS ++;
             else n_includedS ++;
-        } else n_excludedU ++;
+        } else {
+        	n_excludedU ++;
+        	mappingS.push_back(-1);
+        }
     }
     vrb.bullet(stb.str(n_includedS) + " samples included");
     if (n_excludedU > 0) vrb.bullet(stb.str(n_excludedU) + " samples excluded by user");
