@@ -25,10 +25,10 @@ void rep_main(vector < string > & argv) {
 
 	boost::program_options::options_description opt_files ("\x1B[32mI/O\33[0m");
 	opt_files.add_options()
-		("vcf", boost::program_options::value< string >(), "Genotypes in VCF/BCF/BED format.")
-		("bed", boost::program_options::value< string >(), "Phenotypes in BED format.")
-		("cov", boost::program_options::value< string >(), "Covariates in TXT format.")
-		("qtl", boost::program_options::value< string >(), "QTLs to replicate in TXT format.")
+		("vcf", boost::program_options::value< vector <string> >()->multitoken(), "Genotypes in VCF/BCF/BED format.")
+		("bed", boost::program_options::value< vector <string> >()->multitoken(), "Phenotypes in BED format.")
+		("cov", boost::program_options::value< vector <string> >()->multitoken(), "Covariates in TXT format.")
+		("qtl", boost::program_options::value< vector <string> >()->multitoken(), "QTLs to replicate in TXT format.")
 		("out", boost::program_options::value< string >(), "Output file.");
 
 	boost::program_options::options_description opt_parameters ("\x1B[32mParameters\33[0m");
@@ -71,37 +71,59 @@ void rep_main(vector < string > & argv) {
 	if (D.options.count("cov")) vrb.bullet("Linear model: Phe ~ Var + Cov");
 	else vrb.bullet("Linear model: Phe ~ Var");
 
-	//---------------
-	// 6. READ FILES
-	//---------------
-	D.processBasicOptions();
-	D.readSampleFromBED(D.options["bed"].as < string > ());										//Read samples in BED
-   	htsFile * fp = hts_open(D.options["vcf"].as < string > ().c_str(),"r");						
-   	if (fp->format.format == sam) D.readSampleFromBED(D.options["vcf"].as < string > ());
-	else D.readSampleFromVCF(D.options["vcf"].as < string > ());
-	hts_close(fp);
-	if (D.options.count("cov")) D.readSampleFromCOV(D.options["cov"].as < string > ());			//Read samples in COV
-	D.mergeSampleLists();																		//Merge all sample lists
 
-	D.readQTLs(D.options["qtl"].as < string > ());
-	D.filter_phenotype.addInclusion(D.qtl_ids.first);
-	D.filter_genotype.addInclusion(D.qtl_ids.second);
+	vector <string> vcfs = D.options["vcf"].as < vector <string> > ();
+	vector <string> beds = D.options["bed"].as < vector <string> > ();
+	vector <string> covs = D.options["cov"].as < vector <string> > ();
+	vector <string> qtls = D.options["qtl"].as < vector <string> > ();
 
-	D.readPhenotypes(D.options["bed"].as < string > ());										//Read data in BED
-	D.readGenotypes(D.options["vcf"].as < string > ());											//Read data in VCF
-	if (D.options.count("cov")) D.readCovariates(D.options["cov"].as < string > ());
-	D.mapping();
+	if (beds.size() == 1 && vcfs.size() != 1) vrb.error("Single BED file requires a single VCF file!");
+	if (vcfs.size() != 1 && beds.size() != vcfs.size()) vrb.error("Number of BED files does not match the number of VCF files!");
+	if (covs.size() != 0 && covs.size() != beds.size()) vrb.error("Number of BED files does not match the number of covariate files!");
+	bool skipSameIndex = qtls.size() == beds.size() && qtls.size() != 1 && beds.size() != 1;
 
-	//------------------------
-	// 10. INITIALIZE ANALYSIS
-	//------------------------
-	D.imputeGenotypes();
-	D.imputePhenotypes();
-	if (D.options.count("cov")) D.residualizePhenotypes();
-	if (D.options.count("normal")) D.normalTransformPhenotypes();
+	bool first = true;
+	for (int b = 0; b < beds.size(); b++){
+		for (int q = 0; q < qtls.size(); q++){
+			//cerr << beds[b] << " " << qtls[q] << endl;
+			if (skipSameIndex && b == q) continue;
+			//---------------
+			// 6. READ FILES
+			//---------------
+			D.processBasicOptions();
+			D.readSampleFromBED(beds[b]);
+			string inVCF = vcfs.size() != 1 ? vcfs[b] : vcfs[0];
+			htsFile * fp = hts_open(inVCF.c_str(),"r");
+			if (fp->format.format == sam) D.readSampleFromBED(inVCF);
+			else D.readSampleFromVCF(inVCF);
+			hts_close(fp);
+			if (D.options.count("cov")) D.readSampleFromCOV(covs[b]);			//Read samples in COV
+			D.mergeSampleLists();																		//Merge all sample lists
 
-	//-----------------
-	// 11. RUN ANALYSIS
-	//-----------------
-	D.runNominalPass(outFile);
+			D.readQTLs(qtls[q]);
+			D.filter_phenotype.addInclusion(D.qtl_ids.first);
+			D.filter_genotype.addInclusion(D.qtl_ids.second);
+
+			D.readPhenotypes(beds[b]);										//Read data in BED
+			D.readGenotypes(inVCF);											//Read data in VCF
+			if (D.options.count("cov")) D.readCovariates(covs[b]);
+			D.mapping();
+
+			//------------------------
+			// 10. INITIALIZE ANALYSIS
+			//------------------------
+			D.imputeGenotypes();
+			D.imputePhenotypes();
+			if (D.options.count("cov")) D.residualizePhenotypes();
+			if (D.options.count("normal")) D.normalTransformPhenotypes();
+
+			//-----------------
+			// 11. RUN ANALYSIS
+			//-----------------
+
+			D.runNominalPass(outFile, qtls[q], beds[b],first);
+			D.clear();
+			first = false;
+		}
+	}
 }

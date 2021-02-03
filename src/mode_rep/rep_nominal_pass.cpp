@@ -15,10 +15,14 @@
 
 #include "rep_data.h"
 
-void rep_data::runNominalPass(string fout) {
+void rep_data::runNominalPass(string fout, string qtlf, string bedf, bool first) {
 
 	//STEP0: INITIALIZATION OF IO
-	output_file fdo (fout);
+	output_file fdo;
+
+	if (first) fdo.open(fout);
+	else fdo.append(fout);
+
 	if (fdo.fail()) vrb.error("Cannot open file [" + fout + "]");
 
 	//STEP2: INITIALIZE A WORKING COPY OF GENOTYPES
@@ -53,7 +57,8 @@ void rep_data::runNominalPass(string fout) {
 			vrb.bullet("p=" + stb.str(pvalue) + ", s=" + stb.str(slope, 4));
 
 			//STEP10: PRINT RESULTS IN FILE
-			fdo << phenotype_id[i_phenotype];
+			fdo << qtlf << " " << bedf;
+			fdo << " " << phenotype_id[i_phenotype];
 			fdo << " " << phenotype_chr[i_phenotype];
 			fdo << " " << phenotype_start[i_phenotype];
 			fdo << " " << phenotype_end[i_phenotype];

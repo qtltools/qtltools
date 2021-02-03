@@ -25,23 +25,30 @@ rep_data::rep_data() {
 
 void rep_data::clear() {
 	sample_count = 0;
-	sample_id.clear();
 	genotype_count = 0;
+	covariate_count = 0;
+	qtl_count = 0;
 	genotype_val.clear();
 	genotype_chr.clear();
 	genotype_id.clear();
 	genotype_start.clear();
 	genotype_end.clear();
-	phenotype_count = 0;
 	phenotype_val.clear();
 	phenotype_id.clear();
 	phenotype_chr.clear();
 	phenotype_start.clear();
 	phenotype_end.clear();
 	phenotype_neg.clear();
-	covariate_count = 0;
 	covariate_val.clear();
 	covariate_id.clear();
+	qtl_ids.first.clear();
+	qtl_ids.second.clear();
+	qtl_idx.first.clear();
+	qtl_idx.second.clear();
+	sample_occurrence.clear();
+	file_count = 0;
+	filter_phenotype.clear();
+	filter_genotype.clear();
 }
 
 rep_data::~rep_data() {

@@ -91,7 +91,7 @@ public:
 
 	//ANALYSIS
 	void writeHeader(string);
-	void runNominalPass(string);
+	void runNominalPass(string, string, string, bool);
 };
 
 //***************************************************************//

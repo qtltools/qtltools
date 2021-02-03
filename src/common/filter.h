@@ -86,6 +86,11 @@ public:
     void addExclusion(string value){
         exclusion_map.insert(value);
     }
+
+    void clear(){
+    	inclusion_map.clear();
+    	exclusion_map.clear();
+    }
 };
 
 #endif

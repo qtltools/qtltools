@@ -103,3 +103,4 @@ void rep_data::mapping() {
 		for (int g = 0 ; g < genotype_count ; g ++) if (genotype_id[g] == qtl_ids.second[q]) qtl_idx.second.back() = g;
 	}
 }
+
