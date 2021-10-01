@@ -11,3 +11,4 @@ GTAGS
 .settings/
 .vscode/
 /man2html/
+.kdev4/
