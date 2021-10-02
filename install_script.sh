@@ -1,5 +1,20 @@
 #!/usr/bin/env bash
-set -ex
+set -e
+
+FOO=$1
+THREADS=${FOO:=1}
+if ! [[ "$THREADS" =~ ^[0-9]+$ ]]
+then
+        echo "Give a positive integer for the number of threads!"
+        exit 1
+fi
+
+exit_fail(){ 
+    echo "Script failed please check the previous output for the reason" 
+}
+
+trap exit_fail EXIT
+
 
 #CREATE DIR STRUCTURE
 mkdir downloads
@@ -22,7 +37,7 @@ tar zxvf zlib-1.2.11.tar.gz
 rm zlib-1.2.11.tar.gz
 cd zlib-1.2.11
 ./configure --prefix=$PWD/../../install/
-make install
+make install -j $THREADS
 cd ..
 
 #BZIP2
@@ -30,7 +45,7 @@ wget https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz
 tar zxvf bzip2-1.0.8.tar.gz
 rm bzip2-1.0.8.tar.gz
 cd bzip2-1.0.8
-make install PREFIX=$PWD/../../install/
+make install PREFIX=$PWD/../../install/ -j $THREADS
 cd ..
 
 #LZMA
@@ -39,7 +54,7 @@ tar zxvf xz-5.2.5.tar.gz
 rm xz-5.2.5.tar.gz
 cd xz-5.2.5
 ./configure --prefix=$PWD/../../install/
-make install
+make install -j $THREADS
 cd ..
 
 #PCRE2
@@ -48,7 +63,7 @@ tar zxvf pcre2-10.37.tar.gz
 rm pcre2-10.37.tar.gz
 cd pcre2-10.37
 ./configure --prefix=$PWD/../../install/ --enable-jit
-make install
+make install -j $THREADS
 cd ..
 
 #CURL
@@ -57,7 +72,7 @@ tar zxvf curl-7.79.1.tar.gz
 rm curl-7.79.1.tar.gz
 cd curl-7.79.1
 ./configure --prefix=$PWD/../../install/ --with-openssl
-make install
+make install -j $THREADS
 cd ..
 
 
@@ -67,7 +82,7 @@ tar zxvf gsl-2.7.tar.gz
 rm gsl-2.7.tar.gz
 cd gsl-2.7
 ./configure --prefix=$PWD/../../install/
-make install
+make install -j $THREADS
 cd ..
 
 #HTSlib
@@ -76,7 +91,7 @@ tar xvfj htslib-1.13.tar.bz2
 rm htslib-1.13.tar.bz2
 cd htslib-1.13
 ./configure --prefix=$PWD/../../install/ --disable-libcurl
-make install
+make install -j $THREADS
 cd ..
 
 #BOOST
@@ -95,12 +110,18 @@ rm R-4.1.1.tar.gz
 cd R-4.1.1
 ./configure --prefix=$PWD/../../install/ --libdir=$PWD/../../install/lib/ --without-readline --without-x
 cd src/nmath/standalone/
-make
+make -j $THREADS
 make install
 cd ../../../../
 
 #QTLTOOLS
+make -f Makefile4InstallScript -j $THREADS
+
+#CLEAN UP
+#rm -rf install/ download/
 
 #RESTORE ENV VARS
 export LIBRARY_PATH=$LIBRARY_PATH_BCK
 export CPATH=$CPATH_BCK
+
+echo "Script succesfully completed. If you want to install QTLtools please type (as root): make install"
