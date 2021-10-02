@@ -45,7 +45,7 @@ wget https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz
 tar zxvf bzip2-1.0.8.tar.gz
 rm bzip2-1.0.8.tar.gz
 cd bzip2-1.0.8
-make install PREFIX=$PWD/../../install/ -j $THREADS
+make install PREFIX=$PWD/../../install/ CFLAGS="-Wall -Winline -O2 -g -D_FILE_OFFSET_BITS=64 -fPIC" -j $THREADS
 cd ..
 
 #LZMA
@@ -124,4 +124,4 @@ make -f Makefile4InstallScript -j $THREADS
 export LIBRARY_PATH=$LIBRARY_PATH_BCK
 export CPATH=$CPATH_BCK
 
-echo "Script succesfully completed. If you want to install QTLtools please type (as root): make install"
+echo "Script succesfully completed. If you want to install QTLtools please type (as root): make install. You may want to delete the install and download directories as well."
