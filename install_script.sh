@@ -25,6 +25,7 @@ mkdir install/include/
 LIBRARY_PATH_BCK=$LIBRARY_PATH
 CPATH_BCK=$CPATH
 
+QTLTOOLS_DIR=$PWD
 
 export LIBRARY_PATH=$LIBRARY_PATH:$PWD/install/lib/
 export CPATH=$CPATH:$PWD/install/include/
@@ -112,7 +113,7 @@ cd R-4.1.1
 cd src/nmath/standalone/
 make -j $THREADS
 make install
-cd ../../../../
+cd $QTLTOOLS_DIR
 
 #QTLTOOLS
 make -f Makefile4InstallScript -j $THREADS
