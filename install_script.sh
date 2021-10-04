@@ -38,7 +38,8 @@ tar zxvf zlib-1.2.11.tar.gz
 rm zlib-1.2.11.tar.gz
 cd zlib-1.2.11
 ./configure --prefix=$PWD/../../install/
-make install -j $THREADS
+make -j $THREADS
+make install
 cd ..
 
 #BZIP2
@@ -55,7 +56,8 @@ tar zxvf xz-5.2.5.tar.gz
 rm xz-5.2.5.tar.gz
 cd xz-5.2.5
 ./configure --prefix=$PWD/../../install/
-make install -j $THREADS
+make -j $THREADS
+make install
 cd ..
 
 #PCRE2
@@ -64,7 +66,8 @@ tar zxvf pcre2-10.37.tar.gz
 rm pcre2-10.37.tar.gz
 cd pcre2-10.37
 ./configure --prefix=$PWD/../../install/ --enable-jit
-make install -j $THREADS
+make -j $THREADS
+make install
 cd ..
 
 #CURL
@@ -73,7 +76,8 @@ tar zxvf curl-7.79.1.tar.gz
 rm curl-7.79.1.tar.gz
 cd curl-7.79.1
 ./configure --prefix=$PWD/../../install/ --with-openssl
-make install -j $THREADS
+make -j $THREADS
+make install
 cd ..
 
 
@@ -83,7 +87,8 @@ tar zxvf gsl-2.7.tar.gz
 rm gsl-2.7.tar.gz
 cd gsl-2.7
 ./configure --prefix=$PWD/../../install/
-make install -j $THREADS
+make -j $THREADS
+make install
 cd ..
 
 #HTSlib
@@ -92,7 +97,8 @@ tar xvfj htslib-1.13.tar.bz2
 rm htslib-1.13.tar.bz2
 cd htslib-1.13
 ./configure --prefix=$PWD/../../install/ --disable-libcurl
-make install -j $THREADS
+make -j $THREADS
+make install
 cd ..
 
 #BOOST
