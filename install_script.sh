@@ -21,14 +21,19 @@ mkdir downloads
 mkdir -p install/lib/
 mkdir install/include/
 
-
+LD_LIBRARY_PATH_BCK=$LD_LIBRARY_PATH
 LIBRARY_PATH_BCK=$LIBRARY_PATH
 CPATH_BCK=$CPATH
+PATH_BCK=$PATH
+PKG_CONFIG_PATH_BCK=$PKG_CONFIG_PATH
 
 QTLTOOLS_DIR=$PWD
 
-export LIBRARY_PATH=$LIBRARY_PATH:$PWD/install/lib/
-export CPATH=$CPATH:$PWD/install/include/
+export LIBRARY_PATH=$PWD/install/lib/:$LIBRARY_PATH
+export LD_LIBRARY_PATH=$PWD/install/lib/:$LD_LIBRARY_PATH
+export CPATH=$PWD/install/include/:$CPATH
+export PATH=$PWD/install/bin/:$PATH
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/$PWD/install/lib/pkgconfig/
 
 cd downloads
 
@@ -130,6 +135,9 @@ make -f Makefile4InstallScript -j $THREADS
 #RESTORE ENV VARS
 export LIBRARY_PATH=$LIBRARY_PATH_BCK
 export CPATH=$CPATH_BCK
+export PATH=$PATH_BCK
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_BCK
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH_BCK
 
 trap - EXIT
 echo "Script succesfully completed. If you want to install QTLtools please type (as root): make install. You may want to delete the install and download directories as well."
