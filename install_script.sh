@@ -38,7 +38,7 @@ export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/$PWD/install/lib/pkgconfig/
 cd downloads
 
 #ZLIB
-wget https://zlib.net/zlib-1.2.11.tar.gz
+wget --no-check-certificate https://zlib.net/zlib-1.2.11.tar.gz
 tar zxvf zlib-1.2.11.tar.gz
 rm zlib-1.2.11.tar.gz
 cd zlib-1.2.11
@@ -48,7 +48,7 @@ make install
 cd ..
 
 #BZIP2
-wget https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz
+wget --no-check-certificate https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz
 tar zxvf bzip2-1.0.8.tar.gz
 rm bzip2-1.0.8.tar.gz
 cd bzip2-1.0.8
@@ -56,7 +56,7 @@ make install PREFIX=$PWD/../../install/ CFLAGS="-Wall -Winline -O2 -g -D_FILE_OF
 cd ..
 
 #LZMA
-wget https://tukaani.org/xz/xz-5.2.5.tar.gz
+wget --no-check-certificate https://tukaani.org/xz/xz-5.2.5.tar.gz
 tar zxvf xz-5.2.5.tar.gz
 rm xz-5.2.5.tar.gz
 cd xz-5.2.5
@@ -66,7 +66,7 @@ make install
 cd ..
 
 #PCRE2
-wget https://github.com/PhilipHazel/pcre2/releases/download/pcre2-10.37/pcre2-10.37.tar.gz
+wget --no-check-certificate https://github.com/PhilipHazel/pcre2/releases/download/pcre2-10.37/pcre2-10.37.tar.gz
 tar zxvf pcre2-10.37.tar.gz
 rm pcre2-10.37.tar.gz
 cd pcre2-10.37
@@ -76,7 +76,7 @@ make install
 cd ..
 
 #CURL
-wget https://curl.se/download/curl-7.79.1.tar.gz
+wget --no-check-certificate https://curl.se/download/curl-7.79.1.tar.gz
 tar zxvf curl-7.79.1.tar.gz
 rm curl-7.79.1.tar.gz
 cd curl-7.79.1
@@ -87,7 +87,7 @@ cd ..
 
 
 #GSL
-wget https://ftp.gnu.org/gnu/gsl/gsl-2.7.tar.gz
+wget --no-check-certificate https://ftp.gnu.org/gnu/gsl/gsl-2.7.tar.gz
 tar zxvf gsl-2.7.tar.gz
 rm gsl-2.7.tar.gz
 cd gsl-2.7
@@ -97,7 +97,7 @@ make install
 cd ..
 
 #HTSlib
-wget https://github.com/samtools/htslib/releases/download/1.13/htslib-1.13.tar.bz2
+wget --no-check-certificate https://github.com/samtools/htslib/releases/download/1.13/htslib-1.13.tar.bz2
 tar xvfj htslib-1.13.tar.bz2
 rm htslib-1.13.tar.bz2
 cd htslib-1.13
@@ -107,7 +107,7 @@ make install
 cd ..
 
 #BOOST
-wget https://boostorg.jfrog.io/artifactory/main/release/1.77.0/source/boost_1_77_0.tar.bz2
+wget --no-check-certificate https://boostorg.jfrog.io/artifactory/main/release/1.77.0/source/boost_1_77_0.tar.bz2
 tar xvfj boost_1_77_0.tar.bz2
 rm boost_1_77_0.tar.bz2
 cd boost_1_77_0
@@ -116,7 +116,7 @@ cd boost_1_77_0
 cd ..
 
 #R
-wget https://cran.r-project.org/src/base/R-4/R-4.1.1.tar.gz
+wget --no-check-certificate https://cran.r-project.org/src/base/R-4/R-4.1.1.tar.gz
 tar zxvf R-4.1.1.tar.gz
 rm R-4.1.1.tar.gz
 cd R-4.1.1
