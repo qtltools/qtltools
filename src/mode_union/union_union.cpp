@@ -129,7 +129,7 @@ void union_data::find_unions(vector <string> &hitFiles , vector <string> &vcfFil
 					int idx = 0;
 					if(vcfFiles.size()==1){
 						if (!geno_sink[0].genotypes.size()){
-							readGenotypes(vcfFiles[i],regionG);
+							readGenotypes(vcfFiles[0],regionG);
 							geno_sink[0].genotypes = genotype_val;
 							geno_sink[0].ids = genotype_id;
 						}
