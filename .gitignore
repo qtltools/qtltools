@@ -12,3 +12,5 @@ GTAGS
 .vscode/
 /man2html/
 .kdev4/
+/downloads/
+/install/

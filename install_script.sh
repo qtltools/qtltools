@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 set -e
 
+echo "This will attempt to download all the required libraries (potentially outdated and likely redundant) and compile QTLtools. You MUST have patience and basic utilities like C/C++ and fortran compilers, tar, gzip, bzip, and wget. It will create two new directories downloads and install, and when it's done will consume ~1.6G of space. It has been tested with several linux distros (ubuntu, arch, centos, manjaro) but is NOT guaranteed to work."
+echo -e "\n    Usage ./install_script.sh [NoOfThreads]\n"
+
+
+while true; do
+    read -p "Do you want to continue (y/n)? " yn
+    case $yn in
+        y ) break;;
+        n ) exit;;
+        * ) echo "Please answer y or n.";;
+    esac
+done
+
 FOO=$1
 THREADS=${FOO:=1}
 if ! [[ "$THREADS" =~ ^[0-9]+$ ]]
@@ -140,4 +153,4 @@ export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_BCK
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH_BCK
 
 trap - EXIT
-echo "Script succesfully completed. If you want to install QTLtools please type (as root): make install. You may want to delete the install and download directories as well."
+echo "Script succesfully completed. If you want to install QTLtools please type (as root): make install. You may want to delete the install and downloads directories as well."
