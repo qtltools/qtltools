@@ -239,7 +239,7 @@ public:
     void gwas_trans_conditional(string, string);
     void gwas_trans(string, string);
     vector <double> getDprimeRsquare(string,int,string,int, string al1 = "" , string al2 = "", int idx1 = -1 , int idx2 = -1);
-    double getRsquare(int,int,int,int);
+    double getRsquare(long,long,long,long);
     double getRsquare(int,int);
     void printPTTFR();
     vector < float > correct( vector < float> , vector <float> );
@@ -360,7 +360,7 @@ inline double rtc_data::getRsquare(int i, int j){
     return r * r;
 }
 
-inline double rtc_data::getRsquare(int i, int j,int start, int size){
+inline double rtc_data::getRsquare(long i, long j,long start, long size){
 	if (i==j) return 1.0;
 	long int first = -1 , second = -1;
 	if (i > j){
