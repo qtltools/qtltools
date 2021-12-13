@@ -362,7 +362,7 @@ inline double rtc_data::getRsquare(int i, int j){
 
 inline double rtc_data::getRsquare(int i, int j,int start, int size){
 	if (i==j) return 1.0;
-	int first = -1 , second = -1;
+	long int first = -1 , second = -1;
 	if (i > j){
 		first = j - start + 1;
 		second = i - start + 1;
@@ -370,10 +370,10 @@ inline double rtc_data::getRsquare(int i, int j,int start, int size){
 		first = i - start + 1;
 		second = j - start + 1;
 	}
-	int total = size * (size - 1) / 2;
+	long int total = size * (size - 1) / 2;
 	if (!RsquareSink.size() && DprimeR2inMem >=2) RsquareSink = vector <float> (total, __RTC_NA__ );
-	int diff = (size - first) * (size - first + 1) / 2;
-	int index = total - diff + second - first - 1;
+	long int diff = (size - first) * (size - first + 1) / 2;
+	long int index = total - diff + second - first - 1;
 	if (index < RsquareSink.size() && !isnan(RsquareSink[index])) return RsquareSink[index];
 	vector < float > v1;
     if (genotypeSink.count(i)){
