@@ -51,7 +51,7 @@ export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/$PWD/install/lib/pkgconfig/
 cd downloads
 
 #ZLIB
-wget --no-check-certificate https://zlib.net/zlib-1.2.11.tar.gz
+wget --no-check-certificate https://zlib.net/fossils/zlib-1.2.11.tar.gz
 tar zxvf zlib-1.2.11.tar.gz
 rm zlib-1.2.11.tar.gz
 cd zlib-1.2.11

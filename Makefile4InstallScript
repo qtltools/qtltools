@@ -38,7 +38,7 @@ CXXFLAG_DBG=-g
 CXXFLAG_WRN=-Wall -Wextra -Wno-sign-compare -Wno-unused-local-typedefs -Wno-deprecated -Wno-unused-parameter
 
 #BASE LIBRARIES
-LIB_FLAGS=-lm -lpthread
+LIB_FLAGS=-lm -lpthread -ldeflate
 LIB_FILES=install/lib/libgsl.a install/lib/libgslcblas.a install/lib/libboost_program_options.a install/lib/libboost_iostreams.a install/lib/libRmath.a install/lib/libhts.a install/lib/libz.a install/lib/libbz2.a install/lib/liblzma.a 
 #INCLUDE DIRS
 IFLAG=-Ilib/OTools -isystem lib
