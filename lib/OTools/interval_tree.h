@@ -73,13 +73,13 @@ public:
     intervalTree* right;
     int center;
 
-    IntervalTree<T,K>(void)
+    IntervalTree(void)
         : left(NULL)
         , right(NULL)
         , center(0)
     { }
 
-    IntervalTree<T,K>(const intervalTree& other) {
+    IntervalTree(const intervalTree& other) {
         center = other.center;
         intervals = other.intervals;
         if (other.left) {
@@ -96,25 +96,7 @@ public:
         }
     }
 
-    IntervalTree<T,K>& operator=(const intervalTree& other) {
-        center = other.center;
-        intervals = other.intervals;
-        if (other.left) {
-            left = new intervalTree();
-            *left = *other.left;
-        } else {
-            left = NULL;
-        }
-        if (other.right) {
-            right = new intervalTree();
-            *right = *other.right;
-        } else {
-            right = NULL;
-        }
-        return *this;
-    }
-
-    IntervalTree<T,K>(
+    IntervalTree(
             intervalVector& ivals,
             unsigned int depth = 16,
             unsigned int minbucket = 64,
@@ -176,6 +158,24 @@ public:
                 right = new intervalTree(rights, depth, minbucket, centerp, rightp);
             }
         }
+    }
+
+    IntervalTree& operator=(const intervalTree& other) {
+        center = other.center;
+        intervals = other.intervals;
+        if (other.left) {
+            left = new intervalTree();
+            *left = *other.left;
+        } else {
+            left = NULL;
+        }
+        if (other.right) {
+            right = new intervalTree();
+            *right = *other.right;
+        } else {
+            right = NULL;
+        }
+        return *this;
     }
 
     void findOverlapping(K start, K stop, intervalVector& overlapping) {
