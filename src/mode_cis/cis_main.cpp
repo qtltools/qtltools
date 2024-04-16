@@ -160,7 +160,7 @@ void cis_main(vector < string > & argv) {
 	//--------------
 	if (D.options.count("chunk")) {
 		vector < int > nChunk = D.options["chunk"].as < vector < int > > ();
-		if (nChunk[0] == 0) {
+		if (nChunk[0] == 0 || nChunk.size() !=  2) {
 			D.writeHeader(outFile);
 			return;
 		} else {
